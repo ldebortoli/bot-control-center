@@ -35,8 +35,22 @@ test("renderiza el dashboard local con la flota demo", async () => {
   assert.match(html, /Spider Tracker/);
   assert.match(html, /Reshare Stories/);
   assert.match(html, /Modo local/);
+  assert.match(html, /Administrar flota/);
   assert.match(html, /Capacidades declaradas/);
   assert.doesNotMatch(html, /Your site is taking shape|react-loading-skeleton|codex-preview/i);
+});
+
+test("mantiene la flota editable y Reshare inactivo por defecto", async () => {
+  const controlCenter = await readFile(
+    new URL("../app/control-center.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(controlCenter, /initiallyInactiveBotIds = new Set\(\["reshare"\]\)/);
+  assert.match(controlCenter, /localStorage\.setItem/);
+  assert.match(controlCenter, /Administrar flota/);
+  assert.match(controlCenter, /Registrar y agregar/);
+  assert.match(controlCenter, /No se guardan credenciales/);
 });
 
 test("conserva los guardrails de SQL y transporte fuera de la UI", async () => {

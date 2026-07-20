@@ -50,3 +50,17 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-07-20.
 - Decisión: abrir Bot Control Center desde `CODEX APPS` mediante un launcher nativo que inicia vinext en localhost, abre una ventana aislada de Edge o Chrome y asigna el servidor a un Windows Job Object con `KILL_ON_JOB_CLOSE`.
 - Motivo: ofrecer una experiencia de aplicación sin consola visible y garantizar que cerrar la ventana termine el árbol completo del servidor, incluso si el launcher finaliza de forma inesperada.
+
+## D-008 - Catálogo local y flota activa persistente
+
+- Estado: vigente.
+- Fecha: 2026-07-20.
+- Decisión: separar el catálogo de bots de la flota visible. La UI puede activar, quitar y registrar bots locales; guarda solo IDs activos y definiciones demostrativas personalizadas en `localStorage`. Reshare Stories queda disponible en el catálogo, pero inactivo por defecto.
+- Motivo: permitir administrar la flota sin editar código ni almacenar credenciales, manteniendo preparado el catálogo para volver a incorporar un bot.
+
+## D-009 - Feedback inmediato de arranque y escala de lectura
+
+- Estado: vigente.
+- Fecha: 2026-07-20.
+- Decisión: el launcher muestra una ventana de progreso mientras vinext inicia y la interfaz ajusta la altura percibida de las fuentes sin escalar el layout completo.
+- Motivo: evitar que el primer inicio parezca fallido durante los segundos de espera y mejorar la legibilidad sin introducir recortes o desbordes.

@@ -41,6 +41,10 @@ namespace BotControlCenter.WindowsLauncher
                 {
                     RunApplication();
                 }
+                catch (OperationCanceledException)
+                {
+                    // Cerrar la ventana de inicio cancela el arranque sin mostrar un error.
+                }
                 catch (Exception exception)
                 {
                     MessageBox.Show(
@@ -57,6 +61,17 @@ namespace BotControlCenter.WindowsLauncher
         }
 
         private static void RunApplication()
+        {
+            using (StartupForm startup = new StartupForm())
+            {
+                startup.Show();
+                startup.SetStatus("Verificando el entorno local…");
+                Application.DoEvents();
+                RunApplication(startup);
+            }
+        }
+
+        private static void RunApplication(StartupForm startup)
         {
             string projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ".."));
             string packagePath = Path.Combine(projectRoot, "package.json");
@@ -103,6 +118,8 @@ namespace BotControlCenter.WindowsLauncher
             string errorLogPath = Path.Combine(logsDirectory, "server-error.log");
             string url = "http://localhost:" + ServerPort;
 
+            startup.SetStatus("Iniciando el servidor…");
+            startup.ThrowIfCancellationRequested();
             using (StreamWriter standardLog = CreateLogWriter(standardLogPath))
             using (StreamWriter errorLog = CreateLogWriter(errorLogPath))
             using (KillOnCloseJob serverJob = new KillOnCloseJob())
@@ -110,19 +127,21 @@ namespace BotControlCenter.WindowsLauncher
             {
                 serverJob.Assign(serverProcess);
 
-                if (!WaitUntilReady(serverProcess, url, TimeSpan.FromSeconds(60)))
+                if (!WaitUntilReady(serverProcess, url, TimeSpan.FromSeconds(60), startup))
                 {
                     throw new InvalidOperationException(
                         "El servidor no llegó a estar disponible. Revisá los registros en:\n" + logsDirectory);
                 }
 
+                startup.SetStatus("Abriendo la aplicación…");
+                startup.ThrowIfCancellationRequested();
                 using (Process browserProcess = StartBrowser(browserPath, url, browserProfile))
                 {
                     KillOnCloseJob browserJob = null;
                     try
                     {
                         browserJob = TryCreateBrowserJob(browserProcess);
-                        WaitForBrowserWindowToClose(browserProcess);
+                        WaitForBrowserWindowToClose(browserProcess, startup);
                     }
                     finally
                     {
@@ -197,11 +216,17 @@ namespace BotControlCenter.WindowsLauncher
             }
         }
 
-        private static bool WaitUntilReady(Process serverProcess, string url, TimeSpan timeout)
+        private static bool WaitUntilReady(
+            Process serverProcess,
+            string url,
+            TimeSpan timeout,
+            StartupForm startup)
         {
             DateTime deadline = DateTime.UtcNow.Add(timeout);
             while (DateTime.UtcNow < deadline)
             {
+                Application.DoEvents();
+                startup.ThrowIfCancellationRequested();
                 if (serverProcess.HasExited)
                 {
                     return false;
@@ -259,7 +284,7 @@ namespace BotControlCenter.WindowsLauncher
             return process;
         }
 
-        private static void WaitForBrowserWindowToClose(Process browserProcess)
+        private static void WaitForBrowserWindowToClose(Process browserProcess, StartupForm startup)
         {
             bool sawWindow = false;
             DateTime startupDeadline = DateTime.UtcNow.AddSeconds(25);
@@ -267,6 +292,8 @@ namespace BotControlCenter.WindowsLauncher
 
             while (true)
             {
+                Application.DoEvents();
+                startup.ThrowIfCancellationRequested();
                 if (browserProcess.HasExited)
                 {
                     if (!sawWindow)
@@ -280,6 +307,11 @@ namespace BotControlCenter.WindowsLauncher
                 browserProcess.Refresh();
                 if (browserProcess.MainWindowHandle != IntPtr.Zero)
                 {
+                    if (!sawWindow)
+                    {
+                        startup.HideForApplication();
+                    }
+
                     sawWindow = true;
                     missingWindowChecks = 0;
                 }
@@ -437,6 +469,97 @@ namespace BotControlCenter.WindowsLauncher
 
                 Thread.Sleep(150);
             }
+        }
+    }
+
+    internal sealed class StartupForm : Form
+    {
+        private readonly Label statusLabel;
+        private bool allowClose;
+
+        internal StartupForm()
+        {
+            Text = "Bot Control Center";
+            StartPosition = FormStartPosition.CenterScreen;
+            ClientSize = new Size(430, 172);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = false;
+            MinimizeBox = false;
+            BackColor = Color.FromArgb(8, 11, 11);
+            ForeColor = Color.FromArgb(232, 237, 235);
+            Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
+
+            try
+            {
+                Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+            }
+            catch
+            {
+                // El icono no es necesario para iniciar la aplicación.
+            }
+
+            Label titleLabel = new Label();
+            titleLabel.Text = "BOT CONTROL CENTER";
+            titleLabel.ForeColor = Color.FromArgb(184, 243, 74);
+            titleLabel.Font = new Font("Segoe UI Semibold", 16F, FontStyle.Bold, GraphicsUnit.Point);
+            titleLabel.AutoSize = true;
+            titleLabel.Location = new Point(28, 24);
+            Controls.Add(titleLabel);
+
+            statusLabel = new Label();
+            statusLabel.Text = "Preparando la aplicación…";
+            statusLabel.ForeColor = Color.FromArgb(205, 213, 210);
+            statusLabel.AutoSize = false;
+            statusLabel.Location = new Point(30, 66);
+            statusLabel.Size = new Size(370, 24);
+            Controls.Add(statusLabel);
+
+            ProgressBar progress = new ProgressBar();
+            progress.Style = ProgressBarStyle.Marquee;
+            progress.MarqueeAnimationSpeed = 24;
+            progress.Location = new Point(31, 99);
+            progress.Size = new Size(368, 8);
+            Controls.Add(progress);
+
+            Label noteLabel = new Label();
+            noteLabel.Text = "El primer inicio puede demorar unos segundos.";
+            noteLabel.ForeColor = Color.FromArgb(111, 122, 119);
+            noteLabel.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            noteLabel.AutoSize = true;
+            noteLabel.Location = new Point(29, 124);
+            Controls.Add(noteLabel);
+
+            FormClosing += delegate(object sender, FormClosingEventArgs eventArgs)
+            {
+                if (!allowClose)
+                {
+                    CancellationRequested = true;
+                    eventArgs.Cancel = true;
+                    Hide();
+                }
+            };
+        }
+
+        internal bool CancellationRequested { get; private set; }
+
+        internal void SetStatus(string status)
+        {
+            statusLabel.Text = status;
+            statusLabel.Refresh();
+        }
+
+        internal void ThrowIfCancellationRequested()
+        {
+            if (CancellationRequested)
+            {
+                throw new OperationCanceledException();
+            }
+        }
+
+        internal void HideForApplication()
+        {
+            allowClose = true;
+            Hide();
         }
     }
 

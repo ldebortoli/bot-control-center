@@ -12,6 +12,7 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 - Idioma de la interfaz y documentación: español.
 - Hosting: no desplegado; `.openai/hosting.json` mantiene D1 y R2 desactivados.
 - Datos: exclusivamente demostrativos hasta configurar un adaptador real.
+- Flota inicial: Galerazo Bot y Spider Tracker; Reshare Stories permanece en el catálogo local, inactivo por defecto.
 
 ## Arquitectura
 
@@ -22,6 +23,7 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 - `build/` y `worker/`: integración requerida por Sites/vinext.
 - `public/og-bot-control-center.png`: imagen social generada para el proyecto.
 - `launcher/`, `bin/` y `scripts/*windows-launcher*`: app nativa de Windows que supervisa vinext y abre la UI en una ventana aislada del navegador.
+- El administrador de flota activa, quita y registra bots locales; conserva la selección y los registros personalizados en `localStorage`, sin credenciales.
 
 ## Ejecución y tests
 
@@ -35,7 +37,7 @@ Comandos verificados en Windows:
 
 El runner `scripts/run-vinext.mjs` hace que dev/build/start sean multiplataforma.
 
-En Windows también existe el acceso `C:\Users\calei\Documents\Codex\CODEX APPS\Bot Control Center.lnk`. Inicia el servidor oculto en localhost y lo apaga, junto con todo su árbol de procesos, cuando se cierra la ventana de la aplicación.
+En Windows también existe el acceso `C:\Users\calei\Documents\Codex\CODEX APPS\Bot Control Center.lnk`. Muestra una ventana de inicio inmediata, inicia el servidor oculto en localhost y lo apaga, junto con todo su árbol de procesos, cuando se cierra la ventana de la aplicación.
 
 ## Convenciones y seguridad
 

@@ -1,10 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { validateReadonlyQuery } from "@/lib/control-center/query-policy";
 import type { BotDefinition, LogLevel, TriggerDefinition } from "@/lib/control-center/types";
 
 type View = "overview" | "logs" | "triggers" | "sql";
+type FleetSnapshot = { activeIds: string[]; customBots: BotDefinition[] };
+
+const fleetStorageKey = "bot-control-center.fleet.v1";
+const initiallyInactiveBotIds = new Set(["reshare"]);
 
 const views: { id: View; label: string; glyph: string }[] = [
   { id: "overview", label: "Resumen", glyph: "⌁" },
@@ -25,6 +29,79 @@ const transportCopy = {
   railway: "Railway API",
 };
 
+const providerByTransport: Record<BotDefinition["transport"], string> = {
+  "gcp-iap": "Google Compute Engine",
+  ssh: "Servidor SSH",
+  railway: "Railway",
+};
+
+function isStoredBot(value: unknown): value is BotDefinition {
+  if (!value || typeof value !== "object") return false;
+  const bot = value as Partial<BotDefinition>;
+  return Boolean(
+    bot.id &&
+    bot.name &&
+    bot.initials &&
+    bot.transport &&
+    Array.isArray(bot.capabilities) &&
+    Array.isArray(bot.metrics) &&
+    Array.isArray(bot.logs) &&
+    Array.isArray(bot.triggers) &&
+    Array.isArray(bot.queryRows),
+  );
+}
+
+function createLocalBot(name: string, transport: BotDefinition["transport"]): BotDefinition {
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toLocaleUpperCase("es") ?? "")
+    .join("") || "BT";
+  const idBase = name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || "bot";
+
+  return {
+    id: `${idBase}-${Date.now().toString(36)}`,
+    name,
+    initials,
+    description: "Bot agregado localmente; pendiente de configurar su adaptador remoto.",
+    status: "offline",
+    statusLabel: "Sin configurar",
+    provider: providerByTransport[transport],
+    transport,
+    environment: "local · pendiente",
+    host: "sin configurar",
+    version: "—",
+    commit: "local",
+    updatedAt: "sin conexión",
+    capabilities: ["status", "logs"],
+    metrics: [
+      { label: "Uptime", value: "—", detail: "sin conexión" },
+      { label: "CPU", value: "—", detail: "sin conexión" },
+      { label: "Memoria", value: "—", detail: "sin conexión" },
+      { label: "Disco", value: "—", detail: "sin conexión" },
+      { label: "Base SQLite", value: "—", detail: "no declarada" },
+      { label: "Eventos hoy", value: "—", detail: "sin datos" },
+    ],
+    logs: [
+      {
+        id: `${idBase}-registry`,
+        timestamp: "ahora",
+        level: "info",
+        source: "registro",
+        message: "Bot agregado a la flota local; falta configurar el transporte remoto.",
+      },
+    ],
+    triggers: [],
+    queryRows: [],
+  };
+}
+
 function StatusDot({ status }: { status: BotDefinition["status"] }) {
   return <span className={`status-dot status-dot--${status}`} aria-hidden="true" />;
 }
@@ -40,7 +117,13 @@ function EmptyCapability({ title, detail }: { title: string; detail: string }) {
 }
 
 export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
-  const [selectedId, setSelectedId] = useState(bots[0]?.id ?? "");
+  const defaultActiveIds = useMemo(
+    () => bots.filter((item) => !initiallyInactiveBotIds.has(item.id)).map((item) => item.id),
+    [bots],
+  );
+  const [customBots, setCustomBots] = useState<BotDefinition[]>([]);
+  const [activeIds, setActiveIds] = useState<string[]>(defaultActiveIds);
+  const [selectedId, setSelectedId] = useState(defaultActiveIds[0] ?? bots[0]?.id ?? "");
   const [view, setView] = useState<View>("overview");
   const [logFilter, setLogFilter] = useState<"all" | LogLevel>("all");
   const [logSearch, setLogSearch] = useState("");
@@ -51,9 +134,46 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
   const [queryMessage, setQueryMessage] = useState("La ejecución usa datos demo; todavía no se conecta a una base real.");
   const [refreshLabel, setRefreshLabel] = useState("hace 18 s");
   const [triggerState, setTriggerState] = useState<Record<string, boolean>>({});
+  const [fleetOpen, setFleetOpen] = useState(false);
+  const [fleetMessage, setFleetMessage] = useState("");
+  const [newBotName, setNewBotName] = useState("");
+  const [newBotTransport, setNewBotTransport] = useState<BotDefinition["transport"]>("ssh");
 
-  const bot = bots.find((item) => item.id === selectedId) ?? bots[0] ?? null;
+  const allBots = useMemo(() => [...bots, ...customBots], [bots, customBots]);
+  const activeBots = useMemo(
+    () => allBots.filter((item) => activeIds.includes(item.id)),
+    [activeIds, allBots],
+  );
+  const availableBots = useMemo(
+    () => allBots.filter((item) => !activeIds.includes(item.id)),
+    [activeIds, allBots],
+  );
+  const bot = activeBots.find((item) => item.id === selectedId) ?? activeBots[0] ?? null;
   const botLogs = useMemo(() => bot?.logs ?? [], [bot]);
+
+  useEffect(() => {
+    const hydrationTimer = window.setTimeout(() => {
+      try {
+        const raw = window.localStorage.getItem(fleetStorageKey);
+        if (!raw) return;
+        const stored = JSON.parse(raw) as Partial<FleetSnapshot>;
+        const storedCustomBots = Array.isArray(stored.customBots)
+          ? stored.customBots.filter(isStoredBot)
+          : [];
+        const knownIds = new Set([...bots, ...storedCustomBots].map((item) => item.id));
+        const storedActiveIds = Array.isArray(stored.activeIds)
+          ? stored.activeIds.filter((id): id is string => typeof id === "string" && knownIds.has(id))
+          : [];
+
+        setCustomBots(storedCustomBots);
+        if (storedActiveIds.length > 0) setActiveIds(storedActiveIds);
+      } catch {
+        window.localStorage.removeItem(fleetStorageKey);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(hydrationTimer);
+  }, [bots]);
 
   const filteredLogs = useMemo(() => {
     const needle = logSearch.trim().toLocaleLowerCase("es");
@@ -75,6 +195,52 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
     setLogSearch("");
     setQueryState("idle");
     setQueryMessage("La ejecución usa datos demo; todavía no se conecta a una base real.");
+  }
+
+  function persistFleet(nextActiveIds: string[], nextCustomBots = customBots) {
+    setActiveIds(nextActiveIds);
+    setCustomBots(nextCustomBots);
+    window.localStorage.setItem(
+      fleetStorageKey,
+      JSON.stringify({ activeIds: nextActiveIds, customBots: nextCustomBots } satisfies FleetSnapshot),
+    );
+  }
+
+  function removeFromFleet(id: string) {
+    if (activeIds.length <= 1) {
+      setFleetMessage("La flota debe conservar al menos un bot activo.");
+      return;
+    }
+
+    const removedBot = allBots.find((item) => item.id === id);
+    const nextActiveIds = activeIds.filter((item) => item !== id);
+    persistFleet(nextActiveIds);
+    if (selectedId === id) setSelectedId(nextActiveIds[0] ?? "");
+    setFleetMessage(`${removedBot?.name ?? "El bot"} fue quitado de la flota.`);
+  }
+
+  function addToFleet(id: string) {
+    if (activeIds.includes(id)) return;
+    const addedBot = allBots.find((item) => item.id === id);
+    persistFleet([...activeIds, id]);
+    setFleetMessage(`${addedBot?.name ?? "El bot"} fue agregado a la flota.`);
+  }
+
+  function registerBot(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const name = newBotName.trim();
+    if (!name) {
+      setFleetMessage("Escribí un nombre para registrar el bot.");
+      return;
+    }
+
+    const newBot = createLocalBot(name, newBotTransport);
+    const nextCustomBots = [...customBots, newBot];
+    persistFleet([...activeIds, newBot.id], nextCustomBots);
+    setNewBotName("");
+    setFleetMessage(`${newBot.name} fue registrado y agregado a la flota.`);
+    selectBot(newBot.id);
+    setFleetOpen(false);
   }
 
   function runQuery() {
@@ -125,11 +291,19 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
 
         <div className="sidebar__heading">
           <span>FLOTA</span>
-          <span>{bots.length} bots</span>
+          <span>{activeBots.length} bots</span>
         </div>
 
+        <button
+          className="fleet-manage-button"
+          onClick={() => { setFleetMessage(""); setFleetOpen(true); }}
+          type="button"
+        >
+          <span aria-hidden="true">＋</span> Administrar flota
+        </button>
+
         <nav className="bot-list" aria-label="Bots registrados">
-          {bots.map((item) => (
+          {activeBots.map((item) => (
             <button
               className={`bot-item ${item.id === bot.id ? "bot-item--active" : ""}`}
               key={item.id}
@@ -370,6 +544,72 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
           ) : null}
         </div>
       </main>
+
+      {fleetOpen ? (
+        <div className="fleet-overlay" role="presentation">
+          <section aria-labelledby="fleet-manager-title" aria-modal="true" className="fleet-manager" role="dialog">
+            <header className="fleet-manager__header">
+              <div>
+                <span className="eyebrow">REGISTRO LOCAL</span>
+                <h2 id="fleet-manager-title">Administrar flota</h2>
+                <p>Elegí qué bots aparecen en el panel. No se guardan credenciales.</p>
+              </div>
+              <button aria-label="Cerrar administrador de flota" onClick={() => setFleetOpen(false)} type="button">×</button>
+            </header>
+
+            {fleetMessage ? <p className="fleet-message" role="status">{fleetMessage}</p> : null}
+
+            <div className="fleet-manager__grid">
+              <div className="fleet-manager__section">
+                <h3>En la flota <span>{activeBots.length}</span></h3>
+                <div className="fleet-manager__list">
+                  {activeBots.map((item) => (
+                    <article className="fleet-manager__item" key={item.id}>
+                      <span className="bot-avatar">{item.initials}</span>
+                      <div><strong>{item.name}</strong><small>{transportCopy[item.transport]}</small></div>
+                      <button disabled={activeBots.length <= 1} onClick={() => removeFromFleet(item.id)} type="button">Quitar</button>
+                    </article>
+                  ))}
+                </div>
+              </div>
+
+              <div className="fleet-manager__section">
+                <h3>Disponibles <span>{availableBots.length}</span></h3>
+                <div className="fleet-manager__list">
+                  {availableBots.length ? availableBots.map((item) => (
+                    <article className="fleet-manager__item" key={item.id}>
+                      <span className="bot-avatar">{item.initials}</span>
+                      <div><strong>{item.name}</strong><small>{transportCopy[item.transport]}</small></div>
+                      <button className="fleet-add-button" onClick={() => addToFleet(item.id)} type="button">Agregar</button>
+                    </article>
+                  )) : <p className="fleet-manager__empty">No hay bots disponibles fuera de la flota.</p>}
+                </div>
+              </div>
+            </div>
+
+            <form className="fleet-register" onSubmit={registerBot}>
+              <div>
+                <span className="eyebrow">NUEVO REGISTRO</span>
+                <h3>Agregar otro bot</h3>
+                <p>Se crea como desconectado hasta configurar su adaptador remoto.</p>
+              </div>
+              <label>
+                <span>Nombre</span>
+                <input onChange={(event) => setNewBotName(event.target.value)} placeholder="Ej. Bot de reportes" value={newBotName} />
+              </label>
+              <label>
+                <span>Transporte previsto</span>
+                <select onChange={(event) => setNewBotTransport(event.target.value as BotDefinition["transport"])} value={newBotTransport}>
+                  <option value="ssh">SSH</option>
+                  <option value="gcp-iap">Google Cloud IAP</option>
+                  <option value="railway">Railway</option>
+                </select>
+              </label>
+              <button className="fleet-register__submit" type="submit">Registrar y agregar</button>
+            </form>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }

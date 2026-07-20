@@ -32,7 +32,7 @@ Los scripts de desarrollo y build son multiplataforma; no necesitan declarar var
 
 ## Abrir como aplicación de Windows
 
-El acceso `Bot Control Center` de la carpeta `CODEX APPS` inicia el servidor en segundo plano y abre el dashboard en una ventana independiente. Al cerrar esa ventana, el launcher termina automáticamente el árbol completo del servidor.
+El acceso `Bot Control Center` de la carpeta `CODEX APPS` muestra inmediatamente el estado de inicio, levanta el servidor en segundo plano y abre el dashboard en una ventana independiente. Al cerrar esa ventana, el launcher termina automáticamente el árbol completo del servidor.
 
 Para compilar o reinstalar el acceso:
 
@@ -45,6 +45,12 @@ Los registros locales del launcher quedan en `%LOCALAPPDATA%\BotControlCenter\lo
 ## Estado de seguridad
 
 Esta versión es local y demostrativa. No se conecta a Google Cloud, Railway, un VPS ni una base real. Los toggles de triggers solo cambian el estado de la pantalla y la consola SQL devuelve filas de ejemplo.
+
+## Administrar la flota
+
+El botón **Administrar flota** permite quitar bots del panel, volver a agregar bots disponibles y registrar nuevos bots locales indicando un nombre y el transporte previsto. Reshare Stories está disponible en el catálogo, pero queda fuera de la flota inicial.
+
+La selección se conserva localmente en el perfil de la aplicación. Registrar un bot no establece una conexión ni almacena credenciales: el nuevo bot queda desconectado hasta configurar su adaptador remoto.
 
 La integración real mantendrá estas reglas:
 

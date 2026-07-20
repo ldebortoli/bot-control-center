@@ -31,6 +31,7 @@ body {
     var(--ink-950);
   color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size-adjust: 0.58;
   min-width: 320px;
 }
 
@@ -157,6 +158,29 @@ button {
   letter-spacing: 0;
   text-transform: none;
 }
+
+.fleet-manage-button {
+  align-items: center;
+  background: rgba(85, 215, 208, 0.04);
+  border: 1px dashed #34413e;
+  border-radius: 7px;
+  color: #9ba8a4;
+  cursor: pointer;
+  display: flex;
+  font-size: 11px;
+  font-weight: 700;
+  gap: 7px;
+  justify-content: center;
+  margin: 0 7px 10px;
+  padding: 8px 10px;
+}
+
+.fleet-manage-button:hover {
+  border-color: rgba(184, 243, 74, 0.42);
+  color: var(--text);
+}
+
+.fleet-manage-button span { color: var(--lime); font-size: 15px; }
 
 .bot-list {
   display: flex;
@@ -768,6 +792,181 @@ button {
 .empty-state p { color: #78827f; font-size: 10px; line-height: 1.6; margin: 0; max-width: 360px; }
 .fatal-state { align-items: center; display: flex; justify-content: center; min-height: 100vh; }
 
+.fleet-overlay {
+  align-items: center;
+  backdrop-filter: blur(12px);
+  background: rgba(2, 5, 5, 0.78);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: fixed;
+  z-index: 50;
+}
+
+.fleet-manager {
+  background: linear-gradient(145deg, #151b1a, #0c1110);
+  border: 1px solid #35413e;
+  border-radius: 12px;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.55);
+  max-height: calc(100vh - 48px);
+  max-width: 900px;
+  overflow-y: auto;
+  padding: 24px;
+  width: 100%;
+}
+
+.fleet-manager__header {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  padding-bottom: 18px;
+}
+
+.fleet-manager__header h2 { font-size: 21px; margin: 0; }
+.fleet-manager__header p,
+.fleet-register p { color: #7b8683; font-size: 11px; margin: 7px 0 0; }
+
+.fleet-manager__header > button {
+  align-items: center;
+  background: #1a2220;
+  border: 1px solid #36403e;
+  border-radius: 7px;
+  color: #a8b2af;
+  cursor: pointer;
+  display: flex;
+  font-size: 22px;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
+.fleet-manager__header > button:hover { border-color: #65716e; color: var(--text); }
+
+.fleet-message {
+  background: rgba(184, 243, 74, 0.08);
+  border: 1px solid rgba(184, 243, 74, 0.2);
+  border-radius: 6px;
+  color: #c9e991;
+  font-size: 11px;
+  margin: 16px 0 0;
+  padding: 9px 11px;
+}
+
+.fleet-manager__grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 20px;
+}
+
+.fleet-manager__section {
+  background: rgba(7, 11, 10, 0.56);
+  border: 1px solid #28322f;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.fleet-manager__section h3,
+.fleet-register h3 {
+  font-size: 13px;
+  margin: 0;
+}
+
+.fleet-manager__section h3 span {
+  background: #29322f;
+  border-radius: 20px;
+  color: #929d99;
+  font-size: 9px;
+  margin-left: 5px;
+  padding: 2px 6px;
+}
+
+.fleet-manager__list { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; }
+
+.fleet-manager__item {
+  align-items: center;
+  background: #111715;
+  border: 1px solid #29322f;
+  border-radius: 7px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  padding: 9px;
+}
+
+.fleet-manager__item strong,
+.fleet-manager__item small { display: block; }
+.fleet-manager__item strong { font-size: 11px; }
+.fleet-manager__item small { color: #71807b; font-size: 9px; margin-top: 3px; }
+
+.fleet-manager__item button {
+  background: transparent;
+  border: 1px solid #3d4845;
+  border-radius: 5px;
+  color: #9aa4a1;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 7px 9px;
+}
+
+.fleet-manager__item button:hover:not(:disabled) { border-color: #75817d; color: var(--text); }
+.fleet-manager__item button:disabled { cursor: not-allowed; opacity: 0.35; }
+.fleet-manager__item .fleet-add-button { border-color: rgba(184, 243, 74, 0.32); color: var(--lime); }
+.fleet-manager__empty { color: #6d7874; font-size: 10px; margin: 8px 0; }
+
+.fleet-register {
+  align-items: end;
+  background: rgba(85, 215, 208, 0.04);
+  border: 1px solid rgba(85, 215, 208, 0.13);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(180px, 1fr) minmax(150px, 0.8fr) minmax(150px, 0.8fr) auto;
+  margin-top: 18px;
+  padding: 14px;
+}
+
+.fleet-register label > span {
+  color: #74817d;
+  display: block;
+  font-size: 9px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.fleet-register input,
+.fleet-register select {
+  background: #0b100f;
+  border: 1px solid #35413e;
+  border-radius: 5px;
+  color: var(--text);
+  font-size: 10px;
+  height: 35px;
+  outline: 0;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.fleet-register input:focus,
+.fleet-register select:focus { border-color: rgba(184, 243, 74, 0.5); }
+
+.fleet-register__submit {
+  background: var(--lime);
+  border: 0;
+  border-radius: 5px;
+  color: #11170b;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 800;
+  height: 35px;
+  padding: 0 13px;
+  white-space: nowrap;
+}
+
 @media (max-width: 1100px) {
   .metrics-grid { grid-template-columns: repeat(3, 1fr); }
   .overview-grid,
@@ -780,6 +979,7 @@ button {
   .brand { padding: 0; }
   .local-mode { margin: 12px 0; }
   .sidebar__heading { display: none; }
+  .fleet-manage-button { margin: 12px 0 0; }
   .bot-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .bot-item { grid-template-columns: 30px minmax(0, 1fr); padding: 7px; }
   .bot-avatar { height: 30px; width: 30px; }
@@ -788,6 +988,8 @@ button {
   .topbar { position: sticky; }
   .workspace { padding-top: 24px; }
   .version-card { display: none; }
+  .fleet-manager__grid,
+  .fleet-register { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 620px) {
