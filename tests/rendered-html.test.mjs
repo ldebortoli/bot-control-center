@@ -37,6 +37,7 @@ test("renderiza el dashboard local con la flota demo", async () => {
   assert.match(html, /Modo local/);
   assert.match(html, /Administrar flota/);
   assert.match(html, /Capacidades declaradas/);
+  assert.match(html, />Deploy</);
   assert.doesNotMatch(html, /Your site is taking shape|react-loading-skeleton|codex-preview/i);
 });
 
@@ -88,10 +89,11 @@ test("incluye visor multimedia y moderación auditada para triggers", async () =
 });
 
 test("conserva los guardrails de SQL y transporte fuera de la UI", async () => {
-  const [policy, transport, exampleConfig, packageJson] = await Promise.all([
+  const [policy, transport, exampleConfig, runtimeExample, packageJson] = await Promise.all([
     readFile(new URL("../lib/control-center/query-policy.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/control-center/transport-contract.ts", import.meta.url), "utf8"),
     readFile(new URL("../config/bots.example.json", import.meta.url), "utf8"),
+    readFile(new URL("../config/runtime.example.json", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
   ]);
 
@@ -101,5 +103,26 @@ test("conserva los guardrails de SQL y transporte fuera de la UI", async () => {
   assert.match(transport, /BotTransport/);
   assert.match(exampleConfig, /TU_PROYECTO_GCP/);
   assert.doesNotMatch(exampleConfig, /private_key|token|password/i);
+  assert.match(runtimeExample, /runtime|repositoryPath|projectId/i);
+  assert.doesNotMatch(runtimeExample, /private_key|token|password/i);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
+});
+
+test("incluye deploy local de una sola acción con confirmación y rollback", async () => {
+  const [controlCenter, deployPanel, agent, jobManager, launcher] = await Promise.all([
+    readFile(new URL("../app/control-center.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/deploy-panel.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../agent/server.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../agent/job-manager.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../launcher/BotControlCenterLauncher.cs", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(controlCenter, /id: "deploy"/);
+  assert.match(deployPanel, /Publicar y deployar/);
+  assert.match(deployPanel, /window\.confirm/);
+  assert.match(deployPanel, /Rollback/);
+  assert.match(agent, /127\.0\.0\.1/);
+  assert.match(agent, /X-Bot-Control-Action|x-bot-control-action/);
+  assert.match(jobManager, /shell: false/);
+  assert.match(launcher, /run-local\.mjs/);
 });

@@ -13,6 +13,10 @@ test("el launcher liga la ventana al ciclo de vida del servidor", async () => {
   assert.match(source, /127\.0\.0\.1/);
   assert.match(source, /WaitForBrowserWindowToClose/);
   assert.match(source, /using \(KillOnCloseJob serverJob/);
+  assert.match(source, /AgentPort = 43121/);
+  assert.match(source, /run-local\.mjs/);
+  assert.match(source, /WaitForActiveJobsToFinish/);
+  assert.match(source, /activeJobs/);
   assert.match(source, /StartupForm/);
   assert.match(source, /El primer inicio puede demorar unos segundos/);
 });

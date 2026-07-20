@@ -85,3 +85,10 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-07-20.
 - Decisión: normalizar medios como `video`, `audio`, `image` o `sticker` y usar el MIME para distinguir PNG/JPEG/WebP/GIF, WebM y TGS. Los formatos nativos se reproducen con elementos del navegador; TGS se descomprime en memoria y usa el runtime liviano de Lottie sin evaluador de expresiones. Todos conservan descarga del archivo original.
 - Motivo: cubrir los formatos reales de Telegram dentro del mismo visor sin depender de servicios externos ni habilitar el evaluador del reproductor Lottie completo.
+
+## D-013 - Deploy mediante agente privilegiado local
+
+- Estado: vigente; reemplaza D-004 únicamente para la capacidad `deploy` autorizada explícitamente.
+- Fecha: 2026-07-20.
+- Decisión: la UI no ejecuta procesos. Un agente Node separado escucha sólo en `127.0.0.1:43121`, acepta orígenes locales permitidos y expone únicamente `release`, `deploy` y `rollback` para bots configurados. Invoca con `shell: false` los scripts versionados de Galerazo, exige confirmación, limita concurrencia, sanea logs y reutiliza las credenciales locales de Docker/Google Cloud sin guardarlas. El launcher posee UI y agente; si se cierra durante un job activo, espera hasta 45 minutos a que concluya antes de terminar el árbol, salvo cancelación explícita de la espera.
+- Motivo: ofrecer un deploy de una sola acción sin convertir el dashboard hospedable en una shell remota ni mezclar permisos operativos con observación, SQL o moderación.

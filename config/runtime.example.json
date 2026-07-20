@@ -1,0 +1,17 @@
+{
+  "allowedOrigins": [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+  ],
+  "bots": {
+    "galerazo": {
+      "repositoryPath": "C:\\Users\\TU_USUARIO\\Documents\\Codex\\Galerazobot",
+      "projectId": "TU_PROYECTO_GCP",
+      "location": "us-central1",
+      "repository": "bots",
+      "zone": "us-central1-a",
+      "instance": "galerazo-prod",
+      "imageFile": "deploy\\out\\last-image.txt"
+    }
+  }
+}

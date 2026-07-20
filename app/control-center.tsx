@@ -9,8 +9,9 @@ import type {
   TriggerModerationAction,
 } from "@/lib/control-center/types";
 import { TriggerMediaViewer } from "./trigger-media-viewer";
+import { DeployPanel } from "./deploy-panel";
 
-type View = "overview" | "logs" | "triggers" | "sql";
+type View = "overview" | "logs" | "triggers" | "sql" | "deploy";
 type FleetSnapshot = { activeIds: string[]; customBots: BotDefinition[] };
 type ModerationAnnouncement = {
   id: string;
@@ -41,6 +42,7 @@ const views: { id: View; label: string; glyph: string }[] = [
   { id: "logs", label: "Logs", glyph: "≡" },
   { id: "triggers", label: "Triggers", glyph: "↯" },
   { id: "sql", label: "SQL", glyph: "⌘" },
+  { id: "deploy", label: "Deploy", glyph: "↑" },
 ];
 
 const statusCopy = {
@@ -410,7 +412,7 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
           <span>●</span>
           <div>
             <strong>Modo local</strong>
-            <small>Sin conexiones reales</small>
+            <small>Agente en localhost</small>
           </div>
         </div>
 
@@ -531,7 +533,7 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
                     <div><dt>Acceso</dt><dd>{bot.status === "offline" ? "no disponible" : "solo lectura"}</dd></div>
                     <div><dt>Última señal</dt><dd>{bot.updatedAt}</dd></div>
                   </dl>
-                  <p className="guardrail"><span>✓</span> La moderación de triggers exige confirmación y auditoría; las demás acciones destructivas siguen desactivadas.</p>
+                  <p className="guardrail"><span>✓</span> Moderación y deploy usan permisos separados, confirmación y auditoría; las demás acciones destructivas siguen desactivadas.</p>
                 </section>
 
                 <section className="panel activity-panel">
@@ -557,7 +559,7 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
                   <span className="contract-badge">contrato botctl</span>
                 </div>
                 <div className="capability-list">
-                  {(["status", "logs", "sql", "triggers"] as const).map((capability) => {
+                  {(["status", "logs", "sql", "triggers", "deploy"] as const).map((capability) => {
                     const enabled = bot.capabilities.includes(capability);
                     return (
                       <div className={enabled ? "capability capability--enabled" : "capability"} key={capability}>
@@ -777,6 +779,12 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
                 </section>
               </div>
             ) : <EmptyCapability title="SQL no está disponible" detail="Este bot no declaró acceso a una base SQLite de solo lectura." />
+          ) : null}
+
+          {view === "deploy" ? (
+            bot.capabilities.includes("deploy")
+              ? <DeployPanel key={bot.id} bot={bot} />
+              : <EmptyCapability title="Deploy no disponible" detail="Este bot no declaró un flujo de despliegue administrado." />
           ) : null}
         </div>
       </main>

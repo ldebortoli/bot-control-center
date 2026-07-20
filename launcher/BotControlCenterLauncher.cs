@@ -8,6 +8,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -16,6 +17,7 @@ namespace BotControlCenter.WindowsLauncher
     internal static class Program
     {
         private const int ServerPort = 3000;
+        private const int AgentPort = 43121;
         private const string MutexName = "Local\\BotControlCenterWindowsLauncher";
 
         [STAThread]
@@ -94,6 +96,12 @@ namespace BotControlCenter.WindowsLauncher
                     "El puerto 3000 ya está ocupado. Cerrá el proceso que lo usa y volvé a abrir la aplicación.");
             }
 
+            if (IsPortInUse(AgentPort))
+            {
+                throw new InvalidOperationException(
+                    "El puerto 43121 del agente local ya está ocupado. Cerrá el proceso que lo usa y volvé a abrir la aplicación.");
+            }
+
             string nodePath = FindExecutable("node.exe");
             if (nodePath == null)
             {
@@ -117,6 +125,7 @@ namespace BotControlCenter.WindowsLauncher
             string standardLogPath = Path.Combine(logsDirectory, "server.log");
             string errorLogPath = Path.Combine(logsDirectory, "server-error.log");
             string url = "http://localhost:" + ServerPort;
+            string agentUrl = "http://127.0.0.1:" + AgentPort + "/api/health";
 
             startup.SetStatus("Iniciando el servidor…");
             startup.ThrowIfCancellationRequested();
@@ -127,7 +136,7 @@ namespace BotControlCenter.WindowsLauncher
             {
                 serverJob.Assign(serverProcess);
 
-                if (!WaitUntilReady(serverProcess, url, TimeSpan.FromSeconds(60), startup))
+                if (!WaitUntilReady(serverProcess, url, agentUrl, TimeSpan.FromSeconds(60), startup))
                 {
                     throw new InvalidOperationException(
                         "El servidor no llegó a estar disponible. Revisá los registros en:\n" + logsDirectory);
@@ -151,9 +160,12 @@ namespace BotControlCenter.WindowsLauncher
                         }
                     }
                 }
+
+                WaitForActiveJobsToFinish(serverProcess, agentUrl, TimeSpan.FromMinutes(45), startup);
             }
 
             WaitForPortToClose(ServerPort, TimeSpan.FromSeconds(10));
+            WaitForPortToClose(AgentPort, TimeSpan.FromSeconds(10));
         }
 
         private static StreamWriter CreateLogWriter(string path)
@@ -171,8 +183,7 @@ namespace BotControlCenter.WindowsLauncher
         {
             ProcessStartInfo startInfo = new ProcessStartInfo();
             startInfo.FileName = nodePath;
-            startInfo.Arguments =
-                "\"scripts\\run-vinext.mjs\" dev --host 127.0.0.1 --port " + ServerPort;
+            startInfo.Arguments = "\"scripts\\run-local.mjs\"";
             startInfo.WorkingDirectory = projectRoot;
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
@@ -219,6 +230,7 @@ namespace BotControlCenter.WindowsLauncher
         private static bool WaitUntilReady(
             Process serverProcess,
             string url,
+            string agentUrl,
             TimeSpan timeout,
             StartupForm startup)
         {
@@ -232,7 +244,7 @@ namespace BotControlCenter.WindowsLauncher
                     return false;
                 }
 
-                if (IsHttpReady(url))
+                if (IsHttpReady(url) && IsHttpReady(agentUrl))
                 {
                     return true;
                 }
@@ -255,6 +267,64 @@ namespace BotControlCenter.WindowsLauncher
                 using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
                 {
                     return (int)response.StatusCode < 500;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static void WaitForActiveJobsToFinish(
+            Process serverProcess,
+            string agentUrl,
+            TimeSpan timeout,
+            StartupForm startup)
+        {
+            int activeJobs;
+            if (!TryGetActiveJobs(agentUrl, out activeJobs) || activeJobs == 0)
+            {
+                return;
+            }
+
+            startup.ShowForShutdown("Hay un deploy en curso; esperando que termine antes de apagar…");
+            DateTime deadline = DateTime.UtcNow.Add(timeout);
+            while (DateTime.UtcNow < deadline)
+            {
+                Application.DoEvents();
+                startup.ThrowIfCancellationRequested();
+                if (serverProcess.HasExited)
+                {
+                    return;
+                }
+
+                if (TryGetActiveJobs(agentUrl, out activeJobs) && activeJobs == 0)
+                {
+                    return;
+                }
+
+                Thread.Sleep(500);
+            }
+
+            throw new InvalidOperationException(
+                "El deploy no terminó dentro de 45 minutos. Revisá los logs antes de volver a intentarlo.");
+        }
+
+        private static bool TryGetActiveJobs(string agentUrl, out int activeJobs)
+        {
+            activeJobs = 0;
+            try
+            {
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(agentUrl);
+                request.Method = "GET";
+                request.Timeout = 900;
+                request.ReadWriteTimeout = 900;
+                request.Proxy = null;
+                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                using (StreamReader reader = new StreamReader(response.GetResponseStream()))
+                {
+                    Match match = Regex.Match(reader.ReadToEnd(), "\\\"activeJobs\\\"\\s*:\\s*(\\d+)");
+                    return match.Success && int.TryParse(match.Groups[1].Value, out activeJobs);
                 }
             }
             catch
@@ -560,6 +630,15 @@ namespace BotControlCenter.WindowsLauncher
         {
             allowClose = true;
             Hide();
+        }
+
+        internal void ShowForShutdown(string status)
+        {
+            CancellationRequested = false;
+            allowClose = false;
+            SetStatus(status);
+            Show();
+            BringToFront();
         }
     }
 

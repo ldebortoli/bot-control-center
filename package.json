@@ -7,9 +7,11 @@
   },
   "scripts": {
     "dev": "node scripts/run-vinext.mjs dev",
+    "dev:full": "node scripts/run-local.mjs",
+    "agent": "node agent/server.mjs",
     "build": "node scripts/run-vinext.mjs build",
     "start": "node scripts/run-vinext.mjs start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs tests/windows-launcher.test.mjs",
+    "test": "npm run build && node --test tests/agent.test.mjs tests/rendered-html.test.mjs tests/windows-launcher.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },
   "dependencies": {

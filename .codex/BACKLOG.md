@@ -7,10 +7,11 @@
 
 # IN PROGRESS
 
-- [2026-07-20] Integrar un deploy de Galerazo de una sola acción en Bot Control Center mediante un agente local, con publicación, deploy, rollback, confirmación y logs.
+No hay tareas en curso.
 
 # DONE
 
+- [2026-07-20] Integrar un deploy de Galerazo de una sola acción en Bot Control Center mediante un agente local, con publicación, deploy, rollback, confirmación, pre-flight y logs saneados; actualizar el launcher para administrar ambos procesos.
 - [2026-07-20] Ampliar el visualizador de triggers para texto, imágenes, GIF y stickers estáticos/animados WebP/WebM/TGS, con reproducción local y descarga del original.
 - [2026-07-20] Incorporar un visualizador multimedia genérico de triggers con autor y chat, reproducción/descarga, eliminación, bloqueo, acción combinada, confirmación y avisos auditados en modo local; extender el contrato remoto.
 - [2026-07-20] Crear el repositorio privado `ldebortoli/bot-control-center`, configurar `origin` y publicar la rama `main`.

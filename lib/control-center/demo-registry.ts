@@ -15,7 +15,7 @@ export const demoBots: BotDefinition[] = [
     version: "v2.8.1",
     commit: "a19f32c",
     updatedAt: "hace 18 s",
-    capabilities: ["status", "logs", "sql", "triggers"],
+    capabilities: ["status", "logs", "sql", "triggers", "deploy"],
     metrics: [
       { label: "Uptime", value: "12d 4h", detail: "sin reinicios", tone: "good" },
       { label: "CPU", value: "8%", detail: "promedio 5 min" },

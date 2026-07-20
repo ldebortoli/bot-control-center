@@ -2,7 +2,7 @@
 
 ## Descripción general
 
-Dashboard local y extensible para observar una flota de bots remotos desde una interfaz común. La primera versión usa datos demo y prepara la futura conexión de Galerazo Bot mediante Google Cloud IAP/SSH, sin publicar bases, puertos administrativos ni credenciales.
+Dashboard local y extensible para observar una flota de bots remotos desde una interfaz común. Las capacidades de observación usan datos demo; Galerazo dispone además de un flujo local preparado para publicar imágenes y desplegarlas en Google Cloud mediante IAP/SSH, sin publicar bases, puertos administrativos ni credenciales.
 
 ## Estado estable
 
@@ -11,18 +11,20 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 - Git: repositorio privado en `https://github.com/ldebortoli/bot-control-center`, con `origin` configurado y rama principal `main`.
 - Idioma de la interfaz y documentación: español.
 - Hosting: no desplegado; `.openai/hosting.json` mantiene D1 y R2 desactivados.
-- Datos: exclusivamente demostrativos hasta configurar un adaptador real.
+- Datos de observación: demostrativos hasta configurar un adaptador real. El deploy queda deshabilitado hasta crear `config/runtime.local.json` e instalar Docker y `gcloud`.
 - Flota inicial: Galerazo Bot y Spider Tracker; Reshare Stories permanece en el catálogo local, inactivo por defecto.
 
 ## Arquitectura
 
-- `app/`: interfaz de selector de bots, resumen, logs, triggers y SQL.
+- `app/`: interfaz de selector de bots, resumen, logs, triggers, SQL y deploy.
+- `agent/`: API privilegiada local en `127.0.0.1:43121`, validación, pre-flight y jobs permitidos de release/deploy/rollback.
 - `lib/control-center/`: tipos, registro demo, política SQL y contrato de transporte.
 - `config/bots.example.json`: ejemplo declarativo sin secretos; `bots.local.json` está ignorado.
+- `config/runtime.example.json`: ejemplo del destino operativo; `runtime.local.json` está ignorado y no contiene credenciales.
 - `docs/ARCHITECTURE.md`: diseño de `botctl`, IAP/SSH y guardrails SQLite.
 - `build/` y `worker/`: integración requerida por Sites/vinext.
 - `public/og-bot-control-center.png`: imagen social generada para el proyecto.
-- `launcher/`, `bin/` y `scripts/*windows-launcher*`: app nativa de Windows que supervisa vinext y abre la UI en una ventana aislada del navegador.
+- `launcher/`, `bin/` y `scripts/*windows-launcher*`: app nativa de Windows que supervisa vinext y el agente, y abre la UI en una ventana aislada del navegador.
 - El administrador de flota activa, quita y registra bots locales; conserva la selección y los registros personalizados en `localStorage`, sin credenciales.
 - Los bots que declaran `triggers` muestran un inspector genérico con autor, chat, texto y reproducción/descarga de imágenes, GIF, stickers WebP/WebM/TGS, audio y video. La moderación se confirma, simula y audita en `localStorage` hasta conectar un adaptador real.
 
@@ -32,13 +34,15 @@ Comandos verificados en Windows:
 
 - `npm install`
 - `npm run dev`
+- `npm run dev:full`
+- `npm run agent`
 - `npm run lint`
 - `npm run build`
 - `npm test`
 
-El runner `scripts/run-vinext.mjs` hace que dev/build/start sean multiplataforma.
+El runner `scripts/run-vinext.mjs` hace que dev/build/start sean multiplataforma; `scripts/run-local.mjs` administra en conjunto UI y agente.
 
-En Windows también existe el acceso `C:\Users\calei\Documents\Codex\CODEX APPS\Bot Control Center.lnk`. Muestra una ventana de inicio inmediata, inicia el servidor oculto en localhost y lo apaga, junto con todo su árbol de procesos, cuando se cierra la ventana de la aplicación.
+En Windows también existe el acceso `C:\Users\calei\Documents\Codex\CODEX APPS\Bot Control Center.lnk`. Muestra una ventana de inicio inmediata, inicia UI y agente ocultos en localhost y apaga el árbol de procesos al cerrar. Si hay un job operativo activo, espera a que termine antes de apagar para no interrumpir un push o deploy.
 
 ## Convenciones y seguridad
 
@@ -47,4 +51,5 @@ En Windows también existe el acceso `C:\Users\calei\Documents\Codex\CODEX APPS\
 - La memoria persistente vive en `.codex/` y se carga siguiendo `AGENTS.md`.
 - El dashboard real debe escuchar en localhost y conectarse por sesiones efímeras IAP/SSH.
 - Consultas SQLite reales requieren `mode=ro`, `PRAGMA query_only=ON`, authorizer, timeout y límite de filas.
-- La moderación remota de triggers tendrá permisos separados, confirmación, resultado estructurado y aviso obligatorio al chat; restart, deploy y otras escrituras siguen fuera del MVP.
+- La moderación remota de triggers tendrá permisos separados, confirmación, resultado estructurado y aviso obligatorio al chat.
+- El deploy usa un agente local separado, scripts fijos, confirmación, logs saneados y una sola operación por bot; restart y otras escrituras siguen fuera del MVP.
