@@ -7,7 +7,7 @@ Dashboard local para observar varios bots remotos desde una sola interfaz. La pr
 - selector de bots y estado general de la flota;
 - métricas de proceso, versión, host y transporte;
 - visor de logs con búsqueda y filtro por nivel;
-- visualizador genérico de triggers con reproducción y descarga de audio/video, autor, chat y auditoría de moderación;
+- visualizador genérico de triggers con texto, imágenes, GIF, stickers, audio/video, autor, chat y auditoría de moderación;
 - consola SQLite con validación de consultas de solo lectura;
 - registro declarativo y contrato de transporte extensible;
 - diseño responsive, sin credenciales ni servicios remotos configurados.
@@ -48,7 +48,7 @@ Esta versión es local y demostrativa. No se conecta a Google Cloud, Railway, un
 
 ## Visualizar y moderar triggers
 
-Cualquier bot que declare la capacidad `triggers` muestra una biblioteca con su contenido, archivo multimedia, usuario creador y chat de origen. Los audios y videos se reproducen en el panel y se pueden descargar.
+Cualquier bot que declare la capacidad `triggers` muestra una biblioteca con su contenido, archivo multimedia, usuario creador y chat de origen. El panel admite texto; imágenes PNG, JPEG, WebP y GIF; stickers estáticos WebP/PNG; stickers animados WebM y TGS; además de audio y video. Todo archivo se puede descargar, y los formatos animados se reproducen dentro de la aplicación.
 
 Las acciones **Eliminar trigger**, **Bloquear usuario** y **Eliminar y bloquear** siempre piden confirmación. Cada una genera además una advertencia destinada al mismo chat para que la moderación quede visible. En modo local se conserva un registro demostrativo de esas acciones; para aplicarlas de verdad, el adaptador remoto debe confirmar por separado la eliminación, el bloqueo y el envío del mensaje.
 

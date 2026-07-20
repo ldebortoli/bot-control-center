@@ -6,7 +6,8 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 
 ## Estado actual
 
-- Visualizador genérico de triggers funcional: muestra autor, chat, uso, respuesta y audio/video; reproduce y descarga los medios dentro de la aplicación.
+- Visualizador genérico de triggers funcional: muestra autor, chat, uso y respuesta; admite texto, imágenes PNG/JPEG/WebP/GIF, stickers WebP/PNG/WebM/TGS, audio y video, con reproducción y descarga dentro de la aplicación.
+- Los TGS se descomprimen en memoria y se reproducen con `lottie-web` light; la demostración genera ejemplos locales sin depender de archivos externos.
 - Moderación local funcional con confirmación para eliminar, bloquear o combinar ambas acciones; persiste el resultado y el aviso demostrativo al chat en `localStorage`.
 - Administrador de flota funcional: activa, quita y registra bots locales; persiste la selección sin guardar credenciales.
 - Flota inicial con Galerazo Bot y Spider Tracker; Reshare Stories está disponible para agregar, pero inactivo por defecto.
@@ -23,7 +24,7 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 
 ## Próximo paso exacto
 
-Para conectar Galerazo real, recopilar proyecto/zona/instancia de GCP y rutas no secretas, confirmar IAP manual, implementar primero `botctl health --json` y luego triggers list/media/moderate con una cuenta limitada que pueda eliminar, bloquear y enviar el aviso al chat correspondiente.
+Para conectar Galerazo real, recopilar proyecto/zona/instancia de GCP y rutas no secretas, confirmar IAP manual e implementar `botctl health`, triggers list/media/moderate y la entrega autenticada de archivos con MIME correcto y límites de tamaño.
 
 ## Riesgos y guardrails
 

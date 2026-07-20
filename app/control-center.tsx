@@ -628,7 +628,15 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
                               type="button"
                             >
                               <span className={`trigger-kind trigger-kind--${trigger.media?.kind ?? "text"}`}>
-                                {trigger.media?.kind === "video" ? "▶" : trigger.media?.kind === "audio" ? "♫" : "Aa"}
+                                {trigger.media?.kind === "video"
+                                  ? "▶"
+                                  : trigger.media?.kind === "audio"
+                                    ? "♫"
+                                    : trigger.media?.kind === "image"
+                                      ? "▧"
+                                      : trigger.media?.kind === "sticker"
+                                        ? "★"
+                                        : "Aa"}
                               </span>
                               <span>
                                 <strong>{trigger.name}</strong>

@@ -24,7 +24,7 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 - `public/og-bot-control-center.png`: imagen social generada para el proyecto.
 - `launcher/`, `bin/` y `scripts/*windows-launcher*`: app nativa de Windows que supervisa vinext y abre la UI en una ventana aislada del navegador.
 - El administrador de flota activa, quita y registra bots locales; conserva la selección y los registros personalizados en `localStorage`, sin credenciales.
-- Los bots que declaran `triggers` muestran un inspector genérico con autor, chat, reproducción y descarga multimedia. La moderación se confirma, simula y audita en `localStorage` hasta conectar un adaptador real.
+- Los bots que declaran `triggers` muestran un inspector genérico con autor, chat, texto y reproducción/descarga de imágenes, GIF, stickers WebP/WebM/TGS, audio y video. La moderación se confirma, simula y audita en `localStorage` hasta conectar un adaptador real.
 
 ## Ejecución y tests
 

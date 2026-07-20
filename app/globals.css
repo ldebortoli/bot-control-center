@@ -789,6 +789,8 @@ button {
 .trigger-kind { align-items: center; background: #18201e; border: 1px solid #33403c; border-radius: 6px; color: #89948f; display: flex; font-size: 10px; font-weight: 800; height: 34px; justify-content: center; width: 34px; }
 .trigger-kind--video { color: var(--lime); }
 .trigger-kind--audio { color: var(--cyan); }
+.trigger-kind--image { color: #9cb6ff; }
+.trigger-kind--sticker { color: var(--amber); }
 .blocked-mini { background: rgba(255, 188, 87, 0.08); border: 1px solid rgba(255, 188, 87, 0.2); border-radius: 4px; color: var(--amber); font-size: 7px; padding: 4px 5px; text-transform: uppercase; }
 
 .trigger-inspector { background: #0d1211; border: 1px solid #2b3532; border-radius: 8px; min-width: 0; overflow: hidden; }
@@ -799,7 +801,22 @@ button {
 
 .trigger-media { border-bottom: 1px solid #27302e; border-top: 1px solid #27302e; }
 .trigger-media__stage { align-items: center; aspect-ratio: 16 / 8.5; background: #060909; display: flex; justify-content: center; min-height: 220px; overflow: hidden; position: relative; }
+.trigger-media__stage--image,
+.trigger-media__stage--sticker {
+  background-color: #0a0f0e;
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.025) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.025) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.025) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.025) 75%);
+  background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+  background-size: 24px 24px;
+}
 .trigger-media__stage video { background: #050707; height: 100%; object-fit: contain; width: 100%; }
+.trigger-image-preview { display: block; height: 100%; max-height: 440px; object-fit: contain; width: 100%; }
+.trigger-media__stage .trigger-sticker-player { background: transparent; display: block; height: min(340px, 92%); object-fit: contain; width: min(340px, 92%); }
+.trigger-sticker-player--tgs { align-items: center; color: #6e7975; display: flex; font-size: 9px; justify-content: center; }
+.trigger-sticker-player--tgs svg { height: 100% !important; width: 100% !important; }
 .trigger-media__loading { color: #687470; font-size: 10px; padding: 30px; text-align: center; }
 .trigger-media__footer { align-items: center; background: #0a0e0d; display: flex; gap: 14px; justify-content: space-between; padding: 10px 12px; }
 .trigger-media__footer div span,

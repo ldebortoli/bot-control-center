@@ -78,3 +78,10 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-07-20.
 - Decisión: todo bot que declare `triggers` usa un modelo común con autor, chat y multimedia. Eliminar un trigger, bloquear a su creador o combinar ambas acciones exige confirmación, permisos remotos limitados, auditoría y una advertencia enviada al mismo chat. En modo demo, el resultado y los avisos se simulan y persisten sólo en `localStorage`.
 - Motivo: permitir responder a contenido abusivo desde una única consola sin otorgar a las credenciales de observación permisos generales sobre el bot.
+
+## D-012 - Formatos multimedia normalizados para triggers
+
+- Estado: vigente.
+- Fecha: 2026-07-20.
+- Decisión: normalizar medios como `video`, `audio`, `image` o `sticker` y usar el MIME para distinguir PNG/JPEG/WebP/GIF, WebM y TGS. Los formatos nativos se reproducen con elementos del navegador; TGS se descomprime en memoria y usa el runtime liviano de Lottie sin evaluador de expresiones. Todos conservan descarga del archivo original.
+- Motivo: cubrir los formatos reales de Telegram dentro del mismo visor sin depender de servicios externos ni habilitar el evaluador del reproductor Lottie completo.

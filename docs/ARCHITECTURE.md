@@ -51,7 +51,9 @@ Cada bot conserva su propio usuario de sistema, proceso, token, base y directori
 
 ## Contrato de triggers y moderación
 
-Un bot que declare `triggers` debe devolver, por cada definición, la frase y respuesta, autor, chat de origen, fecha, estado, uso y un descriptor multimedia opcional. El archivo se obtiene mediante un endpoint o comando autenticado de vida corta; la UI nunca guarda el token ni una ruta privada permanente.
+Un bot que declare `triggers` debe devolver, por cada definición, la frase y respuesta, autor, chat de origen, fecha, estado, uso y un descriptor multimedia opcional. Los tipos normalizados son `video`, `audio`, `image` y `sticker`; el MIME distingue imágenes y GIF, stickers estáticos WebP/PNG, stickers animados WebM y stickers vectoriales TGS. El archivo se obtiene mediante un endpoint o comando autenticado de vida corta; la UI nunca guarda el token ni una ruta privada permanente.
+
+La UI usa elementos nativos para imágenes, GIF, audio, video y WebM. Los TGS se descomprimen en memoria y se reproducen con el runtime liviano de Lottie, sin el evaluador de expresiones del reproductor completo; el archivo original sigue disponible para descarga. El adaptador debe entregar el MIME y nombre correctos, aplicar límites de tamaño y duración y servir el contenido desde un origen autorizado para el dashboard.
 
 Las acciones remotas permitidas son `delete-trigger`, `block-user` y `delete-and-block`. Toda solicitud incluye `triggerId`, `userId`, `chatId`, confirmación explícita de `announceInChat` y un identificador de auditoría. El adaptador debe:
 

@@ -37,7 +37,7 @@ export interface TriggerDefinition {
     platform: "telegram";
   };
   media?: {
-    kind: "video" | "audio";
+    kind: "video" | "audio" | "image" | "sticker";
     filename: string;
     mimeType: string;
     source: "remote" | "generated-demo";

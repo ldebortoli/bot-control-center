@@ -54,10 +54,11 @@ test("mantiene la flota editable y Reshare inactivo por defecto", async () => {
 });
 
 test("incluye visor multimedia y moderación auditada para triggers", async () => {
-  const [controlCenter, mediaViewer, types, transport, architecture] = await Promise.all([
+  const [controlCenter, mediaViewer, types, demoRegistry, transport, architecture] = await Promise.all([
     readFile(new URL("../app/control-center.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/trigger-media-viewer.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/control-center/types.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/control-center/demo-registry.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/control-center/transport-contract.ts", import.meta.url), "utf8"),
     readFile(new URL("../docs/ARCHITECTURE.md", import.meta.url), "utf8"),
   ]);
@@ -71,9 +72,16 @@ test("incluye visor multimedia y moderación auditada para triggers", async () =
   assert.match(controlCenter, /moderationStorageKey/);
   assert.match(mediaViewer, /<video/);
   assert.match(mediaViewer, /<audio/);
+  assert.match(mediaViewer, /<img/);
   assert.match(mediaViewer, /download=/);
+  assert.match(mediaViewer, /DecompressionStream/);
+  assert.match(mediaViewer, /lottie_light/);
   assert.match(types, /createdBy/);
   assert.match(types, /chat:/);
+  assert.match(types, /"image" \| "sticker"/);
+  assert.match(demoRegistry, /image\/webp/);
+  assert.match(demoRegistry, /video\/webm/);
+  assert.match(demoRegistry, /application\/x-tgsticker/);
   assert.match(transport, /moderateTrigger/);
   assert.match(transport, /TriggerModerationResult/);
   assert.match(architecture, /announcementSent/);
