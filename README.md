@@ -7,7 +7,7 @@ Dashboard local para observar varios bots remotos desde una sola interfaz. La pr
 - selector de bots y estado general de la flota;
 - métricas de proceso, versión, host y transporte;
 - visor de logs con búsqueda y filtro por nivel;
-- módulo de triggers específico de Galerazo;
+- visualizador genérico de triggers con reproducción y descarga de audio/video, autor, chat y auditoría de moderación;
 - consola SQLite con validación de consultas de solo lectura;
 - registro declarativo y contrato de transporte extensible;
 - diseño responsive, sin credenciales ni servicios remotos configurados.
@@ -44,7 +44,13 @@ Los registros locales del launcher quedan en `%LOCALAPPDATA%\BotControlCenter\lo
 
 ## Estado de seguridad
 
-Esta versión es local y demostrativa. No se conecta a Google Cloud, Railway, un VPS ni una base real. Los toggles de triggers solo cambian el estado de la pantalla y la consola SQL devuelve filas de ejemplo.
+Esta versión es local y demostrativa. No se conecta a Google Cloud, Railway, un VPS ni una base real. Los cambios de estado y las acciones para eliminar triggers o bloquear usuarios se simulan y persisten únicamente en el perfil local; los avisos al chat se muestran en la auditoría, pero todavía no se envían a Telegram. La consola SQL devuelve filas de ejemplo.
+
+## Visualizar y moderar triggers
+
+Cualquier bot que declare la capacidad `triggers` muestra una biblioteca con su contenido, archivo multimedia, usuario creador y chat de origen. Los audios y videos se reproducen en el panel y se pueden descargar.
+
+Las acciones **Eliminar trigger**, **Bloquear usuario** y **Eliminar y bloquear** siempre piden confirmación. Cada una genera además una advertencia destinada al mismo chat para que la moderación quede visible. En modo local se conserva un registro demostrativo de esas acciones; para aplicarlas de verdad, el adaptador remoto debe confirmar por separado la eliminación, el bloqueo y el envío del mensaje.
 
 ## Administrar la flota
 
@@ -60,13 +66,13 @@ La integración real mantendrá estas reglas:
 - cada bot expone un comando remoto `botctl` con respuestas JSON normalizadas;
 - SQLite se abre con `mode=ro` y `PRAGMA query_only=ON`;
 - la API vuelve a validar SQL, limita tiempo y cantidad de filas;
-- reinicios, deploys y escrituras requieren una etapa posterior, permisos separados, confirmación y auditoría.
+- la moderación de triggers usa permisos separados, confirmación y auditoría; reinicios, deploys y otras escrituras siguen fuera de alcance.
 
 ## Conectar Galerazo más adelante
 
 1. Copiar `config/bots.example.json` a un archivo local ignorado por Git, por ejemplo `config/bots.local.json`.
 2. Completar proyecto, zona e instancia de Google Compute Engine.
-3. Instalar en la instancia el comando `botctl` de solo lectura para `health`, `logs`, `triggers list` y `query`.
+3. Instalar en la instancia el comando `botctl` para `health`, `logs`, `triggers list`, `triggers media`, `triggers moderate` y `query`, separando los permisos de observación de los de moderación.
 4. Probar el acceso manual con `gcloud compute ssh --tunnel-through-iap`.
 5. Activar el adaptador `gcp-iap` y verificar cada capacidad desde el dashboard.
 

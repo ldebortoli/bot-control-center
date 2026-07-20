@@ -24,6 +24,7 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 - `public/og-bot-control-center.png`: imagen social generada para el proyecto.
 - `launcher/`, `bin/` y `scripts/*windows-launcher*`: app nativa de Windows que supervisa vinext y abre la UI en una ventana aislada del navegador.
 - El administrador de flota activa, quita y registra bots locales; conserva la selección y los registros personalizados en `localStorage`, sin credenciales.
+- Los bots que declaran `triggers` muestran un inspector genérico con autor, chat, reproducción y descarga multimedia. La moderación se confirma, simula y audita en `localStorage` hasta conectar un adaptador real.
 
 ## Ejecución y tests
 
@@ -46,4 +47,4 @@ En Windows también existe el acceso `C:\Users\calei\Documents\Codex\CODEX APPS\
 - La memoria persistente vive en `.codex/` y se carga siguiendo `AGENTS.md`.
 - El dashboard real debe escuchar en localhost y conectarse por sesiones efímeras IAP/SSH.
 - Consultas SQLite reales requieren `mode=ro`, `PRAGMA query_only=ON`, authorizer, timeout y límite de filas.
-- Acciones de escritura, restart o deploy no comparten permisos con observación y no forman parte del MVP.
+- La moderación remota de triggers tendrá permisos separados, confirmación, resultado estructurado y aviso obligatorio al chat; restart, deploy y otras escrituras siguen fuera del MVP.

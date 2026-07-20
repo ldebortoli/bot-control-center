@@ -25,6 +25,43 @@ export interface TriggerDefinition {
   enabled: boolean;
   hits: number;
   lastHit: string;
+  createdAt: string;
+  createdBy: {
+    id: string;
+    displayName: string;
+    username?: string;
+  };
+  chat: {
+    id: string;
+    title: string;
+    platform: "telegram";
+  };
+  media?: {
+    kind: "video" | "audio";
+    filename: string;
+    mimeType: string;
+    source: "remote" | "generated-demo";
+    url?: string;
+  };
+}
+
+export type TriggerModerationAction = "delete-trigger" | "block-user" | "delete-and-block";
+
+export interface TriggerModerationRequest {
+  requestId: string;
+  triggerId: string;
+  userId: string;
+  chatId: string;
+  action: TriggerModerationAction;
+  announceInChat: true;
+}
+
+export interface TriggerModerationResult {
+  triggerDeleted: boolean;
+  userBlocked: boolean;
+  announcementSent: boolean;
+  announcementMessageId?: string;
+  errors?: string[];
 }
 
 export interface BotDefinition {

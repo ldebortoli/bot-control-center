@@ -1,4 +1,10 @@
-import type { BotDefinition, Capability } from "./types";
+import type {
+  BotDefinition,
+  Capability,
+  TriggerDefinition,
+  TriggerModerationRequest,
+  TriggerModerationResult,
+} from "./types";
 
 /**
  * Contrato que implementará cada transporte real. El dashboard no conoce claves,
@@ -10,6 +16,11 @@ export interface BotTransport {
   logs(bot: BotDefinition, limit: number): Promise<unknown>;
   query(bot: BotDefinition, sql: string): Promise<unknown>;
   capabilities(bot: BotDefinition): Promise<Capability[]>;
+  triggers(bot: BotDefinition): Promise<TriggerDefinition[]>;
+  moderateTrigger(
+    bot: BotDefinition,
+    request: TriggerModerationRequest,
+  ): Promise<TriggerModerationResult>;
 }
 
 export const transportPlan = {

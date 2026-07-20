@@ -53,6 +53,32 @@ test("mantiene la flota editable y Reshare inactivo por defecto", async () => {
   assert.match(controlCenter, /No se guardan credenciales/);
 });
 
+test("incluye visor multimedia y moderación auditada para triggers", async () => {
+  const [controlCenter, mediaViewer, types, transport, architecture] = await Promise.all([
+    readFile(new URL("../app/control-center.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/trigger-media-viewer.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/control-center/types.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/control-center/transport-contract.ts", import.meta.url), "utf8"),
+    readFile(new URL("../docs/ARCHITECTURE.md", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(controlCenter, /Visualizador de triggers/);
+  assert.match(controlCenter, /Agregado por/);
+  assert.match(controlCenter, /Eliminar trigger/);
+  assert.match(controlCenter, /Bloquear usuario/);
+  assert.match(controlCenter, /Eliminar y bloquear/);
+  assert.match(controlCenter, /Avisos enviados a chats/);
+  assert.match(controlCenter, /moderationStorageKey/);
+  assert.match(mediaViewer, /<video/);
+  assert.match(mediaViewer, /<audio/);
+  assert.match(mediaViewer, /download=/);
+  assert.match(types, /createdBy/);
+  assert.match(types, /chat:/);
+  assert.match(transport, /moderateTrigger/);
+  assert.match(transport, /TriggerModerationResult/);
+  assert.match(architecture, /announcementSent/);
+});
+
 test("conserva los guardrails de SQL y transporte fuera de la UI", async () => {
   const [policy, transport, exampleConfig, packageJson] = await Promise.all([
     readFile(new URL("../lib/control-center/query-policy.ts", import.meta.url), "utf8"),

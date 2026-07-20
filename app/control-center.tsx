@@ -2,13 +2,39 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { validateReadonlyQuery } from "@/lib/control-center/query-policy";
-import type { BotDefinition, LogLevel, TriggerDefinition } from "@/lib/control-center/types";
+import type {
+  BotDefinition,
+  LogLevel,
+  TriggerDefinition,
+  TriggerModerationAction,
+} from "@/lib/control-center/types";
+import { TriggerMediaViewer } from "./trigger-media-viewer";
 
 type View = "overview" | "logs" | "triggers" | "sql";
 type FleetSnapshot = { activeIds: string[]; customBots: BotDefinition[] };
+type ModerationAnnouncement = {
+  id: string;
+  action: TriggerModerationAction;
+  chatId: string;
+  chatTitle: string;
+  message: string;
+  createdAt: string;
+};
+type BotModerationState = {
+  removedTriggerIds: string[];
+  blockedUserIds: string[];
+  announcements: ModerationAnnouncement[];
+};
+type ModerationSnapshot = Record<string, BotModerationState>;
 
 const fleetStorageKey = "bot-control-center.fleet.v1";
+const moderationStorageKey = "bot-control-center.moderation.v1";
 const initiallyInactiveBotIds = new Set(["reshare"]);
+const emptyModerationState: BotModerationState = {
+  removedTriggerIds: [],
+  blockedUserIds: [],
+  announcements: [],
+};
 
 const views: { id: View; label: string; glyph: string }[] = [
   { id: "overview", label: "Resumen", glyph: "⌁" },
@@ -49,6 +75,21 @@ function isStoredBot(value: unknown): value is BotDefinition {
     Array.isArray(bot.triggers) &&
     Array.isArray(bot.queryRows),
   );
+}
+
+function isModerationSnapshot(value: unknown): value is ModerationSnapshot {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  return Object.values(value).every((entry) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return false;
+    const state = entry as Partial<BotModerationState>;
+    return (
+      Array.isArray(state.removedTriggerIds) &&
+      state.removedTriggerIds.every((id) => typeof id === "string") &&
+      Array.isArray(state.blockedUserIds) &&
+      state.blockedUserIds.every((id) => typeof id === "string") &&
+      Array.isArray(state.announcements)
+    );
+  });
 }
 
 function createLocalBot(name: string, transport: BotDefinition["transport"]): BotDefinition {
@@ -134,6 +175,9 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
   const [queryMessage, setQueryMessage] = useState("La ejecución usa datos demo; todavía no se conecta a una base real.");
   const [refreshLabel, setRefreshLabel] = useState("hace 18 s");
   const [triggerState, setTriggerState] = useState<Record<string, boolean>>({});
+  const [selectedTriggerId, setSelectedTriggerId] = useState("");
+  const [moderationByBot, setModerationByBot] = useState<ModerationSnapshot>({});
+  const [moderationMessage, setModerationMessage] = useState("");
   const [fleetOpen, setFleetOpen] = useState(false);
   const [fleetMessage, setFleetMessage] = useState("");
   const [newBotName, setNewBotName] = useState("");
@@ -150,6 +194,16 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
   );
   const bot = activeBots.find((item) => item.id === selectedId) ?? activeBots[0] ?? null;
   const botLogs = useMemo(() => bot?.logs ?? [], [bot]);
+  const botModeration = bot ? moderationByBot[bot.id] ?? emptyModerationState : emptyModerationState;
+  const visibleTriggers = useMemo(
+    () => bot?.triggers.filter((trigger) => !botModeration.removedTriggerIds.includes(trigger.id)) ?? [],
+    [bot, botModeration.removedTriggerIds],
+  );
+  const selectedTrigger =
+    visibleTriggers.find((trigger) => trigger.id === selectedTriggerId) ?? visibleTriggers[0] ?? null;
+  const selectedUserBlocked = selectedTrigger
+    ? botModeration.blockedUserIds.includes(selectedTrigger.createdBy.id)
+    : false;
 
   useEffect(() => {
     const hydrationTimer = window.setTimeout(() => {
@@ -175,6 +229,21 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
     return () => window.clearTimeout(hydrationTimer);
   }, [bots]);
 
+  useEffect(() => {
+    const hydrationTimer = window.setTimeout(() => {
+      try {
+        const raw = window.localStorage.getItem(moderationStorageKey);
+        if (!raw) return;
+        const stored = JSON.parse(raw) as unknown;
+        if (isModerationSnapshot(stored)) setModerationByBot(stored);
+      } catch {
+        window.localStorage.removeItem(moderationStorageKey);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(hydrationTimer);
+  }, []);
+
   const filteredLogs = useMemo(() => {
     const needle = logSearch.trim().toLocaleLowerCase("es");
     return botLogs.filter((entry) => {
@@ -191,6 +260,8 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
   function selectBot(id: string) {
     setSelectedId(id);
     setView("overview");
+    setSelectedTriggerId("");
+    setModerationMessage("");
     setLogFilter("all");
     setLogSearch("");
     setQueryState("idle");
@@ -260,10 +331,64 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
   }
 
   function toggleTrigger(trigger: TriggerDefinition) {
+    if (!bot) return;
+    const stateKey = `${bot.id}:${trigger.id}`;
     setTriggerState((current) => ({
       ...current,
-      [trigger.id]: !(current[trigger.id] ?? trigger.enabled),
+      [stateKey]: !(current[stateKey] ?? trigger.enabled),
     }));
+  }
+
+  function moderateTrigger(trigger: TriggerDefinition, action: TriggerModerationAction) {
+    if (!bot) return;
+
+    const actionLabel = {
+      "delete-trigger": "eliminar el trigger",
+      "block-user": "bloquear al usuario",
+      "delete-and-block": "eliminar el trigger y bloquear al usuario",
+    }[action];
+    const confirmed = window.confirm(
+      `¿Confirmás ${actionLabel}? También se enviará un aviso de moderación a “${trigger.chat.title}”.`,
+    );
+    if (!confirmed) return;
+
+    const actor = trigger.createdBy.username
+      ? `@${trigger.createdBy.username}`
+      : trigger.createdBy.displayName;
+    const message = {
+      "delete-trigger": `⚠️ Aviso de moderación: se eliminó el trigger “${trigger.phrase}”, agregado por ${actor}.`,
+      "block-user": `⚠️ Aviso de moderación: ${actor} fue bloqueado por uso abusivo de triggers.`,
+      "delete-and-block": `⚠️ Aviso de moderación: se eliminó el trigger “${trigger.phrase}” y ${actor} fue bloqueado por uso abusivo.`,
+    }[action];
+    const deletesTrigger = action === "delete-trigger" || action === "delete-and-block";
+    const blocksUser = action === "block-user" || action === "delete-and-block";
+    const announcement: ModerationAnnouncement = {
+      id: `${bot.id}-${trigger.id}-${Date.now()}`,
+      action,
+      chatId: trigger.chat.id,
+      chatTitle: trigger.chat.title,
+      message,
+      createdAt: new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date()),
+    };
+
+    setModerationByBot((current) => {
+      const previous = current[bot.id] ?? emptyModerationState;
+      const nextState: BotModerationState = {
+        removedTriggerIds: deletesTrigger
+          ? [...new Set([...previous.removedTriggerIds, trigger.id])]
+          : previous.removedTriggerIds,
+        blockedUserIds: blocksUser
+          ? [...new Set([...previous.blockedUserIds, trigger.createdBy.id])]
+          : previous.blockedUserIds,
+        announcements: [announcement, ...previous.announcements].slice(0, 20),
+      };
+      const next = { ...current, [bot.id]: nextState };
+      window.localStorage.setItem(moderationStorageKey, JSON.stringify(next));
+      return next;
+    });
+    setModerationMessage(
+      `Acción aplicada en modo local. Se registró el aviso para ${trigger.chat.title}.`,
+    );
   }
 
   if (!bot) {
@@ -373,7 +498,7 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
                 onClick={() => setView(item.id)}
               >
                 <span aria-hidden="true">{item.glyph}</span>{item.label}
-                {item.id === "triggers" && bot.triggers.length > 0 ? <b>{bot.triggers.length}</b> : null}
+                {item.id === "triggers" && visibleTriggers.length > 0 ? <b>{visibleTriggers.length}</b> : null}
               </button>
             ))}
           </nav>
@@ -406,7 +531,7 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
                     <div><dt>Acceso</dt><dd>{bot.status === "offline" ? "no disponible" : "solo lectura"}</dd></div>
                     <div><dt>Última señal</dt><dd>{bot.updatedAt}</dd></div>
                   </dl>
-                  <p className="guardrail"><span>✓</span> Los controles destructivos están desactivados en esta etapa.</p>
+                  <p className="guardrail"><span>✓</span> La moderación de triggers exige confirmación y auditoría; las demás acciones destructivas siguen desactivadas.</p>
                 </section>
 
                 <section className="panel activity-panel">
@@ -477,31 +602,134 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
 
           {view === "triggers" ? (
             bot.capabilities.includes("triggers") ? (
-              <section className="panel trigger-panel">
-                <div className="panel__header">
-                  <div><span className="eyebrow">MÓDULO GALERAZO</span><h2>Triggers configurados</h2></div>
-                  <span className="demo-badge">Cambios locales</span>
+              <section className="trigger-workspace">
+                <div className="panel trigger-panel">
+                  <div className="panel__header">
+                    <div><span className="eyebrow">BIBLIOTECA Y MODERACIÓN</span><h2>Visualizador de triggers</h2></div>
+                    <span className="demo-badge">Modo local</span>
+                  </div>
+
+                  {moderationMessage ? <p className="moderation-feedback" role="status">{moderationMessage}</p> : null}
+
+                  {selectedTrigger ? (
+                    <div className="trigger-browser">
+                      <div className="trigger-list" aria-label="Triggers disponibles">
+                        <div className="trigger-list__head">
+                          <span>{visibleTriggers.length} disponibles</span>
+                          <small>Elegí uno para inspeccionarlo</small>
+                        </div>
+                        {visibleTriggers.map((trigger) => {
+                          const blocked = botModeration.blockedUserIds.includes(trigger.createdBy.id);
+                          return (
+                            <button
+                              className={`trigger-list__item ${trigger.id === selectedTrigger.id ? "trigger-list__item--active" : ""}`}
+                              key={trigger.id}
+                              onClick={() => { setSelectedTriggerId(trigger.id); setModerationMessage(""); }}
+                              type="button"
+                            >
+                              <span className={`trigger-kind trigger-kind--${trigger.media?.kind ?? "text"}`}>
+                                {trigger.media?.kind === "video" ? "▶" : trigger.media?.kind === "audio" ? "♫" : "Aa"}
+                              </span>
+                              <span>
+                                <strong>{trigger.name}</strong>
+                                <code>{trigger.phrase}</code>
+                                <small>{trigger.chat.title} · {trigger.lastHit}</small>
+                              </span>
+                              {blocked ? <b className="blocked-mini">Bloqueado</b> : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <article className="trigger-inspector">
+                        <header className="trigger-inspector__header">
+                          <div>
+                            <span className="eyebrow">TRIGGER SELECCIONADO</span>
+                            <h3>{selectedTrigger.name}</h3>
+                            <code>{selectedTrigger.phrase}</code>
+                          </div>
+                          <label className="trigger-enabled-control">
+                            <span>{(triggerState[`${bot.id}:${selectedTrigger.id}`] ?? selectedTrigger.enabled) ? "Activo" : "Pausado"}</span>
+                            <button
+                              aria-label={`${(triggerState[`${bot.id}:${selectedTrigger.id}`] ?? selectedTrigger.enabled) ? "Pausar" : "Activar"} ${selectedTrigger.name}`}
+                              aria-pressed={triggerState[`${bot.id}:${selectedTrigger.id}`] ?? selectedTrigger.enabled}
+                              className={(triggerState[`${bot.id}:${selectedTrigger.id}`] ?? selectedTrigger.enabled) ? "toggle toggle--on" : "toggle"}
+                              onClick={() => toggleTrigger(selectedTrigger)}
+                              type="button"
+                            ><span /></button>
+                          </label>
+                        </header>
+
+                        <TriggerMediaViewer key={selectedTrigger.id} media={selectedTrigger.media} triggerName={selectedTrigger.name} />
+
+                        <div className="trigger-response">
+                          <span className="eyebrow">RESPUESTA</span>
+                          <p>{selectedTrigger.response}</p>
+                        </div>
+
+                        <dl className="trigger-metadata">
+                          <div>
+                            <dt>Agregado por</dt>
+                            <dd><strong>{selectedTrigger.createdBy.displayName}</strong><span>{selectedTrigger.createdBy.username ? `@${selectedTrigger.createdBy.username}` : selectedTrigger.createdBy.id}</span></dd>
+                          </div>
+                          <div>
+                            <dt>Chat</dt>
+                            <dd><strong>{selectedTrigger.chat.title}</strong><span>ID {selectedTrigger.chat.id}</span></dd>
+                          </div>
+                          <div>
+                            <dt>Creado</dt>
+                            <dd><strong>{selectedTrigger.createdAt}</strong><span>por Telegram</span></dd>
+                          </div>
+                          <div>
+                            <dt>Uso</dt>
+                            <dd><strong>{selectedTrigger.hits} ejecuciones</strong><span>Última vez {selectedTrigger.lastHit}</span></dd>
+                          </div>
+                        </dl>
+
+                        {selectedUserBlocked ? (
+                          <p className="blocked-notice"><span>!</span> Este usuario ya está bloqueado en la simulación local.</p>
+                        ) : null}
+
+                        <div className="moderation-actions">
+                          <div>
+                            <span className="eyebrow">ACCIONES DE MODERACIÓN</span>
+                            <p>Cada acción pide confirmación y publica una advertencia en el chat de origen.</p>
+                          </div>
+                          <div className="moderation-actions__buttons">
+                            <button className="danger-button danger-button--outline" onClick={() => moderateTrigger(selectedTrigger, "delete-trigger")} type="button">Eliminar trigger</button>
+                            <button className="warning-button" disabled={selectedUserBlocked} onClick={() => moderateTrigger(selectedTrigger, "block-user")} type="button">{selectedUserBlocked ? "Usuario bloqueado" : "Bloquear usuario"}</button>
+                            <button className="danger-button" disabled={selectedUserBlocked} onClick={() => moderateTrigger(selectedTrigger, "delete-and-block")} type="button">Eliminar y bloquear</button>
+                          </div>
+                        </div>
+                      </article>
+                    </div>
+                  ) : (
+                    <div className="trigger-empty">
+                      <span aria-hidden="true">✓</span>
+                      <h3>No quedan triggers visibles</h3>
+                      <p>Las eliminaciones de esta demostración están guardadas en este equipo.</p>
+                    </div>
+                  )}
+
+                  <p className="guardrail"><span>i</span> Las acciones se simulan y persisten localmente. Al conectar un bot real, el adaptador deberá ejecutar la moderación y confirmar el envío del aviso al chat.</p>
                 </div>
-                <div className="trigger-table-wrap">
-                  <table className="trigger-table">
-                    <thead><tr><th>Trigger</th><th>Respuesta</th><th>Uso</th><th>Última vez</th><th>Estado</th></tr></thead>
-                    <tbody>
-                      {bot.triggers.map((trigger) => {
-                        const enabled = triggerState[trigger.id] ?? trigger.enabled;
-                        return (
-                          <tr key={trigger.id}>
-                            <td><strong>{trigger.name}</strong><code>{trigger.phrase}</code></td>
-                            <td>{trigger.response}</td>
-                            <td><b>{trigger.hits}</b> ejecuciones</td>
-                            <td>{trigger.lastHit}</td>
-                            <td><button className={enabled ? "toggle toggle--on" : "toggle"} onClick={() => toggleTrigger(trigger)} type="button" aria-pressed={enabled}><span /></button></td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="guardrail"><span>i</span> Esta vista demuestra el módulo específico de Galerazo. Todavía no escribe cambios en el bot.</p>
+
+                {botModeration.announcements.length ? (
+                  <section className="panel moderation-log" aria-live="polite">
+                    <div className="panel__header">
+                      <div><span className="eyebrow">AUDITORÍA LOCAL</span><h2>Avisos enviados a chats</h2></div>
+                      <span className="demo-badge">{botModeration.announcements.length} acciones</span>
+                    </div>
+                    <div className="moderation-log__list">
+                      {botModeration.announcements.map((announcement) => (
+                        <article key={announcement.id}>
+                          <span className="moderation-log__icon">!</span>
+                          <div><strong>{announcement.chatTitle}</strong><p>{announcement.message}</p><small>Chat {announcement.chatId} · {announcement.createdAt}</small></div>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
               </section>
             ) : <EmptyCapability title="Este bot no expone triggers" detail="Las capacidades son opcionales y cada bot declara únicamente las que soporta." />
           ) : null}

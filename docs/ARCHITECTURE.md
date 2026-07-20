@@ -16,8 +16,8 @@ Dashboard local
 
 1. **Registro**: nombre, proveedor, transporte, destino y capacidades. Los secretos quedan fuera del JSON y de Git.
 2. **Transporte**: abre una sesión efímera autenticada y ejecuta un comando permitido. No conoce la interfaz.
-3. **`botctl` remoto**: traduce cada bot a un contrato JSON estable (`health`, `logs`, `query`, `triggers list`).
-4. **Capacidades**: `status`, `logs` y `sql` son genéricas; `triggers` es un módulo opcional de Galerazo.
+3. **`botctl` remoto**: traduce cada bot a un contrato JSON estable (`health`, `logs`, `query`, `triggers list`, `triggers media` y `triggers moderate`).
+4. **Capacidades**: `status`, `logs`, `sql` y `triggers` son genéricas; cada bot declara únicamente las que implementa.
 5. **UI**: solo muestra capacidades declaradas y no asume que todos los bots son iguales.
 
 ## Flujo previsto para Google Compute Engine
@@ -49,10 +49,25 @@ La comprobación de la pantalla es solo la primera barrera. La implementación r
 
 Cada bot conserva su propio usuario de sistema, proceso, token, base y directorio de logs. El dashboard recibe solo el acceso mínimo por capacidad. La caída de un bot o adaptador no debe impedir consultar los demás.
 
+## Contrato de triggers y moderación
+
+Un bot que declare `triggers` debe devolver, por cada definición, la frase y respuesta, autor, chat de origen, fecha, estado, uso y un descriptor multimedia opcional. El archivo se obtiene mediante un endpoint o comando autenticado de vida corta; la UI nunca guarda el token ni una ruta privada permanente.
+
+Las acciones remotas permitidas son `delete-trigger`, `block-user` y `delete-and-block`. Toda solicitud incluye `triggerId`, `userId`, `chatId`, confirmación explícita de `announceInChat` y un identificador de auditoría. El adaptador debe:
+
+- validar que el trigger, el usuario y el chat pertenecen al mismo bot;
+- pedir confirmación en la UI antes de ejecutar;
+- aplicar la acción con una cuenta de servicio limitada a moderación;
+- enviar una advertencia al mismo chat describiendo la acción aplicada;
+- devolver por separado `triggerDeleted`, `userBlocked`, `announcementSent` y el ID del mensaje;
+- registrar actor operador, fecha y resultado sin copiar contenido multimedia ni credenciales.
+
+Para `delete-and-block`, el bot debe tratar la operación como una unidad auditada. Si no puede completar o anunciar todos los pasos, devuelve el resultado parcial y el dashboard lo muestra como error; nunca informa éxito total sólo porque uno de los pasos terminó.
+
 ## Próximas etapas
 
 1. Implementar y probar `botctl` en Galerazo.
 2. Crear el backend local que invoque el adaptador GCP IAP.
 3. Reemplazar datos demo por respuestas reales con estados de carga y errores.
 4. Añadir autenticación si el dashboard deja de ser exclusivamente local.
-5. Evaluar acciones privilegiadas por separado; no reutilizar permisos de observación.
+5. Implementar la moderación de triggers con una cuenta limitada y auditoría separada; no reutilizar permisos de observación para otras acciones privilegiadas.

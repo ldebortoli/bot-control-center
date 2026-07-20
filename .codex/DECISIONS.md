@@ -71,3 +71,10 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-07-20.
 - Decisión: publicar Bot Control Center en `https://github.com/ldebortoli/bot-control-center` como repositorio privado y usar `main` como rama principal seguida por `origin/main`.
 - Motivo: persistir el código, el historial y la memoria del proyecto sin exponer públicamente una herramienta de control operativo.
+
+## D-011 - Moderación de triggers separada y con aviso al chat
+
+- Estado: vigente; reemplaza D-004 únicamente para las acciones de moderación de triggers solicitadas explícitamente.
+- Fecha: 2026-07-20.
+- Decisión: todo bot que declare `triggers` usa un modelo común con autor, chat y multimedia. Eliminar un trigger, bloquear a su creador o combinar ambas acciones exige confirmación, permisos remotos limitados, auditoría y una advertencia enviada al mismo chat. En modo demo, el resultado y los avisos se simulan y persisten sólo en `localStorage`.
+- Motivo: permitir responder a contenido abusivo desde una única consola sin otorgar a las credenciales de observación permisos generales sobre el bot.
