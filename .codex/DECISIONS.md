@@ -43,3 +43,10 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-07-20.
 - Decisión: no ejecutar `npm audit fix --force` sobre los avisos transitivos actuales de PostCSS/Next, porque propone un downgrade mayor incompatible.
 - Motivo: el build y las pruebas pasan; se actualizará cuando la cadena estable del starter publique una resolución compatible.
+
+## D-007 - Launcher de Windows dueño del servidor
+
+- Estado: vigente.
+- Fecha: 2026-07-20.
+- Decisión: abrir Bot Control Center desde `CODEX APPS` mediante un launcher nativo que inicia vinext en localhost, abre una ventana aislada de Edge o Chrome y asigna el servidor a un Windows Job Object con `KILL_ON_JOB_CLOSE`.
+- Motivo: ofrecer una experiencia de aplicación sin consola visible y garantizar que cerrar la ventana termine el árbol completo del servidor, incluso si el launcher finaliza de forma inesperada.

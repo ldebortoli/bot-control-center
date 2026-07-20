@@ -11,6 +11,7 @@ No hay tareas en curso.
 
 # DONE
 
+- [2026-07-20] Crear e instalar el acceso `Bot Control Center` en `CODEX APPS`, con launcher nativo, ventana aislada, icono propio y apagado verificado de todo el árbol del servidor al cerrar.
 - [2026-07-20] Inicializar la memoria persistente del proyecto.
 - [2026-07-20] Crear la primera versión local de Bot Control Center con selector multi-bot, métricas, logs filtrables, triggers, consola SQL demo, registro declarativo, política de lectura y contrato de transportes.
 - [2026-07-20] Documentar la arquitectura y el futuro enlace seguro de Galerazo mediante Google Cloud IAP/SSH.

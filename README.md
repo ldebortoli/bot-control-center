@@ -30,6 +30,18 @@ npm run lint
 
 Los scripts de desarrollo y build son multiplataforma; no necesitan declarar variables de entorno con sintaxis específica de Bash o PowerShell.
 
+## Abrir como aplicación de Windows
+
+El acceso `Bot Control Center` de la carpeta `CODEX APPS` inicia el servidor en segundo plano y abre el dashboard en una ventana independiente. Al cerrar esa ventana, el launcher termina automáticamente el árbol completo del servidor.
+
+Para compilar o reinstalar el acceso:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\install-codex-app.ps1
+```
+
+Los registros locales del launcher quedan en `%LOCALAPPDATA%\BotControlCenter\logs` y no se guardan en el repositorio.
+
 ## Estado de seguridad
 
 Esta versión es local y demostrativa. No se conecta a Google Cloud, Railway, un VPS ni una base real. Los toggles de triggers solo cambian el estado de la pantalla y la consola SQL devuelve filas de ejemplo.

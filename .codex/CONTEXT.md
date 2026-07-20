@@ -21,6 +21,7 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 - `docs/ARCHITECTURE.md`: diseño de `botctl`, IAP/SSH y guardrails SQLite.
 - `build/` y `worker/`: integración requerida por Sites/vinext.
 - `public/og-bot-control-center.png`: imagen social generada para el proyecto.
+- `launcher/`, `bin/` y `scripts/*windows-launcher*`: app nativa de Windows que supervisa vinext y abre la UI en una ventana aislada del navegador.
 
 ## Ejecución y tests
 
@@ -33,6 +34,8 @@ Comandos verificados en Windows:
 - `npm test`
 
 El runner `scripts/run-vinext.mjs` hace que dev/build/start sean multiplataforma.
+
+En Windows también existe el acceso `C:\Users\calei\Documents\Codex\CODEX APPS\Bot Control Center.lnk`. Inicia el servidor oculto en localhost y lo apaga, junto con todo su árbol de procesos, cuando se cierra la ventana de la aplicación.
 
 ## Convenciones y seguridad
 
