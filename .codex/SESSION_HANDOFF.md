@@ -17,7 +17,7 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 - Integración preparada mediante `BotTransport`, registro JSON y documentación de `botctl`.
 - `npm run lint`, `npm run build` y `npm test` pasan en Windows; la suite tiene cinco pruebas.
 - La dependencia de producción mantiene dos avisos moderados transitivos de PostCSS dentro de Next; no hay fix estable compatible y no se forzó downgrade.
-- Rama `main`, sin remoto configurado.
+- Repositorio privado publicado en `https://github.com/ldebortoli/bot-control-center`; `origin` apunta a ese repositorio y `main` sigue `origin/main`.
 
 ## Próximo paso exacto
 

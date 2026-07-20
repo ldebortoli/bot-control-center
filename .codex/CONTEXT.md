@@ -8,7 +8,7 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 
 - Ruta: `C:\Users\calei\Documents\Codex\BotControlCenter\dashboard`
 - Stack: Node.js 22+, TypeScript, React 19, Next 16 y vinext/Vite para Cloudflare Sites.
-- Git: repositorio local en rama `main`; no tiene remoto configurado.
+- Git: repositorio privado en `https://github.com/ldebortoli/bot-control-center`, con `origin` configurado y rama principal `main`.
 - Idioma de la interfaz y documentación: español.
 - Hosting: no desplegado; `.openai/hosting.json` mantiene D1 y R2 desactivados.
 - Datos: exclusivamente demostrativos hasta configurar un adaptador real.

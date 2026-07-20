@@ -11,6 +11,7 @@ No hay tareas en curso.
 
 # DONE
 
+- [2026-07-20] Crear el repositorio privado `ldebortoli/bot-control-center`, configurar `origin` y publicar la rama `main`.
 - [2026-07-20] Agregar administración persistente para activar, quitar y registrar bots; dejar Reshare Stories disponible pero fuera de la flota inicial.
 - [2026-07-20] Mostrar feedback inmediato durante el primer arranque y aumentar la legibilidad tipográfica sin escalar el layout.
 - [2026-07-20] Crear e instalar el acceso `Bot Control Center` en `CODEX APPS`, con launcher nativo, ventana aislada, icono propio y apagado verificado de todo el árbol del servidor al cerrar.

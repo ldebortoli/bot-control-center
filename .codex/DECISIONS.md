@@ -64,3 +64,10 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-07-20.
 - Decisión: el launcher muestra una ventana de progreso mientras vinext inicia y la interfaz ajusta la altura percibida de las fuentes sin escalar el layout completo.
 - Motivo: evitar que el primer inicio parezca fallido durante los segundos de espera y mejorar la legibilidad sin introducir recortes o desbordes.
+
+## D-010 - Repositorio privado en GitHub
+
+- Estado: vigente.
+- Fecha: 2026-07-20.
+- Decisión: publicar Bot Control Center en `https://github.com/ldebortoli/bot-control-center` como repositorio privado y usar `main` como rama principal seguida por `origin/main`.
+- Motivo: persistir el código, el historial y la memoria del proyecto sin exponer públicamente una herramienta de control operativo.
