@@ -1,0 +1,14 @@
+{
+  "bots": [
+    {
+      "id": "galerazo",
+      "name": "Galerazo Bot",
+      "provider": "gcp",
+      "transport": "gcp-iap",
+      "project": "TU_PROYECTO_GCP",
+      "zone": "TU_ZONA",
+      "instance": "TU_INSTANCIA",
+      "capabilities": ["status", "logs", "sql", "triggers"]
+    }
+  ]
+}
