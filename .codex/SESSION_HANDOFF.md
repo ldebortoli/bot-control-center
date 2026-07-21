@@ -22,7 +22,7 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 - Launcher reproducible desde `scripts/install-codex-app.ps1`, con ejecutable en `bin/BotControlCenter.exe` y registros locales fuera del repositorio.
 - Catálogo demo con Galerazo, Spider Tracker y Reshare Stories, más registros locales personalizados.
 - Vistas funcionales: Resumen, Logs, Triggers, SQL, Credenciales y Deploy.
-- Toggles, moderación, avisos al chat y resultados SQL son demostrativos. Deploy y credenciales son integraciones externas reales. La primera imagen de Galerazo ya está publicada como `galerazobot:e63c0e8ee924`; todavía no fue desplegada en la VM.
+- Toggles, moderación, avisos al chat y resultados SQL son demostrativos. Deploy y credenciales son integraciones externas reales. El primer release `d8ae2ecc00f5` falló porque el runtime omitía `.python-version`; el contenedor quedó detenido sin afectar datos. La imagen corregida más reciente es `galerazobot:db278a097b62` y todavía no fue iniciada como servicio.
 - Integración preparada mediante `BotTransport`, registro JSON y documentación de `botctl`, incluidos triggers list/media y moderate con resultados parciales explícitos.
 - `npm run lint`, `npm run build` y `npm test` pasan en Windows; la suite tiene 17 pruebas. La revisión visual confirmó la vista de credenciales y la regresión de triggers. La lectura real devolvió sólo booleanos y un no-op real por IAP terminó con éxito sin cambiar el estado útil. Antes del primer deploy se confirmó desde Galerazo que el bot local estaba apagado, sin PID, proceso Python ni contenedor local; debe reconfirmarse al momento de desplegar.
 - La dependencia de producción mantiene dos avisos moderados transitivos de PostCSS dentro de Next; no hay fix estable compatible y no se forzó downgrade.
@@ -30,7 +30,7 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 
 ## Próximo paso exacto
 
-Abrir Bot Control Center desde el acceso de Windows y, en Galerazo Bot > Deploy, ejecutar `Deployar última imagen` para la imagen ya publicada `galerazobot:e63c0e8ee924`. Luego validar el contenedor real por IAP y probar comandos básicos de Telegram.
+En la vista abierta de Galerazo Bot > Deploy, pulsar `Verificar`, confirmar que `Última imagen` termina en `db278a097b62` y ejecutar exclusivamente `Deployar última imagen`. Luego validar el contenedor real por IAP y probar comandos básicos de Telegram; Resumen, Logs, SQL y Triggers siguen siendo demo hasta implementar `botctl`.
 
 ## Riesgos y guardrails
 
