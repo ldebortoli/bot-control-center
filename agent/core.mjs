@@ -4,6 +4,20 @@ const identifierPattern = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
 const imagePattern = /^[A-Za-z0-9][A-Za-z0-9._/:@-]+$/;
 const tagPattern = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
 
+export const credentialFieldNames = Object.freeze([
+  "TELEGRAM_BOT_TOKEN",
+  "OPENAI_API_KEY",
+  "TELEGRAM_DEV_USER_IDS",
+  "TELEGRAM_LOG_CHAT_ID",
+  "TELEGRAM_ANNOUNCEMENTS_CHAT_ID",
+  "GOOGLE_SHEETS_SPREADSHEET_ID",
+  "GOOGLE_SHEETS_WORKSHEET_NAME",
+  "GOOGLE_SHEETS_CREDENTIALS_JSON",
+]);
+
+const credentialFieldSet = new Set(credentialFieldNames);
+const nonClearableCredentialFields = new Set(["TELEGRAM_BOT_TOKEN"]);
+
 export const defaultAllowedOrigins = [
   "http://localhost:3000",
   "http://127.0.0.1:3000",
@@ -110,7 +124,69 @@ export function redactOutput(value) {
     .slice(0, 2000);
 }
 
-export function powershellStep(label, scriptPath, namedArguments = []) {
+export function validateCredentialPatch(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    throw new Error("El parche de credenciales debe ser un objeto JSON.");
+  }
+  const updates = raw.updates ?? {};
+  const clear = raw.clear ?? [];
+  if (!updates || typeof updates !== "object" || Array.isArray(updates)) {
+    throw new Error("updates debe ser un objeto JSON.");
+  }
+  if (!Array.isArray(clear)) {
+    throw new Error("clear debe ser una lista.");
+  }
+
+  const normalizedUpdates = {};
+  for (const [name, value] of Object.entries(updates)) {
+    if (!credentialFieldSet.has(name)) {
+      throw new Error(`La credencial ${name} no está permitida.`);
+    }
+    if (name === "GOOGLE_SHEETS_CREDENTIALS_JSON") {
+      if (!value || typeof value !== "object" || Array.isArray(value)) {
+        throw new Error("GOOGLE_SHEETS_CREDENTIALS_JSON debe ser un objeto JSON.");
+      }
+      for (const required of ["type", "client_email", "private_key"]) {
+        if (typeof value[required] !== "string" || !value[required].trim()) {
+          throw new Error(`La credencial de Google Sheets no incluye ${required}.`);
+        }
+      }
+      normalizedUpdates[name] = value;
+      continue;
+    }
+    if (typeof value !== "string" || !value.trim()) {
+      throw new Error(`${name} debe ser un texto no vacío.`);
+    }
+    if (/\r|\n/.test(value)) {
+      throw new Error(`${name} no puede contener saltos de línea.`);
+    }
+    normalizedUpdates[name] = value.trim();
+  }
+
+  const normalizedClear = [...new Set(clear.map((name) => {
+    if (typeof name !== "string" || !credentialFieldSet.has(name)) {
+      throw new Error(`La credencial ${String(name)} no está permitida.`);
+    }
+    if (nonClearableCredentialFields.has(name)) {
+      throw new Error(`${name} no se puede borrar desde el panel.`);
+    }
+    if (Object.hasOwn(normalizedUpdates, name)) {
+      throw new Error(`${name} no puede actualizarse y borrarse al mismo tiempo.`);
+    }
+    return name;
+  }))];
+
+  if (Object.keys(normalizedUpdates).length === 0 && normalizedClear.length === 0) {
+    throw new Error("No hay cambios de credenciales para aplicar.");
+  }
+  const normalized = { updates: normalizedUpdates, clear: normalizedClear };
+  if (Buffer.byteLength(JSON.stringify(normalized), "utf8") > 32768) {
+    throw new Error("El parche de credenciales supera el límite permitido.");
+  }
+  return normalized;
+}
+
+export function powershellStep(label, scriptPath, namedArguments = [], switches = []) {
   const args = [
     "-NoProfile",
     "-ExecutionPolicy",
@@ -121,6 +197,7 @@ export function powershellStep(label, scriptPath, namedArguments = []) {
   for (const [name, value] of namedArguments) {
     args.push(`-${name}`, value);
   }
+  for (const name of switches) args.push(`-${name}`);
   return { label, command: "powershell.exe", args };
 }
 
@@ -163,5 +240,32 @@ export function createRollbackStep(bot) {
       ["Zone", bot.zone],
       ["Instance", bot.instance],
     ],
+  );
+}
+
+export function createCredentialStatusStep(bot) {
+  return powershellStep(
+    "Consultar presencia de credenciales",
+    resolveInside(bot.repositoryPath, path.join("scripts", "deploy", "Get-GceBotSecretStatus.ps1"), "credentialStatusScript"),
+    [
+      ["ProjectId", bot.projectId],
+      ["Zone", bot.zone],
+      ["Instance", bot.instance],
+    ],
+  );
+}
+
+export function createCredentialUpdateStep(bot, patchFile) {
+  const resolvedPatch = path.resolve(assertString(patchFile, "patchFile"));
+  return powershellStep(
+    "Aplicar credenciales remotas por IAP",
+    resolveInside(bot.repositoryPath, path.join("scripts", "deploy", "Patch-GceBotSecrets.ps1"), "credentialUpdateScript"),
+    [
+      ["ProjectId", bot.projectId],
+      ["Zone", bot.zone],
+      ["Instance", bot.instance],
+      ["PatchFile", resolvedPatch],
+    ],
+    ["AcknowledgeSecretUpdate"],
   );
 }

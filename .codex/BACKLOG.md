@@ -1,16 +1,15 @@
 # TODO
 
-- [P1] [BLOCKED: requiere que el usuario configure proyecto, zona e instancia de Google Cloud y habilite acceso IAP/SSH] Integrar Galerazo Bot real mediante el adaptador `gcp-iap` y reemplazar sus datos demo.
+- [P1] [BLOCKED: requiere implementar y desplegar en Galerazo el contrato remoto `botctl` de observación] Integrar estado, logs, SQL y triggers reales de Galerazo mediante `gcp-iap` y reemplazar sus datos demo.
 - [P1] [BLOCKED: requiere implementar y desplegar en Galerazo el contrato remoto acordado] Crear `botctl` para health, logs, query, triggers list/media y una capa de moderación separada para delete/block/announce.
 - [P2] [BLOCKED: reinicio y otras escrituras siguen requiriendo autorización y un modelo específico; el deploy se implementa por separado con agente local, confirmación y auditoría] Evaluar reinicio y otras capacidades privilegiadas.
 - [P3] [BLOCKED: depende de una versión estable compatible de Next/PostCSS] Resolver los dos avisos moderados transitivos de `npm audit --omit=dev` sin downgrade forzado.
 
 # IN PROGRESS
 
-No hay tareas en curso.
-
 # DONE
 
+- [2026-07-20] Implementar configuración remota de credenciales de Galerazo: estado booleano sin lectura de valores, campos enmascarados, parches parciales y temporales privados por IAP, confirmación, auditoría y limpieza. Configurar `runtime.local.json`, validar lectura y no-op real contra `galerazo-prod`, revisar visualmente la UI y confirmar que triggers sigue operativo. Validación: lint, build y 17 pruebas OK.
 - [2026-07-20] Integrar un deploy de Galerazo de una sola acción en Bot Control Center mediante un agente local, con publicación, deploy, rollback, confirmación, pre-flight y logs saneados; actualizar el launcher para administrar ambos procesos.
 - [2026-07-20] Ampliar el visualizador de triggers para texto, imágenes, GIF y stickers estáticos/animados WebP/WebM/TGS, con reproducción local y descarga del original.
 - [2026-07-20] Incorporar un visualizador multimedia genérico de triggers con autor y chat, reproducción/descarga, eliminación, bloqueo, acción combinada, confirmación y avisos auditados en modo local; extender el contrato remoto.

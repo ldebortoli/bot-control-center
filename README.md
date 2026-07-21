@@ -1,6 +1,6 @@
 # Bot Control Center
 
-Dashboard local para observar varios bots remotos desde una sola interfaz. La primera versión funciona con datos de demostración y deja preparada la integración de Galerazo Bot mediante Google Cloud IAP/SSH.
+Dashboard local para observar varios bots remotos desde una sola interfaz. Galerazo ya integra deploy y configuración segura de credenciales mediante Google Cloud IAP/SSH; las demás vistas continúan con datos de demostración.
 
 ## Qué incluye
 
@@ -11,7 +11,7 @@ Dashboard local para observar varios bots remotos desde una sola interfaz. La pr
 - consola SQLite con validación de consultas de solo lectura;
 - publicación y deploy controlado de Galerazo en Google Compute Engine, con logs y rollback;
 - registro declarativo y contrato de transporte extensible;
-- diseño responsive, sin credenciales ni servicios remotos configurados.
+- diseño responsive, sin guardar credenciales en el navegador ni en Git.
 
 ## Ejecutar en Windows, macOS o Linux
 
@@ -45,7 +45,7 @@ Los registros locales del launcher quedan en `%LOCALAPPDATA%\BotControlCenter\lo
 
 ## Estado de seguridad
 
-El estado, los logs, SQL y la moderación siguen siendo demostrativos. La única integración operativa real preparada es `deploy`: un agente Node escucha exclusivamente en `127.0.0.1:43121`, valida el origen local y sólo puede ejecutar los scripts versionados de Galerazo. No acepta comandos arbitrarios ni almacena tokens; reutiliza la sesión local de Docker y `gcloud`.
+El estado, los logs, SQL y la moderación siguen siendo demostrativos. Las integraciones operativas reales son `deploy` y la configuración de credenciales: un agente Node escucha exclusivamente en `127.0.0.1:43121`, valida el origen local y sólo puede ejecutar scripts versionados de Galerazo. No acepta comandos arbitrarios ni almacena tokens; reutiliza la sesión local de Docker y `gcloud`.
 
 ## Configurar el deploy de Galerazo
 
@@ -56,6 +56,8 @@ Copy-Item config\runtime.example.json config\runtime.local.json
 ```
 
 Editá `config/runtime.local.json` con la ruta local del repositorio Galerazo, proyecto, región, repositorio, zona e instancia. El archivo está ignorado por Git y no debe contener tokens, claves ni el contenido de `.env`.
+
+La vista **Credenciales** usa ese mismo destino para consultar únicamente si cada variable está presente y aplicar parches parciales por IAP. Los campos quedan en blanco y enmascarados: vacío conserva el valor remoto, mientras que **Borrar** elimina sólo campos opcionales. El agente crea un archivo temporal privado, ejecuta scripts fijos del repositorio Galerazo y lo elimina al finalizar; ni la API, los jobs ni los logs conservan los valores enviados. Los cambios toman efecto en el próximo reinicio o deploy.
 
 Al abrir la vista **Deploy**, el pre-flight verifica PowerShell, Git, Docker, `gcloud`, el repositorio y los scripts. Los controles son:
 

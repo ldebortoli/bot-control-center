@@ -126,3 +126,23 @@ test("incluye deploy local de una sola acción con confirmación y rollback", as
   assert.match(jobManager, /shell: false/);
   assert.match(launcher, /run-local\.mjs/);
 });
+
+test("incluye credenciales remotas enmascaradas sin persistencia local", async () => {
+  const [controlCenter, credentialsPanel, agent, jobManager, types] = await Promise.all([
+    readFile(new URL("../app/control-center.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/credentials-panel.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../agent/server.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../agent/job-manager.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../lib/control-center/types.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(controlCenter, /id: "credentials"/);
+  assert.match(controlCenter, /CredentialsPanel/);
+  assert.match(credentialsPanel, /type="password"/);
+  assert.match(credentialsPanel, /Nunca descarga tokens ni claves/);
+  assert.match(credentialsPanel, /window\.confirm/);
+  assert.doesNotMatch(credentialsPanel, /localStorage/);
+  assert.match(agent, /\/credentials/);
+  assert.match(jobManager, /secret-patch\.json/);
+  assert.match(types, /"credentials"/);
+});

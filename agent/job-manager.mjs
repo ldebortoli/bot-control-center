@@ -1,7 +1,17 @@
 import { spawn } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
-import { createDeployStep, createPublishStep, createRollbackStep, isValidImageReference, redactOutput } from "./core.mjs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import {
+  createCredentialUpdateStep,
+  createDeployStep,
+  createPublishStep,
+  createRollbackStep,
+  isValidImageReference,
+  redactOutput,
+  validateCredentialPatch,
+} from "./core.mjs";
 
 const maxLogEntries = 500;
 
@@ -10,9 +20,18 @@ function timestamp() {
 }
 
 export class DeploymentJobManager {
-  constructor({ spawnProcess = spawn, readTextFile = readFile } = {}) {
+  constructor({
+    spawnProcess = spawn,
+    readTextFile = readFile,
+    makeTempDirectory = mkdtemp,
+    writePrivateFile = writeFile,
+    removePath = rm,
+  } = {}) {
     this.spawnProcess = spawnProcess;
     this.readTextFile = readTextFile;
+    this.makeTempDirectory = makeTempDirectory;
+    this.writePrivateFile = writePrivateFile;
+    this.removePath = removePath;
     this.jobs = new Map();
     this.activeByBot = new Map();
     this.children = new Set();
@@ -31,11 +50,14 @@ export class DeploymentJobManager {
     return this.activeByBot.size;
   }
 
-  start(bot, action, { tag } = {}) {
+  start(bot, action, { tag, credentialPatch } = {}) {
     if (this.getActive(bot.id)) {
       throw Object.assign(new Error("Ya hay una operación activa para este bot."), { statusCode: 409 });
     }
 
+    const privateOptions = action === "credentials"
+      ? { credentialPatch: validateCredentialPatch(credentialPatch) }
+      : { tag };
     const job = {
       id: randomUUID(),
       botId: bot.id,
@@ -51,7 +73,7 @@ export class DeploymentJobManager {
     };
     this.jobs.set(job.id, job);
     this.activeByBot.set(bot.id, job.id);
-    void this.#run(job, bot, tag);
+    void this.#run(job, bot, privateOptions);
     return job;
   }
 
@@ -66,7 +88,7 @@ export class DeploymentJobManager {
     if (job.logs.length > maxLogEntries) job.logs.splice(0, job.logs.length - maxLogEntries);
   }
 
-  async #run(job, bot, tag) {
+  async #run(job, bot, { tag, credentialPatch }) {
     job.status = "running";
     job.startedAt = timestamp();
     this.#log(job, "info", `Operación ${job.action} iniciada para ${bot.id}.`);
@@ -84,6 +106,8 @@ export class DeploymentJobManager {
         await this.#runStep(job, bot, createDeployStep(bot, job.image));
       } else if (job.action === "rollback") {
         await this.#runStep(job, bot, createRollbackStep(bot));
+      } else if (job.action === "credentials") {
+        await this.#runCredentialUpdate(job, bot, credentialPatch);
       } else {
         throw new Error("Acción no permitida.");
       }
@@ -97,6 +121,22 @@ export class DeploymentJobManager {
       job.currentStep = null;
       job.finishedAt = timestamp();
       this.activeByBot.delete(bot.id);
+    }
+  }
+
+  async #runCredentialUpdate(job, bot, credentialPatch) {
+    let directory = null;
+    try {
+      directory = await this.makeTempDirectory(path.join(tmpdir(), "bot-control-credentials-"));
+      const patchFile = path.join(directory, "secret-patch.json");
+      await this.writePrivateFile(patchFile, JSON.stringify(credentialPatch), {
+        encoding: "utf8",
+        flag: "wx",
+        mode: 0o600,
+      });
+      await this.#runStep(job, bot, createCredentialUpdateStep(bot, patchFile));
+    } finally {
+      if (directory) await this.removePath(directory, { recursive: true, force: true });
     }
   }
 

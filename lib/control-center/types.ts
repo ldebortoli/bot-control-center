@@ -1,6 +1,6 @@
 export type BotStatus = "online" | "degraded" | "offline";
 export type LogLevel = "info" | "warning" | "error";
-export type Capability = "status" | "logs" | "sql" | "triggers" | "deploy";
+export type Capability = "status" | "logs" | "sql" | "triggers" | "credentials" | "deploy";
 
 export interface BotMetric {
   label: string;

@@ -4,7 +4,19 @@ import http from "node:http";
 import path from "node:path";
 import { promisify } from "node:util";
 import { pathToFileURL } from "node:url";
-import { createDeployStep, createPublishStep, createRollbackStep, isAllowedOrigin, isValidImageReference, isValidTag } from "./core.mjs";
+import {
+  createCredentialStatusStep,
+  createCredentialUpdateStep,
+  createDeployStep,
+  createPublishStep,
+  createRollbackStep,
+  credentialFieldNames,
+  isAllowedOrigin,
+  isValidImageReference,
+  isValidTag,
+  redactOutput,
+  validateCredentialPatch,
+} from "./core.mjs";
 import { DeploymentJobManager } from "./job-manager.mjs";
 import { defaultConfigPath, loadRuntimeConfig } from "./runtime-config.mjs";
 
@@ -18,7 +30,13 @@ async function commandExists(name) {
     await execFileAsync(finder, [name], { windowsHide: true });
     return true;
   } catch {
-    return false;
+    if (process.platform !== "win32") return false;
+    const fallback = name === "gcloud" && process.env.LOCALAPPDATA
+      ? path.join(process.env.LOCALAPPDATA, "Google", "Cloud SDK", "google-cloud-sdk", "bin", "gcloud.cmd")
+      : name === "docker" && process.env.ProgramFiles
+        ? path.join(process.env.ProgramFiles, "Docker", "Docker", "resources", "bin", "docker.exe")
+        : null;
+    return fallback ? fileExists(fallback) : false;
   }
 }
 
@@ -40,6 +58,36 @@ async function readLatestImage(bot) {
   }
 }
 
+export async function inspectCredentialStatus(bot, runFile = execFileAsync) {
+  const step = createCredentialStatusStep(bot);
+  const { stdout } = await runFile(step.command, step.args, {
+    cwd: bot.repositoryPath,
+    env: process.env,
+    shell: false,
+    windowsHide: true,
+    maxBuffer: 1024 * 1024,
+  });
+  let parsed = null;
+  for (const line of String(stdout).split(/\r?\n/).reverse()) {
+    if (!line.trim().startsWith("{")) continue;
+    try {
+      parsed = JSON.parse(line);
+      break;
+    } catch {
+      // gcloud puede escribir mensajes informativos antes del JSON final.
+    }
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("La VM no devolvió un estado de credenciales válido.");
+  }
+  return Object.fromEntries(credentialFieldNames.map((name) => {
+    if (typeof parsed[name] !== "boolean") {
+      throw new Error(`La VM no informó un estado booleano para ${name}.`);
+    }
+    return [name, parsed[name]];
+  }));
+}
+
 export async function inspectBot(configState, botId) {
   const bot = configState.config.bots[botId];
   if (!bot) {
@@ -48,7 +96,7 @@ export async function inspectBot(configState, botId) {
       configError: configState.error ?? `No existe configuración local para ${botId}.`,
       target: null,
       latestImage: null,
-      readiness: { release: false, deploy: false, rollback: false },
+      readiness: { release: false, deploy: false, rollback: false, credentials: false },
       checks: [],
     };
   }
@@ -56,11 +104,15 @@ export async function inspectBot(configState, botId) {
   const publishStep = createPublishStep(bot);
   const deployStep = createDeployStep(bot, "registry.invalid/project/repository/image:probe");
   const rollbackStep = createRollbackStep(bot);
-  const [repositoryOk, publishOk, deployOk, rollbackOk, powershellOk, dockerOk, gcloudOk, gitOk, latestImage] = await Promise.all([
+  const credentialStatusStep = createCredentialStatusStep(bot);
+  const credentialUpdateStep = createCredentialUpdateStep(bot, path.join(bot.repositoryPath, "credential-probe.json"));
+  const [repositoryOk, publishOk, deployOk, rollbackOk, credentialStatusOk, credentialUpdateOk, powershellOk, dockerOk, gcloudOk, gitOk, latestImage] = await Promise.all([
     fileExists(bot.repositoryPath),
     fileExists(publishStep.args[4]),
     fileExists(deployStep.args[4]),
     fileExists(rollbackStep.args[4]),
+    fileExists(credentialStatusStep.args[4]),
+    fileExists(credentialUpdateStep.args[4]),
     commandExists("powershell.exe"),
     commandExists("docker"),
     commandExists("gcloud"),
@@ -76,8 +128,10 @@ export async function inspectBot(configState, botId) {
     { id: "gcloud", label: "Google Cloud CLI", ok: gcloudOk },
     { id: "git", label: "Git", ok: gitOk },
     { id: "scripts", label: "Scripts de deploy versionados", ok: publishOk && deployOk && rollbackOk },
+    { id: "credential-scripts", label: "Scripts de credenciales versionados", ok: credentialStatusOk && credentialUpdateOk },
   ];
   const scriptsAndBase = repositoryOk && powershellOk && publishOk && deployOk && rollbackOk;
+  const credentialBase = repositoryOk && powershellOk && gcloudOk && credentialStatusOk && credentialUpdateOk;
 
   return {
     configured: true,
@@ -94,6 +148,7 @@ export async function inspectBot(configState, botId) {
       release: scriptsAndBase && dockerOk && gcloudOk && gitOk,
       deploy: scriptsAndBase && gcloudOk && Boolean(latestImage),
       rollback: scriptsAndBase && gcloudOk,
+      credentials: credentialBase,
     },
     checks,
   };
@@ -117,7 +172,7 @@ async function readJsonBody(request) {
   let text = "";
   for await (const chunk of request) {
     text += chunk;
-    if (text.length > 8192) throw Object.assign(new Error("Solicitud demasiado grande."), { statusCode: 413 });
+    if (text.length > 32768) throw Object.assign(new Error("Solicitud demasiado grande."), { statusCode: 413 });
   }
   if (!text) return {};
   try {
@@ -130,6 +185,8 @@ async function readJsonBody(request) {
 export function createAgentServer({
   configPath = process.env.BOT_CONTROL_CENTER_CONFIG || defaultConfigPath,
   jobManager = new DeploymentJobManager(),
+  credentialInspector = inspectCredentialStatus,
+  botInspector = inspectBot,
 } = {}) {
   const server = http.createServer(async (request, response) => {
     const origin = request.headers.origin;
@@ -172,13 +229,40 @@ export function createAgentServer({
     const deploymentMatch = url.pathname.match(/^\/api\/bots\/([A-Za-z0-9._:-]+)\/deployment$/);
     if (request.method === "GET" && deploymentMatch) {
       const botId = deploymentMatch[1];
-      const deployment = await inspectBot(configState, botId);
+      const deployment = await botInspector(configState, botId);
       json(response, 200, {
         agent: { status: "online", localOnly: true },
         botId,
         ...deployment,
         activeJob: jobManager.getActive(botId),
       }, origin, allowedOrigins);
+      return;
+    }
+
+    const credentialsMatch = url.pathname.match(/^\/api\/bots\/([A-Za-z0-9._:-]+)\/credentials$/);
+    if (request.method === "GET" && credentialsMatch) {
+      const botId = credentialsMatch[1];
+      try {
+        const bot = configState.config.bots[botId];
+        if (!bot) {
+          throw Object.assign(new Error(configState.error ?? "Bot sin configuración local."), { statusCode: 409 });
+        }
+        const inspection = await botInspector(configState, botId);
+        if (!inspection.readiness.credentials) {
+          throw Object.assign(new Error("La administración de credenciales no está lista. Revisá la configuración, gcloud y los scripts."), { statusCode: 409 });
+        }
+        const fields = await credentialInspector(bot);
+        json(response, 200, {
+          botId,
+          fields,
+          writable: true,
+          activeJob: jobManager.getActive(botId),
+        }, origin, allowedOrigins);
+      } catch (error) {
+        json(response, error?.statusCode ?? 502, {
+          error: redactOutput(error instanceof Error ? error.message : String(error)),
+        }, origin, allowedOrigins);
+      }
       return;
     }
 
@@ -215,7 +299,7 @@ export function createAgentServer({
         if (!bot) {
           throw Object.assign(new Error(configState.error ?? "Bot sin configuración local."), { statusCode: 409 });
         }
-        const inspection = await inspectBot(configState, botId);
+        const inspection = await botInspector(configState, botId);
         if (!inspection.readiness[action]) {
           throw Object.assign(new Error(`La acción ${action} no está lista. Revisá la configuración y herramientas.`), { statusCode: 409 });
         }
@@ -225,6 +309,41 @@ export function createAgentServer({
       } catch (error) {
         json(response, error?.statusCode ?? 500, {
           error: error instanceof Error ? error.message : String(error),
+        }, origin, allowedOrigins);
+      }
+      return;
+    }
+
+    if (request.method === "POST" && credentialsMatch) {
+      try {
+        const botId = credentialsMatch[1];
+        if (!origin || !isAllowedOrigin(origin, allowedOrigins)) {
+          throw Object.assign(new Error("Falta un origen local autorizado."), { statusCode: 403 });
+        }
+        if (!String(request.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) {
+          throw Object.assign(new Error("Se requiere Content-Type application/json."), { statusCode: 415 });
+        }
+        if (request.headers["x-bot-control-action"] !== "credentials") {
+          throw Object.assign(new Error("Falta la cabecera de confirmación de acción."), { statusCode: 403 });
+        }
+        const body = await readJsonBody(request);
+        if (body.confirmation !== botId) {
+          throw Object.assign(new Error("La confirmación no coincide con el bot."), { statusCode: 400 });
+        }
+        const credentialPatch = validateCredentialPatch(body.patch);
+        const bot = configState.config.bots[botId];
+        if (!bot) {
+          throw Object.assign(new Error(configState.error ?? "Bot sin configuración local."), { statusCode: 409 });
+        }
+        const inspection = await botInspector(configState, botId);
+        if (!inspection.readiness.credentials) {
+          throw Object.assign(new Error("La administración de credenciales no está lista."), { statusCode: 409 });
+        }
+        const job = jobManager.start(bot, "credentials", { credentialPatch });
+        json(response, 202, job, origin, allowedOrigins);
+      } catch (error) {
+        json(response, error?.statusCode ?? 500, {
+          error: redactOutput(error instanceof Error ? error.message : String(error)),
         }, origin, allowedOrigins);
       }
       return;

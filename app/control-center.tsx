@@ -10,8 +10,9 @@ import type {
 } from "@/lib/control-center/types";
 import { TriggerMediaViewer } from "./trigger-media-viewer";
 import { DeployPanel } from "./deploy-panel";
+import { CredentialsPanel } from "./credentials-panel";
 
-type View = "overview" | "logs" | "triggers" | "sql" | "deploy";
+type View = "overview" | "logs" | "triggers" | "sql" | "credentials" | "deploy";
 type FleetSnapshot = { activeIds: string[]; customBots: BotDefinition[] };
 type ModerationAnnouncement = {
   id: string;
@@ -42,6 +43,7 @@ const views: { id: View; label: string; glyph: string }[] = [
   { id: "logs", label: "Logs", glyph: "≡" },
   { id: "triggers", label: "Triggers", glyph: "↯" },
   { id: "sql", label: "SQL", glyph: "⌘" },
+  { id: "credentials", label: "Credenciales", glyph: "⚿" },
   { id: "deploy", label: "Deploy", glyph: "↑" },
 ];
 
@@ -533,7 +535,7 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
                     <div><dt>Acceso</dt><dd>{bot.status === "offline" ? "no disponible" : "solo lectura"}</dd></div>
                     <div><dt>Última señal</dt><dd>{bot.updatedAt}</dd></div>
                   </dl>
-                  <p className="guardrail"><span>✓</span> Moderación y deploy usan permisos separados, confirmación y auditoría; las demás acciones destructivas siguen desactivadas.</p>
+                  <p className="guardrail"><span>✓</span> Moderación, credenciales y deploy usan permisos separados, confirmación y auditoría; las demás acciones destructivas siguen desactivadas.</p>
                 </section>
 
                 <section className="panel activity-panel">
@@ -559,7 +561,7 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
                   <span className="contract-badge">contrato botctl</span>
                 </div>
                 <div className="capability-list">
-                  {(["status", "logs", "sql", "triggers", "deploy"] as const).map((capability) => {
+                  {(["status", "logs", "sql", "triggers", "credentials", "deploy"] as const).map((capability) => {
                     const enabled = bot.capabilities.includes(capability);
                     return (
                       <div className={enabled ? "capability capability--enabled" : "capability"} key={capability}>
@@ -779,6 +781,12 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
                 </section>
               </div>
             ) : <EmptyCapability title="SQL no está disponible" detail="Este bot no declaró acceso a una base SQLite de solo lectura." />
+          ) : null}
+
+          {view === "credentials" ? (
+            bot.capabilities.includes("credentials")
+              ? <CredentialsPanel key={bot.id} bot={bot} />
+              : <EmptyCapability title="Credenciales no disponibles" detail="Este bot no declaró administración segura de configuración remota." />
           ) : null}
 
           {view === "deploy" ? (

@@ -54,6 +54,10 @@ No existe un endpoint de shell ni un campo para ingresar comandos. El ejecutable
 
 El agente no guarda credenciales. Docker y Google Cloud CLI usan sus almacenes locales; los secretos del bot siguen únicamente en `/etc/galerazo/bot.env` y `/etc/galerazo/secrets` dentro de la VM.
 
+## Flujo de credenciales remotas
+
+La UI consulta un inspector root remoto que responde exclusivamente booleanos por variable. Para una actualización exige origen local, cabecera de acción, confirmación del bot y una allowlist cerrada. El parche nunca forma parte de los argumentos ni del job: se escribe con permisos privados en un directorio temporal, se copia por IAP, preserva valores omitidos, valida el host y se elimina en ambos extremos. El token principal no se puede borrar desde el panel. Esta capacidad permanece separada de deploy y no reinicia el proceso automáticamente.
+
 ## Política SQLite de solo lectura
 
 La comprobación de la pantalla es solo la primera barrera. La implementación remota debe aplicar todas:
@@ -90,7 +94,7 @@ Para `delete-and-block`, el bot debe tratar la operación como una unidad audita
 ## Próximas etapas
 
 1. Implementar y probar `botctl` en Galerazo.
-2. Configurar y probar el agente local de deploy contra la instancia real de Galerazo.
+2. Reemplazar el estado y los logs demo por el contrato remoto de Galerazo.
 3. Reemplazar datos demo por respuestas reales con estados de carga y errores.
 4. Añadir autenticación si el dashboard deja de ser exclusivamente local.
 5. Implementar la moderación de triggers con una cuenta limitada y auditoría separada; no reutilizar permisos de observación para otras acciones privilegiadas.

@@ -8,7 +8,7 @@
       "project": "TU_PROYECTO_GCP",
       "zone": "TU_ZONA",
       "instance": "TU_INSTANCIA",
-      "capabilities": ["status", "logs", "sql", "triggers", "deploy"]
+      "capabilities": ["status", "logs", "sql", "triggers", "credentials", "deploy"]
     }
   ]
 }

@@ -92,3 +92,10 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-07-20.
 - Decisión: la UI no ejecuta procesos. Un agente Node separado escucha sólo en `127.0.0.1:43121`, acepta orígenes locales permitidos y expone únicamente `release`, `deploy` y `rollback` para bots configurados. Invoca con `shell: false` los scripts versionados de Galerazo, exige confirmación, limita concurrencia, sanea logs y reutiliza las credenciales locales de Docker/Google Cloud sin guardarlas. El launcher posee UI y agente; si se cierra durante un job activo, espera hasta 45 minutos a que concluya antes de terminar el árbol, salvo cancelación explícita de la espera.
 - Motivo: ofrecer un deploy de una sola acción sin convertir el dashboard hospedable en una shell remota ni mezclar permisos operativos con observación, SQL o moderación.
+
+## D-014 - Credenciales como capacidad privilegiada separada
+
+- Estado: vigente; reemplaza D-004 únicamente para la capacidad `credentials` autorizada explícitamente.
+- Fecha: 2026-07-20.
+- Decisión: la UI muestra sólo presencia/ausencia y mantiene todos los campos en blanco y enmascarados. Un cambio exige confirmación y una allowlist cerrada; el agente escribe el parche en un temporal privado, lo transfiere por IAP mediante scripts versionados de Galerazo, conserva campos omitidos, elimina temporales y nunca incluye valores en argumentos, jobs, respuestas o logs. El cambio no reinicia ni despliega el bot.
+- Motivo: permitir rotación remota desde el Control Center sin convertir el dashboard en un lector de secretos ni acoplar configuración y deploy.

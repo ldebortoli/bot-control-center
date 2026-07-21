@@ -7,8 +7,9 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 ## Estado actual
 
 - Vista Deploy funcional para Galerazo con pre-flight, confirmación, release completo, deploy de última imagen, rollback, progreso y logs saneados.
-- Agente local funcional en `127.0.0.1:43121`; sólo ejecuta los scripts `Publish-DockerImage.ps1`, `Deploy-Gce.ps1` y `Rollback-Gce.ps1` con argumentos validados y `shell: false`.
-- `config/runtime.example.json` documenta proyecto/zona/instancia/ruta; `runtime.local.json` está ignorado y todavía no existe porque faltan los datos GCP del usuario.
+- Vista Credenciales funcional para Galerazo: indicadores presente/ausente, entradas enmascaradas, parches parciales, borrado sólo de opcionales, confirmación y auditoría; nunca lee valores remotos.
+- Agente local funcional en `127.0.0.1:43121`; ejecuta exclusivamente scripts versionados de credenciales, publicación, deploy y rollback con argumentos validados y `shell: false`.
+- `config/runtime.local.json` está ignorado, no contiene secretos y apunta a `bot-fleet-production`, `us-central1-a`, `galerazo-prod` y el repositorio local Galerazo.
 - Visualizador genérico de triggers funcional: muestra autor, chat, uso y respuesta; admite texto, imágenes PNG/JPEG/WebP/GIF, stickers WebP/PNG/WebM/TGS, audio y video, con reproducción y descarga dentro de la aplicación.
 - Los TGS se descomprimen en memoria y se reproducen con `lottie-web` light; la demostración genera ejemplos locales sin depender de archivos externos.
 - Moderación local funcional con confirmación para eliminar, bloquear o combinar ambas acciones; persiste el resultado y el aviso demostrativo al chat en `localStorage`.
@@ -18,16 +19,16 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 - Acceso instalado en `C:\Users\calei\Documents\Codex\CODEX APPS\Bot Control Center.lnk`; abre una ventana de aplicación aislada y apaga automáticamente el árbol completo del servidor al cerrarse.
 - Launcher reproducible desde `scripts/install-codex-app.ps1`, con ejecutable en `bin/BotControlCenter.exe` y registros locales fuera del repositorio.
 - Catálogo demo con Galerazo, Spider Tracker y Reshare Stories, más registros locales personalizados.
-- Vistas funcionales: Resumen, Logs, Triggers, SQL y Deploy.
-- Toggles, moderación, avisos al chat y resultados SQL son demostrativos. Deploy es la única integración externa real preparada, pero permanece deshabilitada mientras falten configuración, Docker y `gcloud`.
+- Vistas funcionales: Resumen, Logs, Triggers, SQL, Credenciales y Deploy.
+- Toggles, moderación, avisos al chat y resultados SQL son demostrativos. Deploy y credenciales son integraciones externas reales; aún no existe una imagen publicada, por lo que deploy permanece pendiente del paso 10 de Galerazo.
 - Integración preparada mediante `BotTransport`, registro JSON y documentación de `botctl`, incluidos triggers list/media y moderate con resultados parciales explícitos.
-- `npm run lint`, `npm run build` y `npm test` pasan en Windows; la suite tiene doce pruebas. El smoke test confirmó UI HTTP 200, agente online, cero jobs y deploy deshabilitado sin configuración.
+- `npm run lint`, `npm run build` y `npm test` pasan en Windows; la suite tiene 17 pruebas. La revisión visual confirmó la vista de credenciales y la regresión de triggers. La lectura real devolvió sólo booleanos y un no-op real por IAP terminó con éxito sin cambiar el estado útil.
 - La dependencia de producción mantiene dos avisos moderados transitivos de PostCSS dentro de Next; no hay fix estable compatible y no se forzó downgrade.
 - Repositorio privado publicado en `https://github.com/ldebortoli/bot-control-center`; `origin` apunta a ese repositorio y `main` sigue `origin/main`.
 
 ## Próximo paso exacto
 
-Copiar `config/runtime.example.json` a `config/runtime.local.json`, completar proyecto/zona/instancia de GCP, instalar Docker Desktop y Google Cloud CLI, verificar IAP manualmente y ejecutar primero un release controlado desde la vista Deploy. La observación real sigue requiriendo `botctl health`, logs, SQL y triggers.
+Volver a Galerazo y ejecutar con el usuario el paso 10: publicar la primera imagen inmutable en Artifact Registry, sin desplegarla todavía.
 
 ## Riesgos y guardrails
 
