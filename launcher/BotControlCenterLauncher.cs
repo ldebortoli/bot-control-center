@@ -145,20 +145,14 @@ namespace BotControlCenter.WindowsLauncher
                 startup.SetStatus("Abriendo la aplicación…");
                 startup.ThrowIfCancellationRequested();
                 using (Process browserProcess = StartBrowser(browserPath, url, browserProfile))
+                using (KillOnCloseJob browserJob = new KillOnCloseJob())
                 {
-                    KillOnCloseJob browserJob = null;
-                    try
-                    {
-                        browserJob = TryCreateBrowserJob(browserProcess);
-                        WaitForBrowserWindowToClose(browserProcess, startup);
-                    }
-                    finally
-                    {
-                        if (browserJob != null)
-                        {
-                            browserJob.Dispose();
-                        }
-                    }
+                    TryAssignBrowserProcess(browserJob, browserProcess);
+                    WaitForBrowserWindowToClose(
+                        browserProcess,
+                        Path.GetFileNameWithoutExtension(browserPath),
+                        browserJob,
+                        startup);
                 }
 
                 WaitForActiveJobsToFinish(serverProcess, agentUrl, TimeSpan.FromMinutes(45), startup);
@@ -354,71 +348,135 @@ namespace BotControlCenter.WindowsLauncher
             return process;
         }
 
-        private static void WaitForBrowserWindowToClose(Process browserProcess, StartupForm startup)
+        private static void WaitForBrowserWindowToClose(
+            Process browserProcess,
+            string browserProcessName,
+            KillOnCloseJob browserJob,
+            StartupForm startup)
         {
-            bool sawWindow = false;
             DateTime startupDeadline = DateTime.UtcNow.AddSeconds(25);
             int missingWindowChecks = 0;
+            Process windowProcess = null;
 
-            while (true)
+            try
             {
-                Application.DoEvents();
-                startup.ThrowIfCancellationRequested();
-                if (browserProcess.HasExited)
+                while (true)
                 {
-                    if (!sawWindow)
+                    Application.DoEvents();
+                    startup.ThrowIfCancellationRequested();
+
+                    if (windowProcess == null)
                     {
-                        throw new InvalidOperationException("La ventana del navegador se cerró antes de abrirse.");
+                        windowProcess = FindBrowserWindowProcess(browserProcessName);
+                        if (windowProcess != null)
+                        {
+                            TryAssignBrowserProcess(browserJob, windowProcess);
+                            startup.HideForApplication();
+                            missingWindowChecks = 0;
+                        }
+                        else if (DateTime.UtcNow >= startupDeadline)
+                        {
+                            if (browserProcess.HasExited)
+                            {
+                                throw new InvalidOperationException(
+                                    "Edge cerró el proceso inicial y no se pudo encontrar la ventana de Bot Control Center.");
+                            }
+
+                            throw new InvalidOperationException("No se pudo detectar la ventana de Bot Control Center.");
+                        }
+                    }
+                    else
+                    {
+                        bool windowClosed = false;
+                        try
+                        {
+                            if (windowProcess.HasExited)
+                            {
+                                windowClosed = true;
+                            }
+                            else
+                            {
+                                windowProcess.Refresh();
+                                windowClosed = windowProcess.MainWindowHandle == IntPtr.Zero;
+                            }
+                        }
+                        catch
+                        {
+                            windowClosed = true;
+                        }
+
+                        if (windowClosed)
+                        {
+                            missingWindowChecks += 1;
+                            if (missingWindowChecks >= 4)
+                            {
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            missingWindowChecks = 0;
+                        }
                     }
 
-                    return;
+                    Thread.Sleep(250);
                 }
-
-                browserProcess.Refresh();
-                if (browserProcess.MainWindowHandle != IntPtr.Zero)
+            }
+            finally
+            {
+                if (windowProcess != null)
                 {
-                    if (!sawWindow)
-                    {
-                        startup.HideForApplication();
-                    }
-
-                    sawWindow = true;
-                    missingWindowChecks = 0;
+                    windowProcess.Dispose();
                 }
-                else if (sawWindow)
-                {
-                    missingWindowChecks += 1;
-                    if (missingWindowChecks >= 4)
-                    {
-                        return;
-                    }
-                }
-                else if (DateTime.UtcNow >= startupDeadline)
-                {
-                    throw new InvalidOperationException("No se pudo detectar la ventana de Bot Control Center.");
-                }
-
-                Thread.Sleep(250);
             }
         }
 
-        private static KillOnCloseJob TryCreateBrowserJob(Process browserProcess)
+        private static Process FindBrowserWindowProcess(string browserProcessName)
         {
-            KillOnCloseJob job = null;
+            foreach (Process candidate in Process.GetProcessesByName(browserProcessName))
+            {
+                bool keepCandidate = false;
+                try
+                {
+                    candidate.Refresh();
+                    if (
+                        candidate.MainWindowHandle != IntPtr.Zero &&
+                        candidate.MainWindowTitle.IndexOf(
+                            "Bot Control Center",
+                            StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        keepCandidate = true;
+                        return candidate;
+                    }
+                }
+                catch
+                {
+                    // El proceso puede terminar mientras se enumeran las ventanas.
+                }
+                finally
+                {
+                    if (!keepCandidate)
+                    {
+                        candidate.Dispose();
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static void TryAssignBrowserProcess(KillOnCloseJob browserJob, Process browserProcess)
+        {
             try
             {
-                job = new KillOnCloseJob();
-                job.Assign(browserProcess);
-                return job;
+                if (!browserProcess.HasExited)
+                {
+                    browserJob.Assign(browserProcess);
+                }
             }
             catch
             {
-                if (job != null)
-                {
-                    job.Dispose();
-                }
-
-                return null;
+                // Chromium puede haber delegado el arranque o usar su propio Job Object.
             }
         }
 

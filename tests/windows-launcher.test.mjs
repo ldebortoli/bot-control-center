@@ -12,6 +12,11 @@ test("el launcher liga la ventana al ciclo de vida del servidor", async () => {
   assert.match(source, /JobObjectLimitKillOnJobClose/);
   assert.match(source, /127\.0\.0\.1/);
   assert.match(source, /WaitForBrowserWindowToClose/);
+  assert.match(source, /FindBrowserWindowProcess/);
+  assert.match(source, /Process\.GetProcessesByName/);
+  assert.match(source, /MainWindowTitle\.IndexOf/);
+  assert.match(source, /TryAssignBrowserProcess/);
+  assert.doesNotMatch(source, /La ventana del navegador se cerró antes de abrirse/);
   assert.match(source, /using \(KillOnCloseJob serverJob/);
   assert.match(source, /AgentPort = 43121/);
   assert.match(source, /run-local\.mjs/);

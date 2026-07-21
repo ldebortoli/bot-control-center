@@ -24,7 +24,7 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 - `docs/ARCHITECTURE.md`: diseño de `botctl`, IAP/SSH y guardrails SQLite.
 - `build/` y `worker/`: integración requerida por Sites/vinext.
 - `public/og-bot-control-center.png`: imagen social generada para el proyecto.
-- `launcher/`, `bin/` y `scripts/*windows-launcher*`: app nativa de Windows que supervisa vinext y el agente, y abre la UI en una ventana aislada del navegador.
+- `launcher/`, `bin/` y `scripts/*windows-launcher*`: app nativa de Windows que supervisa vinext y el agente, abre la UI en una ventana aislada y sigue la ventana real aunque Edge derive el arranque a otro proceso.
 - El administrador de flota activa, quita y registra bots locales; conserva la selección y los registros personalizados en `localStorage`, sin credenciales.
 - Los bots que declaran `triggers` muestran un inspector genérico con autor, chat, texto y reproducción/descarga de imágenes, GIF, stickers WebP/WebM/TGS, audio y video. La moderación se confirma, simula y audita en `localStorage` hasta conectar un adaptador real.
 - Galerazo declara `credentials`: la UI muestra sólo presencia/ausencia, recibe reemplazos enmascarados, conserva campos vacíos y permite borrar únicamente opcionales. El agente usa un parche temporal privado por IAP y nunca guarda ni devuelve los valores.

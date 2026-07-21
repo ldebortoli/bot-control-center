@@ -6,6 +6,7 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 
 ## Estado actual
 
+- Launcher corregido e instalado: detecta la ventana real de Bot Control Center entre los procesos de Edge/Chrome aunque el proceso inicial termine por handoff.
 - Vista Deploy funcional para Galerazo con pre-flight, confirmación, release completo, deploy de última imagen, rollback, progreso y logs saneados.
 - Vista Credenciales funcional para Galerazo: indicadores presente/ausente, entradas enmascaradas, parches parciales, borrado sólo de opcionales, confirmación y auditoría; nunca lee valores remotos.
 - Agente local funcional en `127.0.0.1:43121`; ejecuta exclusivamente scripts versionados de credenciales, publicación, deploy y rollback con argumentos validados y `shell: false`.
@@ -16,6 +17,7 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 - Administrador de flota funcional: activa, quita y registra bots locales; persiste la selección sin guardar credenciales.
 - Flota inicial con Galerazo Bot y Spider Tracker; Reshare Stories está disponible para agregar, pero inactivo por defecto.
 - El launcher muestra progreso mientras inicia vinext y el agente; espera un job operativo activo antes de apagar y mata el árbol completo al terminar.
+- Dos aperturas consecutivas del launcher corregido mostraron la ventana en 9,56 s y 8,05 s; en ambas, cerrar la ventana terminó el launcher y liberó los puertos 3000 y 43121.
 - Acceso instalado en `C:\Users\calei\Documents\Codex\CODEX APPS\Bot Control Center.lnk`; abre una ventana de aplicación aislada y apaga automáticamente el árbol completo del servidor al cerrarse.
 - Launcher reproducible desde `scripts/install-codex-app.ps1`, con ejecutable en `bin/BotControlCenter.exe` y registros locales fuera del repositorio.
 - Catálogo demo con Galerazo, Spider Tracker y Reshare Stories, más registros locales personalizados.
@@ -28,7 +30,7 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 
 ## Próximo paso exacto
 
-Abrir Bot Control Center desde el acceso de Windows y, en Galerazo Bot > Deploy, ejecutar `Deployar última imagen` para la imagen ya publicada `galerazobot:e63c0e8ee924`. Luego validar el contenedor real por IAP y probar comandos básicos de Telegram; Resumen, Logs, SQL y Triggers siguen siendo demo hasta implementar `botctl`.
+Abrir Bot Control Center desde el acceso de Windows y, en Galerazo Bot > Deploy, ejecutar `Deployar última imagen` para la imagen ya publicada `galerazobot:e63c0e8ee924`. Luego validar el contenedor real por IAP y probar comandos básicos de Telegram.
 
 ## Riesgos y guardrails
 

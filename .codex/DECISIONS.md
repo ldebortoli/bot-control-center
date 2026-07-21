@@ -99,3 +99,10 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-07-20.
 - Decisión: la UI muestra sólo presencia/ausencia y mantiene todos los campos en blanco y enmascarados. Un cambio exige confirmación y una allowlist cerrada; el agente escribe el parche en un temporal privado, lo transfiere por IAP mediante scripts versionados de Galerazo, conserva campos omitidos, elimina temporales y nunca incluye valores en argumentos, jobs, respuestas o logs. El cambio no reinicia ni despliega el bot.
 - Motivo: permitir rotación remota desde el Control Center sin convertir el dashboard en un lector de secretos ni acoplar configuración y deploy.
+
+## D-015 - Seguimiento de la ventana real del navegador
+
+- Estado: vigente; amplía D-007.
+- Fecha: 2026-07-21.
+- Decisión: el launcher no toma la vida del proceso inicial de Edge o Chrome como equivalente a la vida de la ventana. Después de abrir el modo app, busca la ventana titulada Bot Control Center entre los procesos del navegador, la incorpora al Job Object cuando es posible y supervisa ese proceso hasta que la ventana desaparece.
+- Motivo: Chromium puede entregar el arranque a otro proceso del perfil aislado y terminar inmediatamente el proceso creado, lo que antes generaba un falso error aunque UI y agente hubieran iniciado correctamente.
