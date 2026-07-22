@@ -31,6 +31,18 @@ npm run lint
 
 `npm run dev:full` inicia la UI y el agente privilegiado local. `npm run dev` sigue disponible para trabajar sólo en la interfaz, pero la vista Deploy quedará desconectada. Los scripts de desarrollo y build son multiplataforma; no necesitan declarar variables de entorno con sintaxis específica de Bash o PowerShell.
 
+### Pruebas y cobertura
+
+Los comandos de calidad generan y evalúan el resultado automáticamente:
+
+```bash
+npm run test:unit      # suite rápida, sin build
+npm run test:coverage  # tests del agente y tabla de cobertura V8
+npm test               # build y suite completa
+```
+
+`test:coverage` usa el motor incorporado en Node.js, muestra porcentajes por archivo y falla si el agente privilegiado baja de 95% de líneas, 90% de ramas o 95% de funciones. El alcance instrumentado es `agent/**/*.mjs`, donde viven la API local, la validación de configuración, los guardrails de credenciales y los jobs operativos. La interfaz, el launcher y el render continúan cubiertos por el build y las pruebas de integración de la suite completa.
+
 ## Abrir como aplicación de Windows
 
 El acceso `Bot Control Center` de la carpeta `CODEX APPS` muestra inmediatamente el estado de inicio, levanta la UI y el agente en segundo plano y abre el dashboard en una ventana independiente. Al cerrar esa ventana, el launcher termina automáticamente el árbol completo. Si hay un release activo, muestra una espera y deja que termine antes de apagarlo para no cortar un push o deploy a mitad de camino.

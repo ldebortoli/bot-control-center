@@ -106,3 +106,10 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-07-21.
 - Decisión: el launcher no toma la vida del proceso inicial de Edge o Chrome como equivalente a la vida de la ventana. Después de abrir el modo app, busca la ventana titulada Bot Control Center entre los procesos del navegador, la incorpora al Job Object cuando es posible y supervisa ese proceso hasta que la ventana desaparece.
 - Motivo: Chromium puede entregar el arranque a otro proceso del perfil aislado y terminar inmediatamente el proceso creado, lo que antes generaba un falso error aunque UI y agente hubieran iniciado correctamente.
+
+## D-016 - Cobertura automática del agente privilegiado
+
+- Estado: vigente.
+- Fecha: 2026-07-22.
+- Decisión: usar la cobertura V8 incorporada en Node para instrumentar `agent/**/*.mjs`, con umbrales mínimos de 95% de líneas, 90% de ramas y 95% de funciones. Mantener `test:unit` como suite rápida y `npm test` como validación completa con build, render, agente y launcher.
+- Motivo: medir automáticamente la lógica operativa y sus guardrails sin incorporar otra dependencia, evitando que una regresión reduzca la cobertura crítica de forma silenciosa.

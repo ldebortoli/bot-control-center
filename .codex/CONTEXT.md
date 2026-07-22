@@ -39,9 +39,13 @@ Comandos verificados en Windows:
 - `npm run agent`
 - `npm run lint`
 - `npm run build`
+- `npm run test:unit`
+- `npm run test:coverage`
 - `npm test`
 
 El runner `scripts/run-vinext.mjs` hace que dev/build/start sean multiplataforma; `scripts/run-local.mjs` administra en conjunto UI y agente.
+
+La cobertura usa el motor V8 incorporado en Node sobre `agent/**/*.mjs`, con umbrales automáticos de 95% de líneas, 90% de ramas y 95% de funciones. La suite completa conserva además el build y las pruebas de render, launcher e integración.
 
 En Windows también existe el acceso `C:\Users\calei\Documents\Codex\CODEX APPS\Bot Control Center.lnk`. Muestra una ventana de inicio inmediata, inicia UI y agente ocultos en localhost y apaga el árbol de procesos al cerrar. Si hay un job operativo activo, espera a que termine antes de apagar para no interrumpir un push o deploy.
 
