@@ -120,3 +120,10 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-07-22.
 - Decisión: exigir 100% de líneas, ramas y funciones en `agent/**/*.mjs`. Mantener casos explícitos para plataformas, entrada CLI, señales, cuerpos HTTP y errores, sin exclusiones de cobertura.
 - Motivo: la lógica privilegiada alcanzó cobertura total con pruebas de comportamiento reales y el umbral debe impedir cualquier regresión futura.
+
+## D-018 - Contrato operativo efímero para Galerazo
+
+- Estado: vigente; amplía D-003, D-005 y D-011, y reemplaza el uso de fixtures de Galerazo para estado, logs y triggers.
+- Fecha: 2026-07-22.
+- Decisión: el agente copia por IAP un `botctl.py` versionado y de vida corta, ejecuta únicamente acciones enumeradas y elimina el temporal. Las lecturas devuelven estado de VM/contenedor, health, reinicios, imagen, recursos, Telegram, logs y triggers reales; un fallo se presenta como error y nunca se completa con datos inventados. La detención confirmada usa `docker compose stop bot`, sin `down` ni borrado, y la moderación vuelve a validar los identificadores contra SQLite antes de modificar datos y avisar al chat.
+- Motivo: obtener visibilidad y cortar bucles de reinicio sin exponer puertos administrativos, tokens, una shell libre ni una operación destructiva sobre producción.

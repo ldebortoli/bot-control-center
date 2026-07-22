@@ -3,6 +3,8 @@ import path from "node:path";
 const identifierPattern = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
 const imagePattern = /^[A-Za-z0-9][A-Za-z0-9._/:@-]+$/;
 const tagPattern = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
+const opaqueIdPattern = /^[A-Za-z0-9_-]{1,2048}$/;
+const moderationActions = new Set(["delete-trigger", "block-user", "delete-and-block"]);
 
 export const credentialFieldNames = Object.freeze([
   "TELEGRAM_BOT_TOKEN",
@@ -114,6 +116,10 @@ export function isValidImageReference(value) {
 
 export function isValidTag(value) {
   return value === undefined || (typeof value === "string" && tagPattern.test(value));
+}
+
+export function isValidOpaqueId(value) {
+  return typeof value === "string" && opaqueIdPattern.test(value);
 }
 
 export function redactOutput(value) {
@@ -268,4 +274,53 @@ export function createCredentialUpdateStep(bot, patchFile) {
     ],
     ["AcknowledgeSecretUpdate"],
   );
+}
+
+function createBotctlStep(bot, action, namedArguments = [], switches = []) {
+  return powershellStep(
+    `Galerazo botctl: ${action}`,
+    resolveInside(bot.repositoryPath, path.join("scripts", "deploy", "Invoke-GceBotctl.ps1"), "botctlScript"),
+    [
+      ["ProjectId", bot.projectId],
+      ["Zone", bot.zone],
+      ["Instance", bot.instance],
+      ["Action", action],
+      ...namedArguments,
+    ],
+    switches,
+  );
+}
+
+export function createRuntimeStatusStep(bot) {
+  return createBotctlStep(bot, "status");
+}
+
+export function createTriggerListStep(bot) {
+  return createBotctlStep(bot, "triggers");
+}
+
+export function createTriggerMediaStep(bot, triggerId, outputFile) {
+  if (!isValidOpaqueId(triggerId)) throw new Error("El identificador del trigger no es válido.");
+  const resolvedOutput = path.resolve(assertString(outputFile, "outputFile"));
+  return createBotctlStep(bot, "media", [
+    ["TriggerId", triggerId],
+    ["OutputFile", resolvedOutput],
+  ]);
+}
+
+export function createModerationStep(bot, triggerId, action) {
+  if (!isValidOpaqueId(triggerId)) throw new Error("El identificador del trigger no es válido.");
+  if (!moderationActions.has(action)) throw new Error("La acción de moderación no está permitida.");
+  return createBotctlStep(bot, "moderate", [
+    ["TriggerId", triggerId],
+    ["ModerationAction", action],
+  ], ["AcknowledgeModeration"]);
+}
+
+export function createStopStep(bot) {
+  return createBotctlStep(bot, "stop", [], ["AcknowledgeStop"]);
+}
+
+export function botctlRuntimePath(bot) {
+  return resolveInside(bot.repositoryPath, path.join("deploy", "gce", "botctl.py"), "botctlRuntime");
 }

@@ -2,7 +2,7 @@
 
 ## Descripción general
 
-Dashboard local y extensible para observar una flota de bots remotos desde una interfaz común. Las capacidades de observación usan datos demo; Galerazo dispone además de deploy y administración segura de credenciales en Google Cloud mediante IAP/SSH, sin publicar bases ni puertos administrativos.
+Dashboard local y extensible para observar una flota de bots remotos desde una interfaz común. Galerazo usa datos reales para estado operativo, logs y triggers, y dispone además de deploy, moderación y administración segura de credenciales en Google Cloud mediante IAP/SSH, sin publicar bases ni puertos administrativos. Los demás bots continúan en modo demo hasta incorporar su propio adaptador.
 
 ## Estado estable
 
@@ -11,13 +11,13 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 - Git: repositorio privado en `https://github.com/ldebortoli/bot-control-center`, con `origin` configurado y rama principal `main`.
 - Idioma de la interfaz y documentación: español.
 - Hosting: no desplegado; `.openai/hosting.json` mantiene D1 y R2 desactivados.
-- Datos de observación: demostrativos hasta configurar un adaptador real. `config/runtime.local.json` existe localmente, está ignorado y apunta a `bot-fleet-production/us-central1-a/galerazo-prod`; no contiene secretos.
+- Datos de observación: reales para Galerazo mediante un `botctl` efímero por IAP; un error de conexión queda explícito y nunca se reemplaza por fixtures. `config/runtime.local.json` existe localmente, está ignorado y apunta a `bot-fleet-production/us-central1-a/galerazo-prod`; no contiene secretos.
 - Flota inicial: Galerazo Bot y Spider Tracker; Reshare Stories permanece en el catálogo local, inactivo por defecto.
 
 ## Arquitectura
 
 - `app/`: interfaz de selector de bots, resumen, logs, triggers, SQL, credenciales y deploy.
-- `agent/`: API privilegiada local en `127.0.0.1:43121`, validación, pre-flight y jobs permitidos de credenciales/release/deploy/rollback.
+- `agent/`: API privilegiada local en `127.0.0.1:43121`, validación, pre-flight y acciones fijas de estado, triggers, multimedia, moderación, detención, credenciales, release, deploy y rollback.
 - `lib/control-center/`: tipos, registro demo, política SQL y contrato de transporte.
 - `config/bots.example.json`: ejemplo declarativo sin secretos; `bots.local.json` está ignorado.
 - `config/runtime.example.json`: ejemplo del destino operativo; `runtime.local.json` está ignorado y no contiene credenciales.
@@ -26,7 +26,8 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 - `public/og-bot-control-center.png`: imagen social generada para el proyecto.
 - `launcher/`, `bin/` y `scripts/*windows-launcher*`: app nativa de Windows que supervisa vinext y el agente, abre la UI en una ventana aislada y sigue la ventana real aunque Edge derive el arranque a otro proceso.
 - El administrador de flota activa, quita y registra bots locales; conserva la selección y los registros personalizados en `localStorage`, sin credenciales.
-- Los bots que declaran `triggers` muestran un inspector genérico con autor, chat, texto y reproducción/descarga de imágenes, GIF, stickers WebP/WebM/TGS, audio y video. La moderación se confirma, simula y audita en `localStorage` hasta conectar un adaptador real.
+- Los bots que declaran `triggers` muestran un inspector genérico con autor, chat, texto y reproducción/descarga de imágenes, GIF, stickers WebP/WebM/TGS, audio, video y archivos. Galerazo consulta SQLite/Telegram reales y ejecuta moderación confirmada con aviso al chat; los bots sin adaptador conservan la simulación local.
+- Galerazo expone en Resumen, Logs y Deploy un panel real de VM/contenedor, health, reinicios, imagen, CPU/RAM/disco/SQLite, Telegram, logs/errores y alertas. Una detención confirmada usa `docker compose stop bot` para cortar bucles sin borrar datos.
 - Galerazo declara `credentials`: la UI muestra sólo presencia/ausencia, recibe reemplazos enmascarados, conserva campos vacíos y permite borrar únicamente opcionales. El agente usa un parche temporal privado por IAP y nunca guarda ni devuelve los valores.
 
 ## Ejecución y tests
@@ -56,6 +57,6 @@ En Windows también existe el acceso `C:\Users\calei\Documents\Codex\CODEX APPS\
 - La memoria persistente vive en `.codex/` y se carga siguiendo `AGENTS.md`.
 - El dashboard real debe escuchar en localhost y conectarse por sesiones efímeras IAP/SSH.
 - Consultas SQLite reales requieren `mode=ro`, `PRAGMA query_only=ON`, authorizer, timeout y límite de filas.
-- La moderación remota de triggers tendrá permisos separados, confirmación, resultado estructurado y aviso obligatorio al chat.
-- El deploy usa un agente local separado, scripts fijos, confirmación, logs saneados y una sola operación por bot; restart y otras escrituras siguen fuera del MVP.
+- La moderación remota de triggers usa permisos separados, confirmación, revalidación contra SQLite, resultado estructurado y aviso al chat; un fallo parcial del aviso se informa explícitamente.
+- El deploy usa un agente local separado, scripts fijos, confirmación, logs saneados y una sola operación por bot; restart y otras escrituras generales siguen fuera del MVP. La única excepción operativa adicional es detener de forma segura el servicio `bot` para cortar un bucle.
 - La edición de credenciales está separada del deploy, exige confirmación y no reinicia el bot; los cambios toman efecto en el siguiente reinicio o deploy.

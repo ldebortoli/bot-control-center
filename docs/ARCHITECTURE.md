@@ -76,11 +76,11 @@ Cada bot conserva su propio usuario de sistema, proceso, token, base y directori
 
 ## Contrato de triggers y moderación
 
-Un bot que declare `triggers` debe devolver, por cada definición, la frase y respuesta, autor, chat de origen, fecha, estado, uso y un descriptor multimedia opcional. Los tipos normalizados son `video`, `audio`, `image` y `sticker`; el MIME distingue imágenes y GIF, stickers estáticos WebP/PNG, stickers animados WebM y stickers vectoriales TGS. El archivo se obtiene mediante un endpoint o comando autenticado de vida corta; la UI nunca guarda el token ni una ruta privada permanente.
+Un bot que declare `triggers` debe devolver, por cada definición, frase/respuesta, autor, chat de origen, fecha, estado y un descriptor multimedia opcional. Las métricas de uso sólo se muestran si el bot las persiste; Galerazo no guarda hits ni última ejecución por trigger y la UI lo declara en vez de inventarlos. Los tipos normalizados son `video`, `audio`, `image`, `sticker` y `file`; el MIME distingue imágenes y GIF, stickers estáticos WebP/PNG, stickers animados WebM y stickers vectoriales TGS. El archivo se obtiene mediante un endpoint autenticado de vida corta; la UI nunca guarda el token ni una ruta privada permanente.
 
 La UI usa elementos nativos para imágenes, GIF, audio, video y WebM. Los TGS se descomprimen en memoria y se reproducen con el runtime liviano de Lottie, sin el evaluador de expresiones del reproductor completo; el archivo original sigue disponible para descarga. El adaptador debe entregar el MIME y nombre correctos, aplicar límites de tamaño y duración y servir el contenido desde un origen autorizado para el dashboard.
 
-Las acciones remotas permitidas son `delete-trigger`, `block-user` y `delete-and-block`. Toda solicitud incluye `triggerId`, `userId`, `chatId`, confirmación explícita de `announceInChat` y un identificador de auditoría. El adaptador debe:
+Las acciones remotas permitidas son `delete-trigger`, `block-user` y `delete-and-block`. La solicitud local incluye sólo el `triggerId` opaco, la acción y la confirmación del bot; el contrato remoto vuelve a resolver usuario y chat desde SQLite para impedir combinaciones manipuladas. El adaptador debe:
 
 - validar que el trigger, el usuario y el chat pertenecen al mismo bot;
 - pedir confirmación en la UI antes de ejecutar;
@@ -93,8 +93,6 @@ Para `delete-and-block`, el bot debe tratar la operación como una unidad audita
 
 ## Próximas etapas
 
-1. Implementar y probar `botctl` en Galerazo.
-2. Reemplazar el estado y los logs demo por el contrato remoto de Galerazo.
-3. Reemplazar datos demo por respuestas reales con estados de carga y errores.
-4. Añadir autenticación si el dashboard deja de ser exclusivamente local.
-5. Implementar la moderación de triggers con una cuenta limitada y auditoría separada; no reutilizar permisos de observación para otras acciones privilegiadas.
+1. Implementar SQL real mediante consultas allowlisted, timeout y SQLite `mode=ro`.
+2. Añadir autenticación si el dashboard deja de ser exclusivamente local.
+3. Persistir una auditoría operativa separada para moderación sin copiar archivos ni secretos.

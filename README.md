@@ -1,11 +1,11 @@
 # Bot Control Center
 
-Dashboard local para observar varios bots remotos desde una sola interfaz. Galerazo ya integra deploy y configuración segura de credenciales mediante Google Cloud IAP/SSH; las demás vistas continúan con datos de demostración.
+Dashboard local para observar varios bots remotos desde una sola interfaz. Galerazo integra estado operativo, logs, triggers, multimedia, moderación, deploy y configuración segura de credenciales mediante Google Cloud IAP/SSH. Los bots sin adaptador siguen identificados como demostrativos.
 
 ## Qué incluye
 
 - selector de bots y estado general de la flota;
-- métricas de proceso, versión, host y transporte;
+- estado real de VM/contenedor, healthcheck, reinicios, imagen, Telegram, CPU, RAM, disco y SQLite;
 - visor de logs con búsqueda y filtro por nivel;
 - visualizador genérico de triggers con texto, imágenes, GIF, stickers, audio/video, autor, chat y auditoría de moderación;
 - consola SQLite con validación de consultas de solo lectura;
@@ -57,7 +57,7 @@ Los registros locales del launcher quedan en `%LOCALAPPDATA%\BotControlCenter\lo
 
 ## Estado de seguridad
 
-El estado, los logs, SQL y la moderación siguen siendo demostrativos. Las integraciones operativas reales son `deploy` y la configuración de credenciales: un agente Node escucha exclusivamente en `127.0.0.1:43121`, valida el origen local y sólo puede ejecutar scripts versionados de Galerazo. No acepta comandos arbitrarios ni almacena tokens; reutiliza la sesión local de Docker y `gcloud`.
+Para Galerazo, estado, logs, triggers, multimedia, moderación, deploy y credenciales son integraciones reales. SQL permanece deshabilitado hasta implementar su contrato de solo lectura. Un agente Node escucha exclusivamente en `127.0.0.1:43121`, valida el origen local y sólo puede ejecutar scripts versionados de Galerazo. No acepta comandos arbitrarios ni almacena tokens; reutiliza la sesión local de `gcloud`.
 
 ## Configurar el deploy de Galerazo
 
@@ -79,11 +79,15 @@ Al abrir la vista **Deploy**, el pre-flight verifica PowerShell, Git, Docker, `g
 
 Cada acción pide confirmación, admite una sola operación activa por bot y muestra la salida saneada. El script remoto de Galerazo crea un backup y revierte automáticamente si el contenedor nuevo no queda healthy.
 
+Las vistas **Resumen**, **Logs** y **Deploy** incluyen el estado remoto actualizado bajo demanda: running/stopped, healthy/unhealthy, reinicios totales y recientes, imagen desplegada, conectividad con Telegram, CPU/RAM/disco, tamaño de SQLite y los últimos logs/errores. Si se detecta un bucle, **Detener contenedor** ejecuta únicamente `docker compose stop bot`; conserva base, imagen, secretos y Compose para poder corregir y reintentar el deploy. **Verificar** muestra progreso, hora y cantidad de requisitos listos o un error explícito.
+
 ## Visualizar y moderar triggers
 
 Cualquier bot que declare la capacidad `triggers` muestra una biblioteca con su contenido, archivo multimedia, usuario creador y chat de origen. El panel admite texto; imágenes PNG, JPEG, WebP y GIF; stickers estáticos WebP/PNG; stickers animados WebM y TGS; además de audio y video. Todo archivo se puede descargar, y los formatos animados se reproducen dentro de la aplicación.
 
-Las acciones **Eliminar trigger**, **Bloquear usuario** y **Eliminar y bloquear** siempre piden confirmación. Cada una genera además una advertencia destinada al mismo chat para que la moderación quede visible. En modo local se conserva un registro demostrativo de esas acciones; para aplicarlas de verdad, el adaptador remoto debe confirmar por separado la eliminación, el bloqueo y el envío del mensaje.
+En Galerazo la lista se lee directamente de SQLite por IAP; si la VM o el bot no son accesibles se muestra un error de conexión y nunca se sustituyen los datos por fixtures. Los archivos se obtienen desde Telegram bajo demanda mediante el token que permanece en la VM.
+
+Las acciones **Eliminar trigger**, **Bloquear usuario** y **Eliminar y bloquear** siempre piden confirmación. Galerazo vuelve a resolver autor y chat desde SQLite, aplica la acción y envía una advertencia al mismo chat. El resultado informa por separado eliminación, bloqueo y aviso para que un fallo parcial nunca se presente como éxito total.
 
 ## Administrar la flota
 
@@ -100,15 +104,11 @@ La integración real mantendrá estas reglas:
 - SQLite se abre con `mode=ro` y `PRAGMA query_only=ON`;
 - la API vuelve a validar SQL, limita tiempo y cantidad de filas;
 - la moderación de triggers usa permisos separados, confirmación y auditoría;
-- el deploy usa un agente y permisos distintos de las capacidades de observación; reinicios y otras escrituras siguen fuera de alcance.
+- el deploy usa un agente y permisos distintos de observación; la única detención operativa expuesta es `docker compose stop`, explícita y no destructiva.
 
-## Conectar Galerazo más adelante
+## Conexión de Galerazo
 
-1. Copiar `config/bots.example.json` a un archivo local ignorado por Git, por ejemplo `config/bots.local.json`.
-2. Completar proyecto, zona e instancia de Google Compute Engine.
-3. Instalar en la instancia el comando `botctl` para `health`, `logs`, `triggers list`, `triggers media`, `triggers moderate` y `query`, separando los permisos de observación de los de moderación.
-4. Probar el acceso manual con `gcloud compute ssh --tunnel-through-iap`.
-5. Activar el adaptador `gcp-iap` y verificar cada capacidad desde el dashboard.
+`config/runtime.local.json` selecciona proyecto, zona, instancia y repositorio local. El agente invoca `scripts/deploy/Invoke-GceBotctl.ps1`, que copia temporalmente el contrato versionado `deploy/gce/botctl.py` por IAP. No instala un daemon ni abre puertos remotos. SQL seguirá fuera del panel hasta agregar una consulta allowlisted y de solo lectura.
 
 No guardar tokens, claves SSH, rutas sensibles ni copias de la base en el repositorio. La arquitectura completa está en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 

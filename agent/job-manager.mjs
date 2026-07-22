@@ -8,6 +8,7 @@ import {
   createDeployStep,
   createPublishStep,
   createRollbackStep,
+  createStopStep,
   isValidImageReference,
   redactOutput,
   validateCredentialPatch,
@@ -108,6 +109,8 @@ export class DeploymentJobManager {
         await this.#runStep(job, bot, createRollbackStep(bot));
       } else if (job.action === "credentials") {
         await this.#runCredentialUpdate(job, bot, credentialPatch);
+      } else if (job.action === "stop") {
+        await this.#runStep(job, bot, createStopStep(bot));
       } else {
         throw new Error("Acción no permitida.");
       }

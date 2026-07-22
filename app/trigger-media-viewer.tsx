@@ -342,6 +342,7 @@ function TgsStickerPlayer({ triggerName, url }: { triggerName: string; url: stri
 }
 
 function mediaFormatLabel(media: TriggerMedia) {
+  if (media.kind === "file") return "ARCHIVO";
   if (media.kind === "video") return "VIDEO";
   if (media.kind === "audio") return "AUDIO";
   if (media.kind === "image") return media.mimeType === "image/gif" ? "GIF" : "IMAGEN";
@@ -413,6 +414,13 @@ export function TriggerMediaViewer({ media, triggerName }: { media?: TriggerMedi
         {!loading && resolvedUrl && media.kind === "sticker" && !isTgs(media) && !isVideoSticker(media) ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img className="trigger-sticker-player" src={resolvedUrl} alt={`Sticker de ${triggerName}`} />
+        ) : null}
+        {!loading && resolvedUrl && media.kind === "file" ? (
+          <div className="trigger-text-preview trigger-file-preview">
+            <span aria-hidden="true">↓</span>
+            <strong>{media.filename}</strong>
+            <small>Este formato se puede descargar, pero no tiene vista previa integrada.</small>
+          </div>
         ) : null}
         {!loading && !resolvedUrl ? (
           <div className="trigger-media__loading">No se pudo generar la vista previa en este navegador.</div>

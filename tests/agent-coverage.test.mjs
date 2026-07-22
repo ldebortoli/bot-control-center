@@ -8,8 +8,14 @@ import { pathToFileURL } from "node:url";
 import {
   createCredentialUpdateStep,
   createDeployStep,
+  createModerationStep,
   createRollbackStep,
+  createRuntimeStatusStep,
+  createStopStep,
+  createTriggerListStep,
+  createTriggerMediaStep,
   isValidImageReference,
+  isValidOpaqueId,
   isValidTag,
   parseRuntimeConfig,
   powershellStep,
@@ -23,6 +29,10 @@ import {
   createAgentServer,
   inspectBot,
   inspectCredentialStatus,
+  fetchRemoteTriggerMedia,
+  inspectRemoteTriggers,
+  inspectRuntimeStatus,
+  moderateRemoteTrigger,
   resolveAgentPort,
   runAgentMain,
   startAgent,
@@ -252,17 +262,21 @@ test("inspecciona scripts e imagen sin elevar permisos", async () => {
   try {
     const deployDirectory = path.join(temporary, "scripts", "deploy");
     const outputDirectory = path.join(temporary, "deploy", "out");
+    const botctlDirectory = path.join(temporary, "deploy", "gce");
     await mkdir(deployDirectory, { recursive: true });
     await mkdir(outputDirectory, { recursive: true });
+    await mkdir(botctlDirectory, { recursive: true });
     for (const script of [
       "Publish-DockerImage.ps1",
       "Deploy-Gce.ps1",
       "Rollback-Gce.ps1",
       "Get-GceBotSecretStatus.ps1",
       "Patch-GceBotSecrets.ps1",
+      "Invoke-GceBotctl.ps1",
     ]) {
       await writeFile(path.join(deployDirectory, script), "# test", "utf8");
     }
+    await writeFile(path.join(botctlDirectory, "botctl.py"), "# test", "utf8");
     await writeFile(path.join(outputDirectory, "last-image.txt"), "registry.example/project/image:latest\n", "utf8");
     const config = parseRuntimeConfig(sampleConfig(temporary));
     const state = { config, error: null };
@@ -270,6 +284,13 @@ test("inspecciona scripts e imagen sin elevar permisos", async () => {
     assert.equal(ready.configured, true);
     assert.equal(ready.latestImage, "registry.example/project/image:latest");
     assert.equal(ready.checks.find((check) => check.id === "scripts").ok, true);
+    assert.equal(ready.checks.find((check) => check.id === "botctl").ok, true);
+    assert.equal(ready.readiness.stop, true);
+
+    await rm(path.join(botctlDirectory, "botctl.py"));
+    const missingBotctlRuntime = await inspectBot(state, "galerazo");
+    assert.equal(missingBotctlRuntime.checks.find((check) => check.id === "botctl").ok, false);
+    assert.equal(missingBotctlRuntime.readiness.runtime, false);
 
     await writeFile(path.join(outputDirectory, "last-image.txt"), "imagen inválida", "utf8");
     assert.equal((await inspectBot(state, "galerazo")).latestImage, null);
@@ -323,6 +344,86 @@ test("rechaza respuestas de credenciales incompletas o sin JSON válido", async 
   assert.equal(valid.TELEGRAM_BOT_TOKEN, false);
 });
 
+test("construye y valida el contrato fijo de botctl", () => {
+  const bot = parseRuntimeConfig(sampleConfig(path.resolve("C:/bots/galerazo"))).bots.galerazo;
+  assert.equal(isValidOpaqueId("YWJjLTEyMw"), true);
+  assert.equal(isValidOpaqueId("con punto."), false);
+  assert.equal(isValidOpaqueId(null), false);
+
+  const runtime = createRuntimeStatusStep(bot);
+  const triggers = createTriggerListStep(bot);
+  const media = createTriggerMediaStep(bot, "YWJjLTEyMw", path.resolve("C:/private/media.bin"));
+  const moderation = createModerationStep(bot, "YWJjLTEyMw", "delete-and-block");
+  const stop = createStopStep(bot);
+  assert.match(runtime.args[4], /Invoke-GceBotctl\.ps1$/);
+  assert.ok(triggers.args.includes("triggers"));
+  assert.ok(media.args.includes("-OutputFile"));
+  assert.ok(moderation.args.includes("-AcknowledgeModeration"));
+  assert.ok(stop.args.includes("-AcknowledgeStop"));
+  assert.throws(() => createTriggerMediaStep(bot, "inválido", "x"));
+  assert.throws(() => createTriggerMediaStep(bot, "YWJj", ""));
+  assert.throws(() => createModerationStep(bot, "inválido", "block-user"));
+  assert.throws(() => createModerationStep(bot, "YWJj", "otra"));
+});
+
+test("interpreta estado, triggers, moderación y multimedia de botctl", async () => {
+  const bot = parseRuntimeConfig(sampleConfig(path.resolve("C:/bots/galerazo"))).bots.galerazo;
+  const runtime = {
+    vm: { status: "running" },
+    container: { status: "running" },
+    telegram: { connected: true },
+    resources: {},
+    logs: [],
+  };
+  const runJson = (payload) => async (_command, _args, options) => {
+    assert.equal(options.shell, false);
+    return { stdout: `gcloud info\n{json roto\n${JSON.stringify(payload)}\n` };
+  };
+  assert.deepEqual(await inspectRuntimeStatus(bot, runJson(runtime)), runtime);
+  await assert.rejects(() => inspectRuntimeStatus(bot, runJson({ vm: {} })), /incompleto/);
+  await assert.rejects(() => inspectRuntimeStatus(bot, async () => ({ stdout: "sin json" })), /estado operativo válido/);
+
+  const triggerPayload = { observedAt: "ahora", triggers: [{ id: "YWJj" }] };
+  assert.deepEqual(await inspectRemoteTriggers(bot, runJson(triggerPayload)), triggerPayload);
+  await assert.rejects(() => inspectRemoteTriggers(bot, runJson({ triggers: null })), /incompleto/);
+  await assert.rejects(() => inspectRemoteTriggers(bot, async () => ({ stdout: "{roto" })), /triggers válidos/);
+
+  const moderation = { triggerDeleted: true, userBlocked: true, announcementSent: false };
+  assert.deepEqual(await moderateRemoteTrigger(bot, "YWJj", "delete-and-block", runJson(moderation)), moderation);
+  await assert.rejects(
+    () => moderateRemoteTrigger(bot, "YWJj", "block-user", runJson({ ...moderation, userBlocked: "sí" })),
+    /incompleto/,
+  );
+  await assert.rejects(
+    () => moderateRemoteTrigger(bot, "YWJj", "block-user", async () => ({ stdout: "ningún json" })),
+    /resultado de moderación/,
+  );
+
+  const removals = [];
+  const media = await fetchRemoteTriggerMedia(bot, "YWJj", {
+    makeTempDirectory: async () => path.resolve("C:/private/media-test"),
+    runFile: runJson({ filename: "foto real.jpg", mimeType: "image/jpeg" }),
+    readBinaryFile: async () => Buffer.from("media-real"),
+    removePath: async (...args) => { removals.push(args); },
+  });
+  assert.equal(media.data.toString(), "media-real");
+  assert.equal(media.mimeType, "image/jpeg");
+  assert.equal(removals[0][1].recursive, true);
+  await assert.rejects(() => fetchRemoteTriggerMedia(bot, "YWJj", {
+    makeTempDirectory: async () => path.resolve("C:/private/media-test-invalid"),
+    runFile: runJson({ filename: 1, mimeType: null }),
+    removePath: async () => {},
+  }), /incompletos/);
+  await assert.rejects(() => fetchRemoteTriggerMedia(bot, "YWJj", {
+    makeTempDirectory: async () => path.resolve("C:/private/media-test-invalid-mime"),
+    runFile: runJson({ filename: "archivo.bin", mimeType: null }),
+    removePath: async () => {},
+  }), /incompletos/);
+  await assert.rejects(() => fetchRemoteTriggerMedia(bot, "YWJj", {
+    makeTempDirectory: async () => { throw new Error("sin temporal"); },
+  }), /sin temporal/);
+});
+
 test("ejecuta deploy y rollback y conserva salida saneada", async () => {
   const bot = parseRuntimeConfig(sampleConfig(path.resolve("C:/bots/galerazo"))).bots.galerazo;
   const calls = [];
@@ -335,9 +436,12 @@ test("ejecuta deploy y rollback y conserva salida saneada", async () => {
   });
   const deploy = await waitForJob(manager.start(bot, "deploy"));
   const rollback = await waitForJob(manager.start(bot, "rollback"));
+  const stop = await waitForJob(manager.start(bot, "stop"));
   assert.equal(deploy.status, "succeeded");
   assert.equal(rollback.status, "succeeded");
-  assert.equal(calls.length, 2);
+  assert.equal(stop.status, "succeeded");
+  assert.equal(calls.length, 3);
+  assert.match(calls[2].args[4], /Invoke-GceBotctl\.ps1$/);
   assert.equal(calls.every((call) => call.options.shell === false), true);
   assert.ok(deploy.logs.some((entry) => entry.message === "resto"));
   assert.ok(deploy.logs.some((entry) => entry.message === "warning"));
@@ -420,13 +524,23 @@ test("cubre rutas exitosas, preflight, CORS y consulta de jobs", async () => {
     configured: true,
     target: { instance: "galerazo-prod" },
     latestImage: "registry.example/image:latest",
-    readiness: { release: true, deploy: true, rollback: true, credentials: true },
+    readiness: { release: true, deploy: true, rollback: true, credentials: true, runtime: true, triggers: true, stop: true },
     checks: [],
   };
   const harness = await startTestServer({
     jobManager,
     botInspector: async () => inspection,
     credentialInspector: async () => credentialFields(),
+    runtimeInspector: async () => ({ vm: { status: "running" }, container: { status: "running" }, telegram: { connected: true }, resources: {}, logs: [] }),
+    triggerInspector: async () => ({
+      observedAt: "2026-07-22T12:00:00Z",
+      triggers: [
+        { id: "YWJj", name: "Con media", media: { filename: "foto.jpg", mimeType: "image/jpeg", kind: "image", source: "remote" } },
+        { id: "ZGVm", name: "Texto" },
+      ],
+    }),
+    triggerMediaFetcher: async () => ({ data: Buffer.from("media"), filename: "foto real.jpg", mimeType: "image/jpeg" }),
+    triggerModerator: async () => ({ triggerDeleted: true, userBlocked: false, announcementSent: true }),
   });
   try {
     const health = await fetch(`${harness.base}/api/health`);
@@ -444,6 +558,29 @@ test("cubre rutas exitosas, preflight, CORS y consulta de jobs", async () => {
     assert.equal(deployment.status, 200);
     assert.equal((await deployment.json()).activeJob.id, "job-visible");
 
+    const runtime = await fetch(`${harness.base}/api/bots/galerazo/runtime`, { headers: { Origin: allowedOrigin } });
+    assert.equal(runtime.status, 200);
+    assert.equal((await runtime.json()).vm.status, "running");
+
+    const triggers = await fetch(`${harness.base}/api/bots/galerazo/triggers`, { headers: { Origin: allowedOrigin } });
+    assert.equal(triggers.status, 200);
+    const triggerBody = await triggers.json();
+    assert.match(triggerBody.triggers[0].media.url, /\/triggers\/YWJj\/media$/);
+    assert.equal(triggerBody.triggers[1].media, undefined);
+
+    const media = await fetch(`${harness.base}/api/bots/galerazo/triggers/YWJj/media`, { headers: { Origin: allowedOrigin } });
+    assert.equal(media.status, 200);
+    assert.equal(media.headers.get("content-type"), "image/jpeg");
+    assert.match(media.headers.get("content-disposition"), /foto_real\.jpg/);
+    assert.equal(await media.text(), "media");
+
+    const moderation = await fetch(`${harness.base}/api/bots/galerazo/triggers/moderate`, {
+      method: "POST",
+      headers: { Origin: allowedOrigin, "Content-Type": "application/json", "X-Bot-Control-Action": "moderate-trigger" },
+      body: JSON.stringify({ confirmation: "galerazo", triggerId: "YWJj", action: "delete-trigger" }),
+    });
+    assert.equal(moderation.status, 200);
+
     const credentials = await fetch(`${harness.base}/api/bots/galerazo/credentials`, { headers: { Origin: allowedOrigin } });
     assert.equal(credentials.status, 200);
     assert.equal((await credentials.json()).writable, true);
@@ -458,13 +595,20 @@ test("cubre rutas exitosas, preflight, CORS y consulta de jobs", async () => {
     });
     assert.equal(release.status, 202);
 
+    const stop = await fetch(`${harness.base}/api/bots/galerazo/stop`, {
+      method: "POST",
+      headers: { Origin: allowedOrigin, "Content-Type": "application/json", "X-Bot-Control-Action": "stop" },
+      body: JSON.stringify({ confirmation: "galerazo" }),
+    });
+    assert.equal(stop.status, 202);
+
     const credentialUpdate = await fetch(`${harness.base}/api/bots/galerazo/credentials`, {
       method: "POST",
       headers: { Origin: allowedOrigin, "Content-Type": "application/json", "X-Bot-Control-Action": "credentials" },
       body: JSON.stringify({ confirmation: "galerazo", patch: { updates: { OPENAI_API_KEY: "valor-test" }, clear: [] } }),
     });
     assert.equal(credentialUpdate.status, 202);
-    assert.deepEqual(started.map((job) => job.action), ["release", "credentials"]);
+    assert.deepEqual(started.map((job) => job.action), ["release", "stop", "credentials"]);
     assert.equal((await fetch(`${harness.base}/no-existe`, { headers: { Origin: allowedOrigin } })).status, 404);
   } finally {
     await harness.close();
@@ -553,6 +697,106 @@ test("cubre rechazos de escritura y errores saneados de la API", async () => {
     });
     assert.equal(plainFailure.status, 500);
     assert.match(await plainFailure.text(), /fallo plano/);
+  } finally {
+    await harness.close();
+  }
+});
+
+test("cubre guardrails y fallos de estado, triggers, media y moderación", async () => {
+  let runtimeReady = true;
+  let triggersReady = true;
+  let runtimeFailure = false;
+  let triggerFailure = false;
+  let mediaFailure = false;
+  let fallbackMedia = false;
+  let announcementSent = false;
+  const jobManager = {
+    getActiveCount: () => 0,
+    getActive: () => null,
+    get: () => null,
+    start: () => ({ id: "job", status: "queued" }),
+    stopChildren() {},
+  };
+  const botInspector = async () => ({
+    readiness: {
+      release: true,
+      deploy: true,
+      rollback: true,
+      credentials: true,
+      runtime: runtimeReady,
+      triggers: triggersReady,
+      stop: true,
+    },
+  });
+  const harness = await startTestServer({
+    jobManager,
+    botInspector,
+    runtimeInspector: async () => {
+      if (runtimeFailure) throw new Error("token=runtime-secreto");
+      return { vm: {}, container: {}, telegram: {}, resources: {}, logs: [] };
+    },
+    triggerInspector: async () => {
+      if (triggerFailure) throw { toString: () => "fallo triggers plano" };
+      return { observedAt: "ahora", triggers: [] };
+    },
+    triggerMediaFetcher: async () => {
+      if (mediaFailure) throw new Error("password=media-secreta");
+      return fallbackMedia
+        ? { data: Buffer.from("x"), filename: "", mimeType: "mime inválido" }
+        : { data: Buffer.from("x"), filename: "x.bin", mimeType: "application/octet-stream" };
+    },
+    triggerModerator: async () => ({ triggerDeleted: false, userBlocked: true, announcementSent }),
+  });
+  const moderationUrl = `${harness.base}/api/bots/galerazo/triggers/moderate`;
+  const moderationHeaders = { Origin: allowedOrigin, "Content-Type": "application/json", "X-Bot-Control-Action": "moderate-trigger" };
+  try {
+    assert.equal((await fetch(`${harness.base}/api/bots/desconocido/runtime`, { headers: { Origin: allowedOrigin } })).status, 409);
+    runtimeReady = false;
+    assert.equal((await fetch(`${harness.base}/api/bots/galerazo/runtime`, { headers: { Origin: allowedOrigin } })).status, 409);
+    runtimeReady = true;
+    runtimeFailure = true;
+    const runtimeError = await fetch(`${harness.base}/api/bots/galerazo/runtime`, { headers: { Origin: allowedOrigin } });
+    assert.equal(runtimeError.status, 502);
+    assert.doesNotMatch(await runtimeError.text(), /runtime-secreto/);
+    runtimeFailure = false;
+
+    assert.equal((await fetch(`${harness.base}/api/bots/desconocido/triggers`, { headers: { Origin: allowedOrigin } })).status, 409);
+    triggersReady = false;
+    assert.equal((await fetch(`${harness.base}/api/bots/galerazo/triggers`, { headers: { Origin: allowedOrigin } })).status, 409);
+    assert.equal((await fetch(`${harness.base}/api/bots/galerazo/triggers/YWJj/media`, { headers: { Origin: allowedOrigin } })).status, 409);
+    triggersReady = true;
+    triggerFailure = true;
+    const triggerError = await fetch(`${harness.base}/api/bots/galerazo/triggers`, { headers: { Origin: allowedOrigin } });
+    assert.equal(triggerError.status, 502);
+    assert.match(await triggerError.text(), /fallo triggers plano/);
+    triggerFailure = false;
+
+    const tooLongId = "a".repeat(2049);
+    assert.equal((await fetch(`${harness.base}/api/bots/galerazo/triggers/${tooLongId}/media`, { headers: { Origin: allowedOrigin } })).status, 400);
+    assert.equal((await fetch(`${harness.base}/api/bots/desconocido/triggers/YWJj/media`, { headers: { Origin: allowedOrigin } })).status, 409);
+    mediaFailure = true;
+    const mediaError = await fetch(`${harness.base}/api/bots/galerazo/triggers/YWJj/media`, { headers: { Origin: allowedOrigin } });
+    assert.equal(mediaError.status, 502);
+    assert.doesNotMatch(await mediaError.text(), /media-secreta/);
+    mediaFailure = false;
+    fallbackMedia = true;
+    const fallback = await fetch(`${harness.base}/api/bots/galerazo/triggers/YWJj/media`);
+    assert.equal(fallback.status, 200);
+    assert.equal(fallback.headers.get("content-type"), "application/octet-stream");
+    assert.match(fallback.headers.get("content-disposition"), /trigger-media\.bin/);
+
+    assert.equal((await fetch(moderationUrl, { method: "POST", headers: { "Content-Type": "application/json", "X-Bot-Control-Action": "moderate-trigger" }, body: "{}" })).status, 403);
+    assert.equal((await fetch(moderationUrl, { method: "POST", headers: { Origin: allowedOrigin }, body: "{}" })).status, 415);
+    assert.equal((await fetch(moderationUrl, { method: "POST", headers: { Origin: allowedOrigin, "Content-Type": "application/json" }, body: "{}" })).status, 403);
+    assert.equal((await fetch(moderationUrl, { method: "POST", headers: moderationHeaders, body: JSON.stringify({ confirmation: "otro", triggerId: "YWJj", action: "block-user" }) })).status, 400);
+    assert.equal((await fetch(moderationUrl, { method: "POST", headers: moderationHeaders, body: JSON.stringify({ confirmation: "galerazo", triggerId: "inválido", action: "block-user" }) })).status, 400);
+    assert.equal((await fetch(moderationUrl, { method: "POST", headers: moderationHeaders, body: JSON.stringify({ confirmation: "galerazo", triggerId: "YWJj", action: "otra" }) })).status, 400);
+    assert.equal((await fetch(`${harness.base}/api/bots/desconocido/triggers/moderate`, { method: "POST", headers: moderationHeaders, body: JSON.stringify({ confirmation: "desconocido", triggerId: "YWJj", action: "block-user" }) })).status, 409);
+    triggersReady = false;
+    assert.equal((await fetch(moderationUrl, { method: "POST", headers: moderationHeaders, body: JSON.stringify({ confirmation: "galerazo", triggerId: "YWJj", action: "block-user" }) })).status, 409);
+    triggersReady = true;
+    const partial = await fetch(moderationUrl, { method: "POST", headers: moderationHeaders, body: JSON.stringify({ confirmation: "galerazo", triggerId: "YWJj", action: "block-user" }) });
+    assert.equal(partial.status, 207);
   } finally {
     await harness.close();
   }

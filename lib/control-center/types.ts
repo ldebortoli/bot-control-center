@@ -23,13 +23,14 @@ export interface TriggerDefinition {
   phrase: string;
   response: string;
   enabled: boolean;
-  hits: number;
-  lastHit: string;
+  hits?: number;
+  lastHit?: string;
   createdAt: string;
   createdBy: {
     id: string;
     displayName: string;
     username?: string;
+    blocked?: boolean;
   };
   chat: {
     id: string;
@@ -37,7 +38,7 @@ export interface TriggerDefinition {
     platform: "telegram";
   };
   media?: {
-    kind: "video" | "audio" | "image" | "sticker";
+    kind: "video" | "audio" | "image" | "sticker" | "file";
     filename: string;
     mimeType: string;
     source: "remote" | "generated-demo";

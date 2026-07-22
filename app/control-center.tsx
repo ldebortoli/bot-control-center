@@ -11,6 +11,8 @@ import type {
 import { TriggerMediaViewer } from "./trigger-media-viewer";
 import { DeployPanel } from "./deploy-panel";
 import { CredentialsPanel } from "./credentials-panel";
+import { RemoteTriggersPanel } from "./remote-triggers-panel";
+import { RuntimeStatusPanel } from "./runtime-status-panel";
 
 type View = "overview" | "logs" | "triggers" | "sql" | "credentials" | "deploy";
 type FleetSnapshot = { activeIds: string[]; customBots: BotDefinition[] };
@@ -508,6 +510,7 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
           </nav>
 
           {view === "overview" ? (
+            bot.id === "galerazo" ? <RuntimeStatusPanel bot={bot} /> : (
             <div className="content-stack">
               <section className="metrics-grid" aria-label="Métricas principales">
                 {bot.metrics.map((metric) => (
@@ -572,10 +575,11 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
                   })}
                 </div>
               </section>
-            </div>
+            </div>)
           ) : null}
 
           {view === "logs" ? (
+            bot.id === "galerazo" ? <RuntimeStatusPanel bot={bot} /> : (
             <section className="panel logs-panel">
               <div className="panel__header panel__header--wrap">
                 <div><span className="eyebrow">STREAM REMOTO · DEMO</span><h2>Logs del proceso</h2></div>
@@ -601,11 +605,12 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
                   </div>
                 )) : <p className="terminal-empty">No hay entradas que coincidan con el filtro.</p>}
               </div>
-            </section>
+            </section>)
           ) : null}
 
           {view === "triggers" ? (
             bot.capabilities.includes("triggers") ? (
+              bot.id === "galerazo" ? <RemoteTriggersPanel bot={bot} /> : (
               <section className="trigger-workspace">
                 <div className="panel trigger-panel">
                   <div className="panel__header">
@@ -742,7 +747,7 @@ export function ControlCenter({ bots }: { bots: BotDefinition[] }) {
                     </div>
                   </section>
                 ) : null}
-              </section>
+              </section>)
             ) : <EmptyCapability title="Este bot no expone triggers" detail="Las capacidades son opcionales y cada bot declara únicamente las que soporta." />
           ) : null}
 

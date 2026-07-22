@@ -36,7 +36,7 @@ test("renderiza el dashboard local con la flota demo", async () => {
   assert.match(html, /Reshare Stories/);
   assert.match(html, /Modo local/);
   assert.match(html, /Administrar flota/);
-  assert.match(html, /Capacidades declaradas/);
+  assert.match(html, /Operación de Galerazo/);
   assert.match(html, />Deploy</);
   assert.doesNotMatch(html, /Your site is taking shape|react-loading-skeleton|codex-preview/i);
 });
@@ -54,9 +54,10 @@ test("mantiene la flota editable y Reshare inactivo por defecto", async () => {
   assert.match(controlCenter, /No se guardan credenciales/);
 });
 
-test("incluye visor multimedia y moderación auditada para triggers", async () => {
-  const [controlCenter, mediaViewer, types, demoRegistry, transport, architecture] = await Promise.all([
+test("incluye visor multimedia y moderación auditada para triggers reales", async () => {
+  const [controlCenter, remoteTriggers, mediaViewer, types, demoRegistry, transport, architecture] = await Promise.all([
     readFile(new URL("../app/control-center.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/remote-triggers-panel.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/trigger-media-viewer.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/control-center/types.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/control-center/demo-registry.ts", import.meta.url), "utf8"),
@@ -71,6 +72,11 @@ test("incluye visor multimedia y moderación auditada para triggers", async () =
   assert.match(controlCenter, /Eliminar y bloquear/);
   assert.match(controlCenter, /Avisos enviados a chats/);
   assert.match(controlCenter, /moderationStorageKey/);
+  assert.match(controlCenter, /RemoteTriggersPanel/);
+  assert.match(remoteTriggers, /Error de conexión\. No pude cargar los triggers/);
+  assert.match(remoteTriggers, /DATOS REALES · GCP IAP/);
+  assert.match(remoteTriggers, /moderate-trigger/);
+  assert.match(remoteTriggers, /No se muestran fixtures/);
   assert.match(mediaViewer, /<video/);
   assert.match(mediaViewer, /<audio/);
   assert.match(mediaViewer, /<img/);
@@ -80,12 +86,27 @@ test("incluye visor multimedia y moderación auditada para triggers", async () =
   assert.match(types, /createdBy/);
   assert.match(types, /chat:/);
   assert.match(types, /"image" \| "sticker"/);
-  assert.match(demoRegistry, /image\/webp/);
-  assert.match(demoRegistry, /video\/webm/);
-  assert.match(demoRegistry, /application\/x-tgsticker/);
+  assert.match(mediaViewer, /video\/webm/);
+  assert.match(mediaViewer, /application\/x-tgsticker/);
+  assert.doesNotMatch(demoRegistry, /generated-demo|Próximo partido|Mateo Sosa/);
   assert.match(transport, /moderateTrigger/);
   assert.match(transport, /TriggerModerationResult/);
   assert.match(architecture, /announcementSent/);
+});
+
+test("muestra estado remoto y feedback visible del pre-flight", async () => {
+  const [deployPanel, runtimePanel, agent] = await Promise.all([
+    readFile(new URL("../app/deploy-panel.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/runtime-status-panel.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../agent/server.mjs", import.meta.url), "utf8"),
+  ]);
+  assert.match(deployPanel, /Verificando…/);
+  assert.match(deployPanel, /Verificación completada/);
+  assert.match(runtimePanel, /Healthcheck/);
+  assert.match(runtimePanel, /Reinicios/);
+  assert.match(runtimePanel, /Imagen desplegada/);
+  assert.match(runtimePanel, /Detener contenedor/);
+  assert.match(agent, /\/runtime|\/triggers/);
 });
 
 test("conserva los guardrails de SQL y transporte fuera de la UI", async () => {

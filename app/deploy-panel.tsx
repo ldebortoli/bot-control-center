@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { BotDefinition } from "@/lib/control-center/types";
+import { RuntimeStatusPanel } from "./runtime-status-panel";
 
 const agentBaseUrl = "http://127.0.0.1:43121";
 
@@ -44,8 +45,14 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
   const [loading, setLoading] = useState(true);
   const [agentError, setAgentError] = useState("");
   const [actionError, setActionError] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState("");
 
-  const refreshInfo = useCallback(async () => {
+  const refreshInfo = useCallback(async (manual = false) => {
+    if (manual) {
+      setVerifying(true);
+      setVerificationMessage("Verificando requisitos locales…");
+    }
     try {
       const response = await fetch(`${agentBaseUrl}/api/bots/${encodeURIComponent(bot.id)}/deployment`, {
         cache: "no-store",
@@ -54,11 +61,17 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
       setInfo(next);
       if (next.activeJob) setJob(next.activeJob);
       setAgentError("");
+      if (manual) {
+        const ready = next.checks.filter((check) => check.ok).length;
+        setVerificationMessage(`Verificación completada: ${ready}/${next.checks.length} requisitos listos · ${new Date().toLocaleTimeString("es-AR")}.`);
+      }
     } catch (error) {
       setInfo(null);
       setAgentError(error instanceof Error ? error.message : "No se pudo contactar al agente local.");
+      if (manual) setVerificationMessage("La verificación falló: no se pudo contactar al agente local.");
     } finally {
       setLoading(false);
+      if (manual) setVerifying(false);
     }
   }, [bot.id]);
 
@@ -127,6 +140,8 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
         </div>
       </section>
 
+      <RuntimeStatusPanel bot={bot} />
+
       {agentError ? (
         <section className="panel deploy-empty">
           <span aria-hidden="true">!</span>
@@ -171,8 +186,9 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
           <section className="panel deploy-checks-panel">
             <div className="panel__header">
               <div><span className="eyebrow">PRE-FLIGHT</span><h2>Requisitos locales</h2></div>
-              <button type="button" onClick={() => void refreshInfo()}>Verificar</button>
+              <button disabled={verifying} type="button" onClick={() => void refreshInfo(true)}>{verifying ? "Verificando…" : "Verificar"}</button>
             </div>
+            {verificationMessage ? <p className="verification-feedback" role="status">{verificationMessage}</p> : null}
             <div className="deploy-checks">
               {info.checks.map((check) => (
                 <div className={check.ok ? "deploy-check deploy-check--ok" : "deploy-check"} key={check.id}>

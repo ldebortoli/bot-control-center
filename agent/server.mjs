@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
-import { access, readFile } from "node:fs/promises";
+import { access, mkdtemp, readFile, rm } from "node:fs/promises";
 import http from "node:http";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { pathToFileURL } from "node:url";
@@ -8,11 +9,17 @@ import {
   createCredentialStatusStep,
   createCredentialUpdateStep,
   createDeployStep,
+  createModerationStep,
   createPublishStep,
   createRollbackStep,
+  createRuntimeStatusStep,
+  createTriggerListStep,
+  createTriggerMediaStep,
+  botctlRuntimePath,
   credentialFieldNames,
   isAllowedOrigin,
   isValidImageReference,
+  isValidOpaqueId,
   isValidTag,
   redactOutput,
   validateCredentialPatch,
@@ -23,6 +30,7 @@ import { defaultConfigPath, loadRuntimeConfig } from "./runtime-config.mjs";
 const execFileAsync = promisify(execFile);
 const defaultPort = 43121;
 const listenHost = "127.0.0.1";
+const moderationActions = new Set(["delete-trigger", "block-user", "delete-and-block"]);
 
 export async function commandExists(name, {
   platform = process.platform,
@@ -93,6 +101,77 @@ export async function inspectCredentialStatus(bot, runFile = execFileAsync) {
   }));
 }
 
+function parseJsonOutput(stdout, message) {
+  for (const line of String(stdout).split(/\r?\n/).reverse()) {
+    if (!line.trim().startsWith("{")) continue;
+    try {
+      const parsed = JSON.parse(line);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+    } catch {
+      // gcloud puede escribir mensajes informativos antes del JSON final.
+    }
+  }
+  throw new Error(message);
+}
+
+async function runBotStep(bot, step, runFile = execFileAsync) {
+  const { stdout } = await runFile(step.command, step.args, {
+    cwd: bot.repositoryPath,
+    env: process.env,
+    shell: false,
+    windowsHide: true,
+    maxBuffer: 8 * 1024 * 1024,
+  });
+  return stdout;
+}
+
+export async function inspectRuntimeStatus(bot, runFile = execFileAsync) {
+  const stdout = await runBotStep(bot, createRuntimeStatusStep(bot), runFile);
+  const payload = parseJsonOutput(stdout, "La VM no devolvió un estado operativo válido.");
+  if (!payload.vm || !payload.container || !payload.telegram || !payload.resources || !Array.isArray(payload.logs)) {
+    throw new Error("La VM devolvió un contrato operativo incompleto.");
+  }
+  return payload;
+}
+
+export async function inspectRemoteTriggers(bot, runFile = execFileAsync) {
+  const stdout = await runBotStep(bot, createTriggerListStep(bot), runFile);
+  const payload = parseJsonOutput(stdout, "La VM no devolvió triggers válidos.");
+  if (!Array.isArray(payload.triggers)) throw new Error("La VM devolvió un contrato de triggers incompleto.");
+  return payload;
+}
+
+export async function moderateRemoteTrigger(bot, triggerId, action, runFile = execFileAsync) {
+  const stdout = await runBotStep(bot, createModerationStep(bot, triggerId, action), runFile);
+  const payload = parseJsonOutput(stdout, "La VM no devolvió el resultado de moderación.");
+  for (const field of ["triggerDeleted", "userBlocked", "announcementSent"]) {
+    if (typeof payload[field] !== "boolean") throw new Error("La VM devolvió un resultado de moderación incompleto.");
+  }
+  return payload;
+}
+
+export async function fetchRemoteTriggerMedia(bot, triggerId, {
+  runFile = execFileAsync,
+  makeTempDirectory = mkdtemp,
+  readBinaryFile = readFile,
+  removePath = rm,
+} = {}) {
+  let directory = null;
+  try {
+    directory = await makeTempDirectory(path.join(tmpdir(), "bot-control-media-"));
+    const outputFile = path.join(directory, "trigger-media.bin");
+    const stdout = await runBotStep(bot, createTriggerMediaStep(bot, triggerId, outputFile), runFile);
+    const metadata = parseJsonOutput(stdout, "La VM no devolvió metadatos de multimedia válidos.");
+    if (typeof metadata.filename !== "string" || typeof metadata.mimeType !== "string") {
+      throw new Error("La VM devolvió metadatos de multimedia incompletos.");
+    }
+    const data = await readBinaryFile(outputFile);
+    return { data, filename: metadata.filename, mimeType: metadata.mimeType };
+  } finally {
+    if (directory) await removePath(directory, { recursive: true, force: true });
+  }
+}
+
 export async function inspectBot(configState, botId) {
   const bot = configState.config.bots[botId];
   if (!bot) {
@@ -101,7 +180,7 @@ export async function inspectBot(configState, botId) {
       configError: configState.error ?? `No existe configuración local para ${botId}.`,
       target: null,
       latestImage: null,
-      readiness: { release: false, deploy: false, rollback: false, credentials: false },
+      readiness: { release: false, deploy: false, rollback: false, credentials: false, runtime: false, triggers: false, stop: false },
       checks: [],
     };
   }
@@ -111,13 +190,16 @@ export async function inspectBot(configState, botId) {
   const rollbackStep = createRollbackStep(bot);
   const credentialStatusStep = createCredentialStatusStep(bot);
   const credentialUpdateStep = createCredentialUpdateStep(bot, path.join(bot.repositoryPath, "credential-probe.json"));
-  const [repositoryOk, publishOk, deployOk, rollbackOk, credentialStatusOk, credentialUpdateOk, powershellOk, dockerOk, gcloudOk, gitOk, latestImage] = await Promise.all([
+  const runtimeStep = createRuntimeStatusStep(bot);
+  const [repositoryOk, publishOk, deployOk, rollbackOk, credentialStatusOk, credentialUpdateOk, botctlScriptOk, botctlRuntimeOk, powershellOk, dockerOk, gcloudOk, gitOk, latestImage] = await Promise.all([
     fileExists(bot.repositoryPath),
     fileExists(publishStep.args[4]),
     fileExists(deployStep.args[4]),
     fileExists(rollbackStep.args[4]),
     fileExists(credentialStatusStep.args[4]),
     fileExists(credentialUpdateStep.args[4]),
+    fileExists(runtimeStep.args[4]),
+    fileExists(botctlRuntimePath(bot)),
     commandExists("powershell.exe"),
     commandExists("docker"),
     commandExists("gcloud"),
@@ -134,9 +216,11 @@ export async function inspectBot(configState, botId) {
     { id: "git", label: "Git", ok: gitOk },
     { id: "scripts", label: "Scripts de deploy versionados", ok: publishOk && deployOk && rollbackOk },
     { id: "credential-scripts", label: "Scripts de credenciales versionados", ok: credentialStatusOk && credentialUpdateOk },
+    { id: "botctl", label: "Contrato remoto de estado y triggers", ok: botctlScriptOk && botctlRuntimeOk },
   ];
   const scriptsAndBase = repositoryOk && powershellOk && publishOk && deployOk && rollbackOk;
   const credentialBase = repositoryOk && powershellOk && gcloudOk && credentialStatusOk && credentialUpdateOk;
+  const botctlBase = repositoryOk && powershellOk && gcloudOk && botctlScriptOk && botctlRuntimeOk;
 
   return {
     configured: true,
@@ -154,6 +238,9 @@ export async function inspectBot(configState, botId) {
       deploy: scriptsAndBase && gcloudOk && Boolean(latestImage),
       rollback: scriptsAndBase && gcloudOk,
       credentials: credentialBase,
+      runtime: botctlBase,
+      triggers: botctlBase,
+      stop: botctlBase,
     },
     checks,
   };
@@ -171,6 +258,23 @@ function json(response, statusCode, body, origin, allowedOrigins) {
   }
   response.writeHead(statusCode, headers);
   response.end(JSON.stringify(body));
+}
+
+function binary(response, body, filename, mimeType, origin, allowedOrigins) {
+  const safeFilename = filename.replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 180) || "trigger-media.bin";
+  const headers = {
+    "Cache-Control": "private, no-store",
+    "Content-Disposition": `inline; filename="${safeFilename}"`,
+    "Content-Length": String(body.length),
+    "Content-Type": /^[A-Za-z0-9.+-]+\/[A-Za-z0-9.+-]+$/.test(mimeType) ? mimeType : "application/octet-stream",
+    "X-Content-Type-Options": "nosniff",
+  };
+  if (origin && isAllowedOrigin(origin, allowedOrigins)) {
+    headers["Access-Control-Allow-Origin"] = origin;
+    headers.Vary = "Origin";
+  }
+  response.writeHead(200, headers);
+  response.end(body);
 }
 
 async function readJsonBody(request) {
@@ -191,6 +295,10 @@ export function createAgentServer({
   configPath = process.env.BOT_CONTROL_CENTER_CONFIG || defaultConfigPath,
   jobManager = new DeploymentJobManager(),
   credentialInspector = inspectCredentialStatus,
+  runtimeInspector = inspectRuntimeStatus,
+  triggerInspector = inspectRemoteTriggers,
+  triggerMediaFetcher = fetchRemoteTriggerMedia,
+  triggerModerator = moderateRemoteTrigger,
   botInspector = inspectBot,
 } = {}) {
   const server = http.createServer(async (request, response) => {
@@ -244,6 +352,85 @@ export function createAgentServer({
       return;
     }
 
+    const runtimeMatch = url.pathname.match(/^\/api\/bots\/([A-Za-z0-9._:-]+)\/runtime$/);
+    if (request.method === "GET" && runtimeMatch) {
+      const botId = runtimeMatch[1];
+      try {
+        const bot = configState.config.bots[botId];
+        if (!bot) throw Object.assign(new Error(configState.error ?? "Bot sin configuración local."), { statusCode: 409 });
+        const inspection = await botInspector(configState, botId);
+        if (!inspection.readiness.runtime) throw Object.assign(new Error("La observación remota no está lista."), { statusCode: 409 });
+        const runtime = await runtimeInspector(bot);
+        json(response, 200, { botId, ...runtime, activeJob: jobManager.getActive(botId) }, origin, allowedOrigins);
+      } catch (error) {
+        json(response, error?.statusCode ?? 502, { error: redactOutput(error instanceof Error ? error.message : String(error)) }, origin, allowedOrigins);
+      }
+      return;
+    }
+
+    const triggerMediaMatch = url.pathname.match(/^\/api\/bots\/([A-Za-z0-9._:-]+)\/triggers\/([A-Za-z0-9_-]+)\/media$/);
+    if (request.method === "GET" && triggerMediaMatch) {
+      const [, botId, triggerId] = triggerMediaMatch;
+      try {
+        if (!isValidOpaqueId(triggerId)) throw Object.assign(new Error("Identificador de trigger inválido."), { statusCode: 400 });
+        const bot = configState.config.bots[botId];
+        if (!bot) throw Object.assign(new Error(configState.error ?? "Bot sin configuración local."), { statusCode: 409 });
+        const inspection = await botInspector(configState, botId);
+        if (!inspection.readiness.triggers) throw Object.assign(new Error("La lectura remota de triggers no está lista."), { statusCode: 409 });
+        const media = await triggerMediaFetcher(bot, triggerId);
+        binary(response, media.data, media.filename, media.mimeType, origin, allowedOrigins);
+      } catch (error) {
+        json(response, error?.statusCode ?? 502, { error: redactOutput(error instanceof Error ? error.message : String(error)) }, origin, allowedOrigins);
+      }
+      return;
+    }
+
+    const triggersMatch = url.pathname.match(/^\/api\/bots\/([A-Za-z0-9._:-]+)\/triggers$/);
+    if (request.method === "GET" && triggersMatch) {
+      const botId = triggersMatch[1];
+      try {
+        const bot = configState.config.bots[botId];
+        if (!bot) throw Object.assign(new Error(configState.error ?? "Bot sin configuración local."), { statusCode: 409 });
+        const inspection = await botInspector(configState, botId);
+        if (!inspection.readiness.triggers) throw Object.assign(new Error("La lectura remota de triggers no está lista."), { statusCode: 409 });
+        const payload = await triggerInspector(bot);
+        const triggers = payload.triggers.map((trigger) => trigger.media ? {
+          ...trigger,
+          media: {
+            ...trigger.media,
+            url: `http://${listenHost}:${resolveAgentPort(process.env.BOT_CONTROL_CENTER_AGENT_PORT)}/api/bots/${encodeURIComponent(botId)}/triggers/${encodeURIComponent(trigger.id)}/media`,
+          },
+        } : trigger);
+        json(response, 200, { botId, observedAt: payload.observedAt, triggers }, origin, allowedOrigins);
+      } catch (error) {
+        json(response, error?.statusCode ?? 502, { error: redactOutput(error instanceof Error ? error.message : String(error)) }, origin, allowedOrigins);
+      }
+      return;
+    }
+
+    const moderationMatch = url.pathname.match(/^\/api\/bots\/([A-Za-z0-9._:-]+)\/triggers\/moderate$/);
+    if (request.method === "POST" && moderationMatch) {
+      try {
+        const botId = moderationMatch[1];
+        if (!origin || !isAllowedOrigin(origin, allowedOrigins)) throw Object.assign(new Error("Falta un origen local autorizado."), { statusCode: 403 });
+        if (!String(request.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) throw Object.assign(new Error("Se requiere Content-Type application/json."), { statusCode: 415 });
+        if (request.headers["x-bot-control-action"] !== "moderate-trigger") throw Object.assign(new Error("Falta la cabecera de confirmación de acción."), { statusCode: 403 });
+        const body = await readJsonBody(request);
+        if (body.confirmation !== botId) throw Object.assign(new Error("La confirmación no coincide con el bot."), { statusCode: 400 });
+        if (!isValidOpaqueId(body.triggerId)) throw Object.assign(new Error("Identificador de trigger inválido."), { statusCode: 400 });
+        if (!moderationActions.has(body.action)) throw Object.assign(new Error("Acción de moderación inválida."), { statusCode: 400 });
+        const bot = configState.config.bots[botId];
+        if (!bot) throw Object.assign(new Error(configState.error ?? "Bot sin configuración local."), { statusCode: 409 });
+        const inspection = await botInspector(configState, botId);
+        if (!inspection.readiness.triggers) throw Object.assign(new Error("La moderación remota no está lista."), { statusCode: 409 });
+        const result = await triggerModerator(bot, body.triggerId, body.action);
+        json(response, result.announcementSent ? 200 : 207, result, origin, allowedOrigins);
+      } catch (error) {
+        json(response, error?.statusCode ?? 502, { error: redactOutput(error instanceof Error ? error.message : String(error)) }, origin, allowedOrigins);
+      }
+      return;
+    }
+
     const credentialsMatch = url.pathname.match(/^\/api\/bots\/([A-Za-z0-9._:-]+)\/credentials$/);
     if (request.method === "GET" && credentialsMatch) {
       const botId = credentialsMatch[1];
@@ -278,7 +465,7 @@ export function createAgentServer({
       return;
     }
 
-    const actionMatch = url.pathname.match(/^\/api\/bots\/([A-Za-z0-9._:-]+)\/(release|deploy|rollback)$/);
+    const actionMatch = url.pathname.match(/^\/api\/bots\/([A-Za-z0-9._:-]+)\/(release|deploy|rollback|stop)$/);
     if (request.method === "POST" && actionMatch) {
       try {
         const [, botId, action] = actionMatch;
