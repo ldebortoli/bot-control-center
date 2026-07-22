@@ -109,9 +109,10 @@ test("conserva los guardrails de SQL y transporte fuera de la UI", async () => {
 });
 
 test("incluye deploy local de una sola acción con confirmación y rollback", async () => {
-  const [controlCenter, deployPanel, agent, jobManager, launcher] = await Promise.all([
+  const [controlCenter, deployPanel, deployStyles, agent, jobManager, launcher] = await Promise.all([
     readFile(new URL("../app/control-center.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/deploy-panel.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../agent/server.mjs", import.meta.url), "utf8"),
     readFile(new URL("../agent/job-manager.mjs", import.meta.url), "utf8"),
     readFile(new URL("../launcher/BotControlCenterLauncher.cs", import.meta.url), "utf8"),
@@ -121,6 +122,9 @@ test("incluye deploy local de una sola acción con confirmación y rollback", as
   assert.match(deployPanel, /Publicar y deployar/);
   assert.match(deployPanel, /window\.confirm/);
   assert.match(deployPanel, /Rollback/);
+  assert.match(deployPanel, /deploy-target__image/);
+  assert.match(deployStyles, /\.deploy-target__image dd/);
+  assert.match(deployStyles, /\.deploy-primary-action > button strong \{ font-size: 14px; \}/);
   assert.match(agent, /127\.0\.0\.1/);
   assert.match(agent, /X-Bot-Control-Action|x-bot-control-action/);
   assert.match(jobManager, /shell: false/);

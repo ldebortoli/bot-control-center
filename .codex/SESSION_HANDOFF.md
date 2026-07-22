@@ -6,6 +6,7 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 
 ## Estado actual
 
+- Legibilidad de Deploy mejorada: Destino y Pre-flight tienen tipografía y controles mayores, Última imagen dispone de más ancho y puede envolver la referencia completa, y la acción principal tiene mayor jerarquía visual.
 - Launcher corregido e instalado: detecta la ventana real de Bot Control Center entre los procesos de Edge/Chrome aunque el proceso inicial termine por handoff.
 - Vista Deploy funcional para Galerazo con pre-flight, confirmación, release completo, deploy de última imagen, rollback, progreso y logs saneados.
 - Vista Credenciales funcional para Galerazo: indicadores presente/ausente, entradas enmascaradas, parches parciales, borrado sólo de opcionales, confirmación y auditoría; nunca lee valores remotos.

@@ -11,6 +11,7 @@ No hay tareas en curso.
 
 # DONE
 
+- [2026-07-22] Mejorar la legibilidad de Destino y Pre-flight en Deploy, dar más espacio a Última imagen y aumentar la jerarquía del botón principal. Validación: lint, build y 17 pruebas OK.
 - [2026-07-21] Corregir, recompilar e instalar el launcher para seguir la ventana real cuando Edge deriva el arranque; validar dos aperturas consecutivas y el apagado de UI/agente al cerrar.
 - [2026-07-20] Implementar configuración remota de credenciales de Galerazo: estado booleano sin lectura de valores, campos enmascarados, parches parciales y temporales privados por IAP, confirmación, auditoría y limpieza. Configurar `runtime.local.json`, validar lectura y no-op real contra `galerazo-prod`, revisar visualmente la UI y confirmar que triggers sigue operativo. Validación: lint, build y 17 pruebas OK.
 - [2026-07-20] Integrar un deploy de Galerazo de una sola acción en Bot Control Center mediante un agente local, con publicación, deploy, rollback, confirmación, pre-flight y logs saneados; actualizar el launcher para administrar ambos procesos.

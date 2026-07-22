@@ -1136,21 +1136,27 @@ button {
 .deploy-empty code { color: #b7c2be; }
 .deploy-empty button,
 .deploy-checks-panel .panel__header button { background: transparent; border: 1px solid #3a4743; border-radius: 5px; color: #aab5b1; cursor: pointer; font-size: 9px; font-weight: 700; margin-top: 15px; padding: 7px 10px; }
-.deploy-checks-panel .panel__header button { margin-top: 0; }
+.deploy-checks-panel .panel__header button { font-size: 10px; margin-top: 0; padding: 9px 12px; }
 
 .deploy-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.75fr); }
 .deploy-actions-panel,
-.deploy-checks-panel,
+.deploy-checks-panel { padding: 24px; }
 .deploy-job-panel { padding: 20px; }
+.deploy-actions-panel .panel__header h2,
+.deploy-checks-panel .panel__header h2 { font-size: 16px; }
+.deploy-actions-panel .eyebrow,
+.deploy-checks-panel .eyebrow { font-size: 9px; }
 
-.deploy-target { display: grid; grid-template-columns: 1fr 1fr; margin: 18px 0 0; }
-.deploy-target > div { border-bottom: 1px solid #252f2c; min-width: 0; padding: 10px 12px 10px 0; }
-.deploy-target > div:nth-child(even) { border-left: 1px solid #252f2c; padding-left: 14px; }
-.deploy-target dt { color: #68736f; font-size: 8px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; }
-.deploy-target dd { color: #c9d1ce; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 9px; margin: 5px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.deploy-target { display: grid; grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr); margin: 20px 0 0; }
+.deploy-target > div { border-bottom: 1px solid #252f2c; min-width: 0; padding: 12px 14px 12px 0; }
+.deploy-target > div:nth-child(even) { border-left: 1px solid #252f2c; padding-left: 16px; }
+.deploy-target dt { color: #78847f; font-size: 9px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; }
+.deploy-target dd { color: #d2dad7; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 10.5px; line-height: 1.45; margin: 6px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.deploy-target__image { min-height: 68px; }
+.deploy-target__image dd { overflow-wrap: anywhere; text-overflow: clip; white-space: normal; }
 .deploy-config-error { background: rgba(255, 188, 87, 0.07); border: 1px solid rgba(255, 188, 87, 0.18); border-radius: 6px; color: #d7af72; font-size: 10px; line-height: 1.6; margin: 18px 0 0; padding: 11px; }
 
-.deploy-primary-action { margin-top: 18px; }
+.deploy-primary-action { margin-top: 22px; }
 .deploy-primary-action > button {
   align-items: center;
   background: var(--lime);
@@ -1159,31 +1165,31 @@ button {
   color: #10150c;
   cursor: pointer;
   display: flex;
-  gap: 12px;
+  gap: 14px;
   justify-content: center;
-  min-height: 58px;
-  padding: 10px 18px;
+  min-height: 70px;
+  padding: 13px 20px;
   width: 100%;
 }
-.deploy-primary-action > button > span:first-child { font-size: 24px; font-weight: 500; }
+.deploy-primary-action > button > span:first-child { font-size: 28px; font-weight: 500; }
 .deploy-primary-action > button strong,
 .deploy-primary-action > button small { display: block; text-align: left; }
-.deploy-primary-action > button strong { font-size: 12px; }
-.deploy-primary-action > button small { font-size: 8px; margin-top: 3px; opacity: 0.68; }
+.deploy-primary-action > button strong { font-size: 14px; }
+.deploy-primary-action > button small { font-size: 9.5px; margin-top: 4px; opacity: 0.72; }
 .deploy-primary-action > button:disabled { cursor: not-allowed; filter: saturate(0.3); opacity: 0.38; }
-.deploy-primary-action > p { color: #707c78; font-size: 9px; margin: 7px 0 0; text-align: center; }
+.deploy-primary-action > p { color: #7c8984; font-size: 10px; margin: 9px 0 0; text-align: center; }
 
-.deploy-secondary-actions { display: grid; gap: 8px; grid-template-columns: 1fr 0.55fr; margin-top: 12px; }
-.deploy-secondary-actions button { background: #151c1a; border: 1px solid #384540; border-radius: 6px; color: #b0bbb7; cursor: pointer; font-size: 9px; font-weight: 750; min-height: 34px; padding: 8px 10px; }
+.deploy-secondary-actions { display: grid; gap: 9px; grid-template-columns: 1fr 0.55fr; margin-top: 14px; }
+.deploy-secondary-actions button { background: #151c1a; border: 1px solid #384540; border-radius: 6px; color: #b0bbb7; cursor: pointer; font-size: 10.5px; font-weight: 750; min-height: 40px; padding: 9px 12px; }
 .deploy-secondary-actions .deploy-rollback { border-color: rgba(255, 188, 87, 0.3); color: #e1b66d; }
 .deploy-secondary-actions button:disabled { cursor: not-allowed; opacity: 0.32; }
 .deploy-action-error { background: rgba(255, 107, 107, 0.08); border: 1px solid rgba(255, 107, 107, 0.2); border-radius: 5px; color: #e69696; font-size: 9px; line-height: 1.5; margin: 12px 0 0; padding: 9px; }
 
-.deploy-checks { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; }
-.deploy-check { align-items: center; background: rgba(255, 107, 107, 0.035); border: 1px solid rgba(255, 107, 107, 0.15); border-radius: 6px; display: grid; gap: 8px; grid-template-columns: 20px 1fr auto; padding: 8px 10px; }
-.deploy-check > span { align-items: center; background: rgba(255, 107, 107, 0.12); border-radius: 50%; color: var(--red); display: flex; font-size: 10px; height: 18px; justify-content: center; width: 18px; }
-.deploy-check strong { font-size: 9px; }
-.deploy-check small { color: #a37272; font-size: 8px; }
+.deploy-checks { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+.deploy-check { align-items: center; background: rgba(255, 107, 107, 0.035); border: 1px solid rgba(255, 107, 107, 0.15); border-radius: 6px; display: grid; gap: 10px; grid-template-columns: 22px 1fr auto; padding: 10px 12px; }
+.deploy-check > span { align-items: center; background: rgba(255, 107, 107, 0.12); border-radius: 50%; color: var(--red); display: flex; font-size: 11px; height: 21px; justify-content: center; width: 21px; }
+.deploy-check strong { font-size: 10.5px; }
+.deploy-check small { color: #a37272; font-size: 9px; }
 .deploy-check--ok { background: rgba(184, 243, 74, 0.025); border-color: rgba(184, 243, 74, 0.12); }
 .deploy-check--ok > span { background: rgba(184, 243, 74, 0.11); color: var(--lime); }
 .deploy-check--ok small { color: #80995a; }

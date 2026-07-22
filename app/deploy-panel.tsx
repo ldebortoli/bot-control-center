@@ -149,7 +149,7 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
                 <div><dt>Proyecto</dt><dd>{info.target.projectId}</dd></div>
                 <div><dt>Zona</dt><dd>{info.target.zone}</dd></div>
                 <div><dt>Registro</dt><dd>{info.target.location}/{info.target.repository}</dd></div>
-                <div><dt>Última imagen</dt><dd title={info.latestImage ?? undefined}>{info.latestImage ?? "Todavía no publicada"}</dd></div>
+                <div className="deploy-target__image"><dt>Última imagen</dt><dd title={info.latestImage ?? undefined}>{info.latestImage ?? "Todavía no publicada"}</dd></div>
               </dl>
             ) : <p className="deploy-config-error">{info.configError}</p>}
 
