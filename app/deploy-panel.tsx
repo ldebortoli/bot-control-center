@@ -156,7 +156,7 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
           <section className="panel deploy-actions-panel">
             <div className="panel__header">
               <div><span className="eyebrow">DESTINO</span><h2>{info.target?.instance ?? "Sin configurar"}</h2></div>
-              <span className={info.configured ? "contract-badge" : "demo-badge"}>{info.configured ? "GCE + IAP" : "PENDIENTE"}</span>
+              <span className={info.configured ? "contract-badge" : "pending-badge"}>{info.configured ? "GCE + IAP" : "PENDIENTE"}</span>
             </div>
 
             {info.target ? (

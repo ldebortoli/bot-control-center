@@ -2,7 +2,7 @@
 
 ## Descripción general
 
-Dashboard local y extensible para observar una flota de bots remotos desde una interfaz común. Galerazo usa datos reales para estado operativo, logs y triggers, y dispone además de deploy, moderación y administración segura de credenciales en Google Cloud mediante IAP/SSH, sin publicar bases ni puertos administrativos. Los demás bots continúan en modo demo hasta incorporar su propio adaptador.
+Dashboard local y extensible para observar una flota de bots remotos desde una interfaz común. Galerazo usa datos reales para estado operativo, logs y triggers, y dispone además de deploy, moderación y administración segura de credenciales en Google Cloud mediante IAP/SSH, sin publicar bases ni puertos administrativos. Los bots sin adaptador se muestran desconectados y nunca reciben datos operativos de ejemplo.
 
 ## Estado estable
 
@@ -12,21 +12,21 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 - Idioma de la interfaz y documentación: español.
 - Hosting: no desplegado; `.openai/hosting.json` mantiene D1 y R2 desactivados.
 - Datos de observación: reales para Galerazo mediante un `botctl` efímero por IAP; un error de conexión queda explícito y nunca se reemplaza por fixtures. `config/runtime.local.json` existe localmente, está ignorado y apunta a `bot-fleet-production/us-central1-a/galerazo-prod`; no contiene secretos.
-- Flota inicial: Galerazo Bot y Spider Tracker; Reshare Stories permanece en el catálogo local, inactivo por defecto.
+- Flota inicial: Galerazo Bot y Spider Tracker; Reshare Stories permanece en el catálogo local, inactivo por defecto. Spider, Reshare y registros personalizados no tienen adaptador real configurado y se presentan como `Sin conexión`.
 
 ## Arquitectura
 
 - `app/`: interfaz de selector de bots, resumen, logs, triggers, SQL, credenciales y deploy.
 - `agent/`: API privilegiada local en `127.0.0.1:43121`, validación, pre-flight y acciones fijas de estado, triggers, multimedia, moderación, detención, credenciales, release, deploy y rollback.
-- `lib/control-center/`: tipos, registro demo, política SQL y contrato de transporte.
+- `lib/control-center/`: tipos, registro de identidad sin datos operativos, política SQL y contrato de transporte.
 - `config/bots.example.json`: ejemplo declarativo sin secretos; `bots.local.json` está ignorado.
 - `config/runtime.example.json`: ejemplo del destino operativo; `runtime.local.json` está ignorado y no contiene credenciales.
 - `docs/ARCHITECTURE.md`: diseño de `botctl`, IAP/SSH y guardrails SQLite.
 - `build/` y `worker/`: integración requerida por Sites/vinext.
 - `public/og-bot-control-center.png`: imagen social generada para el proyecto.
 - `launcher/`, `bin/` y `scripts/*windows-launcher*`: app nativa de Windows que supervisa vinext y el agente, abre la UI en una ventana aislada y sigue la ventana real aunque Edge derive el arranque a otro proceso.
-- El administrador de flota activa, quita y registra bots locales; conserva la selección y los registros personalizados en `localStorage`, sin credenciales.
-- Los bots que declaran `triggers` muestran un inspector genérico con autor, chat, texto y reproducción/descarga de imágenes, GIF, stickers WebP/WebM/TGS, audio, video y archivos. Galerazo consulta SQLite/Telegram reales y ejecuta moderación confirmada con aviso al chat; los bots sin adaptador conservan la simulación local.
+- El administrador de flota activa, quita y registra bots locales; conserva la selección y los registros personalizados en `localStorage`, sin credenciales ni métricas/logs/triggers. Los registros de versiones anteriores se sanean al hidratarse.
+- Los bots que declaran y tienen configurado `triggers` muestran un inspector genérico con autor, chat, texto y reproducción/descarga de imágenes, GIF, stickers WebP/WebM/TGS, audio, video y archivos. Galerazo consulta SQLite/Telegram reales y ejecuta moderación confirmada con aviso al chat. Sin capacidad se muestra `No hay triggers disponibles`; si falla el adaptador se informa el error de conexión.
 - Galerazo expone en Resumen, Logs y Deploy un panel real de VM/contenedor, health, reinicios, imagen, CPU/RAM/disco/SQLite, Telegram, logs/errores y alertas. Una detención confirmada usa `docker compose stop bot` para cortar bucles sin borrar datos.
 - Galerazo declara `credentials`: la UI muestra sólo presencia/ausencia, recibe reemplazos enmascarados, conserva campos vacíos y permite borrar únicamente opcionales. El agente usa un parche temporal privado por IAP y nunca guarda ni devuelve los valores.
 

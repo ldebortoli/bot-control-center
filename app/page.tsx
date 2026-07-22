@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ControlCenter } from "./control-center";
-import { demoBots } from "@/lib/control-center/demo-registry";
+import { registeredBots } from "@/lib/control-center/bot-registry";
 
 export const metadata: Metadata = {
   title: "Bot Control Center · Panel local",
@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <ControlCenter bots={demoBots} />;
+  return <ControlCenter bots={registeredBots} />;
 }

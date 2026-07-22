@@ -19,7 +19,7 @@ Dashboard local
 2. **Transporte**: abre una sesión efímera autenticada y ejecuta un comando permitido. No conoce la interfaz.
 3. **`botctl` remoto**: traduce cada bot a un contrato JSON estable (`health`, `logs`, `query`, `triggers list`, `triggers media` y `triggers moderate`).
 4. **Capacidades**: `status`, `logs`, `sql`, `triggers` y `deploy` son genéricas; cada bot declara únicamente las que implementa.
-5. **UI**: solo muestra capacidades declaradas y no asume que todos los bots son iguales.
+5. **UI**: solo muestra datos devueltos por un adaptador real. Un bot sin adaptador queda desconectado; una capacidad ausente se presenta como no disponible y nunca se completa con fixtures.
 
 ## Flujo previsto para Google Compute Engine
 
@@ -73,6 +73,8 @@ La comprobación de la pantalla es solo la primera barrera. La implementación r
 ## Aislamiento
 
 Cada bot conserva su propio usuario de sistema, proceso, token, base y directorio de logs. El dashboard recibe solo el acceso mínimo por capacidad. La caída de un bot o adaptador no debe impedir consultar los demás.
+
+El registro estático contiene únicamente identidad, transporte previsto y capacidades realmente conectadas. Métricas, versiones, commits, logs, resultados SQL y triggers nunca se cargan desde el catálogo ni desde `localStorage`. Los registros personalizados de versiones anteriores se sanean al hidratarse para que queden desconectados y con sus colecciones operativas vacías.
 
 ## Contrato de triggers y moderación
 

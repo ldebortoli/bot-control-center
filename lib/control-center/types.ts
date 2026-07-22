@@ -1,21 +1,5 @@
 export type BotStatus = "online" | "degraded" | "offline";
-export type LogLevel = "info" | "warning" | "error";
 export type Capability = "status" | "logs" | "sql" | "triggers" | "credentials" | "deploy";
-
-export interface BotMetric {
-  label: string;
-  value: string;
-  detail: string;
-  tone?: "default" | "good" | "warning";
-}
-
-export interface LogEntry {
-  id: string;
-  timestamp: string;
-  level: LogLevel;
-  source: string;
-  message: string;
-}
 
 export interface TriggerDefinition {
   id: string;
@@ -41,7 +25,7 @@ export interface TriggerDefinition {
     kind: "video" | "audio" | "image" | "sticker" | "file";
     filename: string;
     mimeType: string;
-    source: "remote" | "generated-demo";
+    source: "remote";
     url?: string;
   };
 }
@@ -80,8 +64,4 @@ export interface BotDefinition {
   commit: string;
   updatedAt: string;
   capabilities: Capability[];
-  metrics: BotMetric[];
-  logs: LogEntry[];
-  triggers: TriggerDefinition[];
-  queryRows: Record<string, string | number>[];
 }

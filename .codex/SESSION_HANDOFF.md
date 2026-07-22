@@ -6,6 +6,8 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 
 ## Estado actual
 
+- Toda la flota aplica datos reales o estado explícito: Resumen y Logs consultan el endpoint remoto para cualquier bot; sin configuración/conexión muestran el error y no renderizan métricas ni logs estáticos. Triggers muestra la lectura real, `No hay triggers disponibles` o el error de conexión. SQL sin contrato real queda no disponible.
+- Spider Tracker, Reshare Stories y bots personalizados están desconectados hasta incorporar un adaptador. El catálogo ya no contiene métricas, versiones, commits, logs, SQL ni triggers ficticios; el visor tampoco genera multimedia local. Los registros antiguos guardados en `localStorage` se sanean automáticamente.
 - Galerazo ya no usa fixtures operativos: Resumen, Logs, Triggers y Deploy consultan por IAP el estado real de VM/contenedor, health, reinicios, imagen, recursos, Telegram, logs/errores y los triggers reales de SQLite. Si la conexión falla, la UI muestra un error explícito y no sustituye datos inventados.
 - La inspección real del 2026-07-22 confirmó VM `running`, contenedor `running/healthy`, un reinicio total, cero reinicios en 15 minutos, Telegram conectado y seis triggers reales: cuatro con multimedia y dos de texto. No se ejecutaron acciones mutables en producción.
 - El panel operativo alerta health degradado, reinicios recientes/bucle, Telegram desconectado y disco alto; permite actualizar y detener únicamente el servicio `bot` con confirmación. La detención usa `docker compose stop`, conserva base, imagen, secretos y configuración y deja reintentar un deploy.
@@ -16,19 +18,19 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 - Launcher corregido e instalado: detecta la ventana real de Bot Control Center entre los procesos de Edge/Chrome aunque el proceso inicial termine por handoff.
 - Vista Deploy funcional para Galerazo con pre-flight, confirmación, release completo, deploy de última imagen, rollback, progreso y logs saneados.
 - Vista Credenciales funcional para Galerazo: indicadores presente/ausente, entradas enmascaradas, parches parciales, borrado sólo de opcionales, confirmación y auditoría; nunca lee valores remotos.
-- Agente local funcional en `127.0.0.1:43121`; ejecuta exclusivamente scripts versionados de credenciales, publicación, deploy y rollback con argumentos validados y `shell: false`.
+- Agente local funcional en `127.0.0.1:43121`; ejecuta exclusivamente scripts versionados de estado, triggers, multimedia, moderación, detención, credenciales, publicación, deploy y rollback con argumentos validados y `shell: false`.
 - `config/runtime.local.json` está ignorado, no contiene secretos y apunta a `bot-fleet-production`, `us-central1-a`, `galerazo-prod` y el repositorio local Galerazo.
-- Visualizador genérico de triggers funcional: muestra autor, chat, fecha y respuesta; admite texto, imágenes PNG/JPEG/WebP/GIF, stickers WebP/PNG/WebM/TGS, audio, video y archivos, con reproducción y descarga dentro de la aplicación. En Galerazo, lista y medios son remotos y reales; los demás bots demo conservan fixtures locales.
-- Los TGS se descomprimen en memoria y se reproducen con `lottie-web` light; la demostración genera ejemplos locales sin depender de archivos externos.
-- Moderación remota funcional para Galerazo con confirmación para eliminar, bloquear o combinar ambas acciones; vuelve a resolver trigger, chat y usuario en SQLite, registra el bloqueo global del bot y envía una advertencia al chat. Los bots demo conservan la simulación local.
+- Visualizador genérico de triggers funcional: muestra autor, chat, fecha y respuesta; admite texto, imágenes PNG/JPEG/WebP/GIF, stickers WebP/PNG/WebM/TGS, audio, video y archivos, con reproducción y descarga dentro de la aplicación. Todo el contenido proviene del adaptador remoto; no existe generación multimedia local.
+- Los TGS remotos se descomprimen en memoria y se reproducen con `lottie-web` light; no se generan ejemplos multimedia locales.
+- Moderación remota funcional para Galerazo con confirmación para eliminar, bloquear o combinar ambas acciones; vuelve a resolver trigger, chat y usuario en SQLite, registra el bloqueo global del bot y envía una advertencia al chat. Sin adaptador no se ofrecen acciones simuladas.
 - Administrador de flota funcional: activa, quita y registra bots locales; persiste la selección sin guardar credenciales.
 - Flota inicial con Galerazo Bot y Spider Tracker; Reshare Stories está disponible para agregar, pero inactivo por defecto.
 - El launcher muestra progreso mientras inicia vinext y el agente; espera un job operativo activo antes de apagar y mata el árbol completo al terminar.
 - Dos aperturas consecutivas del launcher corregido mostraron la ventana en 9,56 s y 8,05 s; en ambas, cerrar la ventana terminó el launcher y liberó los puertos 3000 y 43121.
 - Acceso instalado en `C:\Users\calei\Documents\Codex\CODEX APPS\Bot Control Center.lnk`; abre una ventana de aplicación aislada y apaga automáticamente el árbol completo del servidor al cerrarse.
 - Launcher reproducible desde `scripts/install-codex-app.ps1`, con ejecutable en `bin/BotControlCenter.exe` y registros locales fuera del repositorio.
-- Catálogo demo con Galerazo, Spider Tracker y Reshare Stories, más registros locales personalizados.
-- Vistas funcionales: Resumen, Logs, Triggers, Credenciales y Deploy; SQL permanece demostrativo y no se anuncia como capacidad real de Galerazo.
+- Catálogo de identidad con Galerazo, Spider Tracker y Reshare Stories, más registros locales personalizados; sólo Galerazo tiene actualmente un adaptador real.
+- Vistas funcionales: Resumen, Logs, Triggers, Credenciales y Deploy; SQL permanece deshabilitado hasta disponer de un contrato real y no muestra resultados de ejemplo.
 - Galerazo usa un `botctl` versionado y temporal por IAP para estado, triggers, multimedia, moderación y detención. No abre puertos administrativos, no acepta comandos libres y nunca devuelve el token de Telegram.
 - `npm run lint`, `npm run build`, `npm run test:coverage` y `npm test` pasan en Windows; la suite completa tiene 34 pruebas y la cobertura del agente es 100% en líneas, ramas y funciones.
 - La dependencia de producción mantiene dos avisos moderados transitivos de PostCSS dentro de Next; no hay fix estable compatible y no se forzó downgrade.
@@ -36,7 +38,7 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 
 ## Próximo paso exacto
 
-Abrir Bot Control Center desde CODEX APPS y usar `Actualizar estado` o `Verificar` cuando se quiera una lectura nueva. No queda una acción de implementación pendiente para este pedido.
+Abrir Bot Control Center desde CODEX APPS. Galerazo debe cargar datos reales; Spider Tracker, Reshare Stories y bots personalizados deben mostrar `Sin conexión` o `No hay triggers disponibles` hasta configurar sus adaptadores.
 
 ## Riesgos y guardrails
 

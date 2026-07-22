@@ -23,7 +23,7 @@ async function render() {
   );
 }
 
-test("renderiza el dashboard local con la flota demo", async () => {
+test("renderiza el dashboard local sin datos operativos inventados", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -36,7 +36,7 @@ test("renderiza el dashboard local con la flota demo", async () => {
   assert.match(html, /Reshare Stories/);
   assert.match(html, /Modo local/);
   assert.match(html, /Administrar flota/);
-  assert.match(html, /Operación de Galerazo/);
+  assert.match(html, /Operación de[\s\S]*Galerazo Bot/);
   assert.match(html, />Deploy</);
   assert.doesNotMatch(html, /Your site is taking shape|react-loading-skeleton|codex-preview/i);
 });
@@ -55,27 +55,26 @@ test("mantiene la flota editable y Reshare inactivo por defecto", async () => {
 });
 
 test("incluye visor multimedia y moderación auditada para triggers reales", async () => {
-  const [controlCenter, remoteTriggers, mediaViewer, types, demoRegistry, transport, architecture] = await Promise.all([
+  const [controlCenter, remoteTriggers, mediaViewer, types, botRegistry, transport, architecture] = await Promise.all([
     readFile(new URL("../app/control-center.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/remote-triggers-panel.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/trigger-media-viewer.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/control-center/types.ts", import.meta.url), "utf8"),
-    readFile(new URL("../lib/control-center/demo-registry.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/control-center/bot-registry.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/control-center/transport-contract.ts", import.meta.url), "utf8"),
     readFile(new URL("../docs/ARCHITECTURE.md", import.meta.url), "utf8"),
   ]);
 
-  assert.match(controlCenter, /Visualizador de triggers/);
-  assert.match(controlCenter, /Agregado por/);
-  assert.match(controlCenter, /Eliminar trigger/);
-  assert.match(controlCenter, /Bloquear usuario/);
-  assert.match(controlCenter, /Eliminar y bloquear/);
-  assert.match(controlCenter, /Avisos enviados a chats/);
-  assert.match(controlCenter, /moderationStorageKey/);
   assert.match(controlCenter, /RemoteTriggersPanel/);
+  assert.match(controlCenter, /No hay triggers disponibles/);
+  assert.match(controlCenter, /withoutInventedData/);
+  assert.match(controlCenter, /No se muestran datos de ejemplo/);
   assert.match(remoteTriggers, /Error de conexión\. No pude cargar los triggers/);
   assert.match(remoteTriggers, /DATOS REALES · GCP IAP/);
   assert.match(remoteTriggers, /moderate-trigger/);
+  assert.match(remoteTriggers, /Eliminar trigger/);
+  assert.match(remoteTriggers, /Bloquear usuario/);
+  assert.match(remoteTriggers, /Eliminar y bloquear/);
   assert.match(remoteTriggers, /No se muestran fixtures/);
   assert.match(mediaViewer, /<video/);
   assert.match(mediaViewer, /<audio/);
@@ -86,9 +85,12 @@ test("incluye visor multimedia y moderación auditada para triggers reales", asy
   assert.match(types, /createdBy/);
   assert.match(types, /chat:/);
   assert.match(types, /"image" \| "sticker"/);
-  assert.match(mediaViewer, /video\/webm/);
   assert.match(mediaViewer, /application\/x-tgsticker/);
-  assert.doesNotMatch(demoRegistry, /generated-demo|Próximo partido|Mateo Sosa/);
+  assert.doesNotMatch(types, /generated-demo/);
+  assert.doesNotMatch(mediaViewer, /createDemo|generated-demo|Vista previa local generada/);
+  assert.doesNotMatch(botRegistry, /producción · demo|staging · demo|f091b8e|c72e113|3d 18h|694 MB/);
+  assert.match(botRegistry, /name: "Spider Tracker"[\s\S]*statusLabel: "Sin conexión"[\s\S]*capabilities: \[\]/);
+  assert.doesNotMatch(botRegistry, /metrics:|logs:|triggers:|queryRows:/);
   assert.match(transport, /moderateTrigger/);
   assert.match(transport, /TriggerModerationResult/);
   assert.match(architecture, /announcementSent/);

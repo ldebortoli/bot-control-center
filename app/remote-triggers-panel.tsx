@@ -123,19 +123,19 @@ export function RemoteTriggersPanel({ bot }: { bot: BotDefinition }) {
 
         {error ? (
           <div className="trigger-empty trigger-empty--error" role="alert">
-            <span aria-hidden="true">!</span><h3>{error}</h3><p>El bot o la VM pueden estar detenidos, o IAP puede no estar disponible.</p>
+            <span aria-hidden="true">!</span><h3>{error}</h3><p>El bot, su infraestructura o el adaptador remoto pueden no estar disponibles.</p>
             <button className="remote-refresh-button" onClick={() => void refresh()} type="button">Reintentar</button>
           </div>
         ) : null}
 
         {!loading && !error && !selected ? (
-          <div className="trigger-empty"><span aria-hidden="true">✓</span><h3>No hay triggers configurados</h3><p>La consulta real a SQLite terminó correctamente y devolvió cero resultados.</p></div>
+            <div className="trigger-empty"><span aria-hidden="true">✓</span><h3>No hay triggers configurados</h3><p>La consulta al origen real terminó correctamente y devolvió cero resultados.</p></div>
         ) : null}
 
         {!error && selected ? (
           <div className="trigger-browser">
             <div className="trigger-list" aria-label="Triggers reales disponibles">
-              <div className="trigger-list__head"><span>{triggers.length} reales</span><small>{observedAt ? `Actualizado ${formatDate(observedAt)}` : "VM Galerazo"}</small></div>
+              <div className="trigger-list__head"><span>{triggers.length} reales</span><small>{observedAt ? `Actualizado ${formatDate(observedAt)}` : "Adaptador remoto"}</small></div>
               {triggers.map((trigger) => (
                 <button
                   className={`trigger-list__item ${trigger.id === selected.id ? "trigger-list__item--active" : ""}`}
@@ -163,8 +163,8 @@ export function RemoteTriggersPanel({ bot }: { bot: BotDefinition }) {
               <dl className="trigger-metadata">
                 <div><dt>Agregado por</dt><dd><strong>{selected.createdBy.displayName}</strong><span>{selected.createdBy.username ? `@${selected.createdBy.username}` : selected.createdBy.id}</span></dd></div>
                 <div><dt>Chat</dt><dd><strong>{selected.chat.title}</strong><span>ID {selected.chat.id}</span></dd></div>
-                <div><dt>Creado</dt><dd><strong>{formatDate(selected.createdAt)}</strong><span>SQLite remoto</span></dd></div>
-                <div><dt>Datos de uso</dt><dd><strong>No registrados</strong><span>Galerazo no persiste hits por trigger</span></dd></div>
+                <div><dt>Creado</dt><dd><strong>{formatDate(selected.createdAt)}</strong><span>Persistencia remota</span></dd></div>
+                <div><dt>Datos de uso</dt><dd><strong>No registrados</strong><span>El origen no informó hits por trigger</span></dd></div>
               </dl>
 
               {selected.createdBy.blocked ? <p className="blocked-notice"><span>!</span> Este usuario ya está bloqueado en Galerazo.</p> : null}
@@ -180,7 +180,7 @@ export function RemoteTriggersPanel({ bot }: { bot: BotDefinition }) {
           </div>
         ) : null}
 
-        <p className="guardrail"><span>i</span> No se muestran fixtures: toda la lista proviene de la base remota. Los archivos se descargan desde Telegram bajo demanda sin exponer el token.</p>
+        <p className="guardrail"><span>i</span> No se muestran fixtures: toda la lista proviene del adaptador remoto. Los archivos se descargan bajo demanda sin exponer credenciales.</p>
       </div>
     </section>
   );

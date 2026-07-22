@@ -127,3 +127,10 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-07-22.
 - Decisión: el agente copia por IAP un `botctl.py` versionado y de vida corta, ejecuta únicamente acciones enumeradas y elimina el temporal. Las lecturas devuelven estado de VM/contenedor, health, reinicios, imagen, recursos, Telegram, logs y triggers reales; un fallo se presenta como error y nunca se completa con datos inventados. La detención confirmada usa `docker compose stop bot`, sin `down` ni borrado, y la moderación vuelve a validar los identificadores contra SQLite antes de modificar datos y avisar al chat.
 - Motivo: obtener visibilidad y cortar bucles de reinicio sin exponer puertos administrativos, tokens, una shell libre ni una operación destructiva sobre producción.
+
+## D-019 - Prohibición de fixtures operativos en toda la flota
+
+- Estado: vigente; reemplaza D-002 y D-011 únicamente en lo relativo a datos y moderación demo, y amplía D-008.
+- Fecha: 2026-07-22.
+- Decisión: métricas, versiones, commits, logs, SQL, triggers y multimedia sólo pueden provenir de un adaptador real. Un bot sin destino/adaptador queda `Sin conexión`; una capacidad de triggers ausente muestra `No hay triggers disponibles`; un fallo remoto se muestra como error. El registro conserva sólo identidad y capacidades efectivamente conectadas. Los bots personalizados se crean vacíos y los registros antiguos de `localStorage` se reconstruyen sin colecciones operativas.
+- Motivo: impedir que un dato ilustrativo pueda confundirse con el estado real de un bot o de producción.

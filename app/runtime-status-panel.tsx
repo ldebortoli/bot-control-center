@@ -73,7 +73,7 @@ export function RuntimeStatusPanel({ bot }: { bot: BotDefinition }) {
       setError("");
     } catch (runtimeError) {
       setRuntime(null);
-      setError(runtimeError instanceof Error ? runtimeError.message : "No se pudo consultar la VM.");
+      setError(runtimeError instanceof Error ? runtimeError.message : "No se pudo consultar el bot remoto.");
     } finally {
       setLoading(false);
     }
@@ -106,7 +106,7 @@ export function RuntimeStatusPanel({ bot }: { bot: BotDefinition }) {
   }, [job, refresh]);
 
   async function stopContainer() {
-    if (!window.confirm("¿Confirmás detener el contenedor de Galerazo? Esto corta el bucle de reinicios y conserva la base, la imagen y la configuración.")) return;
+    if (!window.confirm(`¿Confirmás detener el contenedor de ${bot.name}? Esto corta el bucle de reinicios y conserva la base, la imagen y la configuración.`)) return;
     setMessage("");
     try {
       const response = await fetch(`${agentBaseUrl}/api/bots/${encodeURIComponent(bot.id)}/stop`, {
@@ -125,14 +125,14 @@ export function RuntimeStatusPanel({ bot }: { bot: BotDefinition }) {
   return (
     <section className="panel runtime-panel" aria-live="polite">
       <div className="panel__header panel__header--wrap">
-        <div><span className="eyebrow">ESTADO REAL · VM Y DOCKER</span><h2>Operación de Galerazo</h2></div>
+        <div><span className="eyebrow">ESTADO REAL · CONEXIÓN REMOTA</span><h2>Operación de {bot.name}</h2></div>
         <div className="runtime-actions">
           {runtime?.container.exists ? <button className="runtime-stop" disabled={stopping} onClick={() => void stopContainer()} type="button">{stopping ? "Deteniendo…" : "Detener contenedor"}</button> : null}
           <button className="remote-refresh-button" disabled={loading || stopping} onClick={() => void refresh()} type="button">{loading ? "Actualizando…" : "Actualizar estado"}</button>
         </div>
       </div>
 
-      {error ? <div className="runtime-alert runtime-alert--error" role="alert"><strong>Sin conexión con la VM</strong><span>{error}</span></div> : null}
+      {error ? <div className="runtime-alert runtime-alert--error" role="alert"><strong>Sin conexión con el bot</strong><span>{error}</span><small>No se muestran métricas, logs ni estados de ejemplo.</small></div> : null}
       {message ? <p className="moderation-feedback" role="status">{message}</p> : null}
 
       {runtime ? (

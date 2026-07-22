@@ -1,14 +1,14 @@
 # Bot Control Center
 
-Dashboard local para observar varios bots remotos desde una sola interfaz. Galerazo integra estado operativo, logs, triggers, multimedia, moderación, deploy y configuración segura de credenciales mediante Google Cloud IAP/SSH. Los bots sin adaptador siguen identificados como demostrativos.
+Dashboard local para observar varios bots remotos desde una sola interfaz. Galerazo integra estado operativo, logs, triggers, multimedia, moderación, deploy y configuración segura de credenciales mediante Google Cloud IAP/SSH. Ningún bot muestra fixtures: si falta un adaptador o la conexión falla, la interfaz lo informa explícitamente.
 
 ## Qué incluye
 
 - selector de bots y estado general de la flota;
 - estado real de VM/contenedor, healthcheck, reinicios, imagen, Telegram, CPU, RAM, disco y SQLite;
-- visor de logs con búsqueda y filtro por nivel;
+- últimos logs y errores obtenidos desde el adaptador remoto;
 - visualizador genérico de triggers con texto, imágenes, GIF, stickers, audio/video, autor, chat y auditoría de moderación;
-- consola SQLite con validación de consultas de solo lectura;
+- estado explícito cuando SQL, triggers u otra capacidad real no están configurados;
 - publicación y deploy controlado de Galerazo en Google Compute Engine, con logs y rollback;
 - registro declarativo y contrato de transporte extensible;
 - diseño responsive, sin guardar credenciales en el navegador ni en Git.
@@ -59,6 +59,8 @@ Los registros locales del launcher quedan en `%LOCALAPPDATA%\BotControlCenter\lo
 
 Para Galerazo, estado, logs, triggers, multimedia, moderación, deploy y credenciales son integraciones reales. SQL permanece deshabilitado hasta implementar su contrato de solo lectura. Un agente Node escucha exclusivamente en `127.0.0.1:43121`, valida el origen local y sólo puede ejecutar scripts versionados de Galerazo. No acepta comandos arbitrarios ni almacena tokens; reutiliza la sesión local de `gcloud`.
 
+Spider Tracker, Reshare Stories y cualquier bot agregado localmente se muestran como **Sin conexión** hasta registrar un destino y un adaptador real. Sus pantallas no incluyen métricas, versiones, logs, SQL ni triggers de ejemplo. Los registros personalizados guardados por versiones anteriores se normalizan automáticamente para eliminar datos operativos locales.
+
 ## Configurar el deploy de Galerazo
 
 Primero completá la preparación de Google Compute Engine indicada en `Galerazobot/docs/DEPLOY_GCE.md`, instalá Docker Desktop y Google Cloud CLI, y verificá manualmente el acceso por IAP. Después:
@@ -83,7 +85,7 @@ Las vistas **Resumen**, **Logs** y **Deploy** incluyen el estado remoto actualiz
 
 ## Visualizar y moderar triggers
 
-Cualquier bot que declare la capacidad `triggers` muestra una biblioteca con su contenido, archivo multimedia, usuario creador y chat de origen. El panel admite texto; imágenes PNG, JPEG, WebP y GIF; stickers estáticos WebP/PNG; stickers animados WebM y TGS; además de audio y video. Todo archivo se puede descargar, y los formatos animados se reproducen dentro de la aplicación.
+Cualquier bot que declare y tenga configurada la capacidad real `triggers` muestra una biblioteca con su contenido, archivo multimedia, usuario creador y chat de origen. El panel admite texto; imágenes PNG, JPEG, WebP y GIF; stickers estáticos WebP/PNG; stickers animados WebM y TGS; además de audio y video. Todo archivo se puede descargar, y los formatos animados se reproducen dentro de la aplicación. Si el bot no declara esa capacidad, la vista dice **No hay triggers disponibles**; si la declara pero falla la lectura, muestra el error de conexión.
 
 En Galerazo la lista se lee directamente de SQLite por IAP; si la VM o el bot no son accesibles se muestra un error de conexión y nunca se sustituyen los datos por fixtures. Los archivos se obtienen desde Telegram bajo demanda mediante el token que permanece en la VM.
 
@@ -119,7 +121,7 @@ app/                         interfaz y navegación
 agent/                       API local, validación y jobs de deploy
 config/bots.example.json     registro sin secretos
 config/runtime.example.json  destino GCP local sin credenciales
-lib/control-center/          tipos, datos demo y políticas
+lib/control-center/          tipos, registro sin fixtures y políticas
 docs/ARCHITECTURE.md         diseño de la integración remota
 scripts/run-local.mjs        ciclo de vida conjunto de UI y agente
 scripts/run-vinext.mjs       ejecución multiplataforma

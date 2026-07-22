@@ -10,6 +10,8 @@ No hay tareas en curso.
 
 # DONE
 
+- [2026-07-22] Eliminar todos los fixtures operativos del catálogo y del visor multimedia. Resumen y Logs consultan siempre el adaptador real; un destino ausente o inaccesible muestra `Sin conexión con el bot`. Triggers sólo consulta una capacidad realmente configurada y, en caso contrario, muestra `No hay triggers disponibles`; SQL tampoco presenta resultados de ejemplo. Spider Tracker, Reshare Stories y bots personalizados quedan desconectados con colecciones operativas inexistentes, y los registros antiguos de `localStorage` se sanean al cargarse. Validación: 34/34 pruebas, lint y build OK; agente con 100% de líneas, ramas y funciones.
+
 - [2026-07-22] Reemplazar los triggers y el estado demo de Galerazo por datos reales leídos por IAP: VM/contenedor, health, reinicios, imagen, logs/errores, Telegram, CPU/RAM/disco/SQLite y seis triggers reales con multimedia bajo demanda; agregar alertas, actualización manual, detención segura con `docker compose stop`, moderación remota y feedback visible de `Verificar`. Validación: 34/34 pruebas, lint y build OK; agente con 100% de líneas, ramas y funciones. La inspección real confirmó VM `running`, contenedor `running/healthy`, un reinicio total, cero reinicios recientes, Telegram conectado y seis triggers (cuatro con multimedia y dos de texto), sin ejecutar mutaciones de producción.
 
 - [2026-07-22] Elevar líneas, ramas y funciones del agente a 100% con casos reales de plataforma, entrada CLI, señales, HTTP, errores y logs parciales; fijar los tres umbrales en 100%. Validación: cobertura total, lint, build y 30 pruebas OK.
