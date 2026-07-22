@@ -11,6 +11,7 @@ No hay tareas en curso.
 
 # DONE
 
+- [2026-07-22] Elevar líneas, ramas y funciones del agente a 100% con casos reales de plataforma, entrada CLI, señales, HTTP, errores y logs parciales; fijar los tres umbrales en 100%. Validación: cobertura total, lint, build y 30 pruebas OK.
 - [2026-07-22] Incorporar cobertura V8 automática con umbrales, comandos rápido/completo y 11 pruebas nuevas para validaciones, credenciales, jobs, CORS y rutas del agente. Resultado: 99,41% líneas, 96,91% ramas, 96% funciones; lint, build y 28 pruebas OK.
 - [2026-07-22] Mejorar la legibilidad de Destino y Pre-flight en Deploy, dar más espacio a Última imagen y aumentar la jerarquía del botón principal. Validación: lint, build y 17 pruebas OK.
 - [2026-07-21] Corregir, recompilar e instalar el launcher para seguir la ventana real cuando Edge deriva el arranque; validar dos aperturas consecutivas y el apagado de UI/agente al cerrar.

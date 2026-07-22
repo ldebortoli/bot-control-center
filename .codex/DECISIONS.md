@@ -113,3 +113,10 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-07-22.
 - Decisión: usar la cobertura V8 incorporada en Node para instrumentar `agent/**/*.mjs`, con umbrales mínimos de 95% de líneas, 90% de ramas y 95% de funciones. Mantener `test:unit` como suite rápida y `npm test` como validación completa con build, render, agente y launcher.
 - Motivo: medir automáticamente la lógica operativa y sus guardrails sin incorporar otra dependencia, evitando que una regresión reduzca la cobertura crítica de forma silenciosa.
+
+## D-017 - Umbral total para la cobertura del agente
+
+- Estado: vigente; reemplaza los umbrales de D-016.
+- Fecha: 2026-07-22.
+- Decisión: exigir 100% de líneas, ramas y funciones en `agent/**/*.mjs`. Mantener casos explícitos para plataformas, entrada CLI, señales, cuerpos HTTP y errores, sin exclusiones de cobertura.
+- Motivo: la lógica privilegiada alcanzó cobertura total con pruebas de comportamiento reales y el umbral debe impedir cualquier regresión futura.

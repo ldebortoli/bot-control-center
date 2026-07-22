@@ -6,7 +6,8 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 
 ## Estado actual
 
-- Cobertura automática disponible con `npm run test:coverage`: instrumenta `agent/**/*.mjs`, exige como mínimo 95% de líneas, 90% de ramas y 95% de funciones, y actualmente alcanza 99,41% / 96,91% / 96%. `npm run test:unit` ejecuta la suite rápida sin build.
+- Cobertura automática disponible con `npm run test:coverage`: instrumenta `agent/**/*.mjs` y alcanza y exige 100% de líneas, ramas y funciones, sin exclusiones. `npm run test:unit` ejecuta la suite rápida sin build.
+- Al cierre de esta validación, la UI y el agente del usuario están activos en `127.0.0.1:3000` y `127.0.0.1:43121`; el agente informa `activeJobs: 0`. No fueron iniciados ni detenidos por esta tarea.
 - Legibilidad de Deploy mejorada: Destino y Pre-flight tienen tipografía y controles mayores, Última imagen dispone de más ancho y puede envolver la referencia completa, y la acción principal tiene mayor jerarquía visual.
 - Launcher corregido e instalado: detecta la ventana real de Bot Control Center entre los procesos de Edge/Chrome aunque el proceso inicial termine por handoff.
 - Vista Deploy funcional para Galerazo con pre-flight, confirmación, release completo, deploy de última imagen, rollback, progreso y logs saneados.
@@ -26,7 +27,7 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 - Vistas funcionales: Resumen, Logs, Triggers, SQL, Credenciales y Deploy.
 - Toggles, moderación, avisos al chat y resultados SQL son demostrativos. Deploy y credenciales son integraciones externas reales. El primer release `d8ae2ecc00f5` falló porque el runtime omitía `.python-version`; el contenedor quedó detenido sin afectar datos. La imagen corregida más reciente es `galerazobot:db278a097b62` y todavía no fue iniciada como servicio.
 - Integración preparada mediante `BotTransport`, registro JSON y documentación de `botctl`, incluidos triggers list/media y moderate con resultados parciales explícitos.
-- `npm run lint`, `npm run build`, `npm run test:coverage` y `npm test` pasan en Windows; la suite completa tiene 28 pruebas. La revisión visual confirmó la vista de credenciales y la regresión de triggers. La lectura real devolvió sólo booleanos y un no-op real por IAP terminó con éxito sin cambiar el estado útil. Antes del primer deploy se confirmó desde Galerazo que el bot local estaba apagado, sin PID, proceso Python ni contenedor local; debe reconfirmarse al momento de desplegar.
+- `npm run lint`, `npm run build`, `npm run test:coverage` y `npm test` pasan en Windows; la suite completa tiene 30 pruebas. La revisión visual confirmó la vista de credenciales y la regresión de triggers. La lectura real devolvió sólo booleanos y un no-op real por IAP terminó con éxito sin cambiar el estado útil. Antes del primer deploy se confirmó desde Galerazo que el bot local estaba apagado, sin PID, proceso Python ni contenedor local; debe reconfirmarse al momento de desplegar.
 - La dependencia de producción mantiene dos avisos moderados transitivos de PostCSS dentro de Next; no hay fix estable compatible y no se forzó downgrade.
 - Repositorio privado publicado en `https://github.com/ldebortoli/bot-control-center`; `origin` apunta a ese repositorio y `main` sigue `origin/main`.
 

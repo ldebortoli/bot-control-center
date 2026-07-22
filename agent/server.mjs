@@ -24,19 +24,24 @@ const execFileAsync = promisify(execFile);
 const defaultPort = 43121;
 const listenHost = "127.0.0.1";
 
-async function commandExists(name) {
+export async function commandExists(name, {
+  platform = process.platform,
+  environment = process.env,
+  runFile = execFileAsync,
+  pathExists = fileExists,
+} = {}) {
   try {
-    const finder = process.platform === "win32" ? "where.exe" : "which";
-    await execFileAsync(finder, [name], { windowsHide: true });
+    const finder = platform === "win32" ? "where.exe" : "which";
+    await runFile(finder, [name], { windowsHide: true });
     return true;
   } catch {
-    if (process.platform !== "win32") return false;
-    const fallback = name === "gcloud" && process.env.LOCALAPPDATA
-      ? path.join(process.env.LOCALAPPDATA, "Google", "Cloud SDK", "google-cloud-sdk", "bin", "gcloud.cmd")
-      : name === "docker" && process.env.ProgramFiles
-        ? path.join(process.env.ProgramFiles, "Docker", "Docker", "resources", "bin", "docker.exe")
+    if (platform !== "win32") return false;
+    const fallback = name === "gcloud" && environment.LOCALAPPDATA
+      ? path.join(environment.LOCALAPPDATA, "Google", "Cloud SDK", "google-cloud-sdk", "bin", "gcloud.cmd")
+      : name === "docker" && environment.ProgramFiles
+        ? path.join(environment.ProgramFiles, "Docker", "Docker", "resources", "bin", "docker.exe")
         : null;
-    return fallback ? fileExists(fallback) : false;
+    return fallback ? pathExists(fallback) : false;
   }
 }
 
@@ -356,7 +361,11 @@ export function createAgentServer({
   return server;
 }
 
-export async function startAgent({ port = Number(process.env.BOT_CONTROL_CENTER_AGENT_PORT || defaultPort) } = {}) {
+export function resolveAgentPort(value) {
+  return Number(value || defaultPort);
+}
+
+export async function startAgent({ port = resolveAgentPort(process.env.BOT_CONTROL_CENTER_AGENT_PORT) } = {}) {
   const server = createAgentServer();
   await new Promise((resolve, reject) => {
     server.once("error", reject);
@@ -369,10 +378,24 @@ export async function startAgent({ port = Number(process.env.BOT_CONTROL_CENTER_
   return server;
 }
 
-const isMain = process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
-if (isMain) {
-  startAgent().catch((error) => {
-    console.error(error instanceof Error ? error.message : String(error));
-    process.exit(1);
-  });
+export async function runAgentMain(start, reportError, exit) {
+  try {
+    await start();
+  } catch (error) {
+    reportError(error instanceof Error ? error.message : String(error));
+    exit(1);
+  }
 }
+
+export function startAgentIfMain(
+  entry = process.argv[1],
+  moduleUrl = import.meta.url,
+  run = runAgentMain,
+) {
+  if (entry && moduleUrl === pathToFileURL(path.resolve(entry)).href) {
+    return run(startAgent, console.error, process.exit);
+  }
+  return null;
+}
+
+void startAgentIfMain();

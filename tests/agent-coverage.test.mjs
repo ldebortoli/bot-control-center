@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { pathToFileURL } from "node:url";
 import {
   createCredentialUpdateStep,
   createDeployStep,
@@ -17,7 +18,16 @@ import {
 } from "../agent/core.mjs";
 import { DeploymentJobManager } from "../agent/job-manager.mjs";
 import { loadRuntimeConfig } from "../agent/runtime-config.mjs";
-import { createAgentServer, inspectBot, inspectCredentialStatus, startAgent } from "../agent/server.mjs";
+import {
+  commandExists,
+  createAgentServer,
+  inspectBot,
+  inspectCredentialStatus,
+  resolveAgentPort,
+  runAgentMain,
+  startAgent,
+  startAgentIfMain,
+} from "../agent/server.mjs";
 
 const allowedOrigin = "http://localhost:3000";
 
@@ -87,6 +97,23 @@ async function startTestServer(overrides = {}) {
   const address = server.address();
   return {
     base: `http://127.0.0.1:${address.port}`,
+    dispatch: async (request) => {
+      const handler = server.listeners("request")[0];
+      return new Promise((resolve, reject) => {
+        const result = { body: "", headers: null, status: null };
+        const response = {
+          writeHead(status, headers) {
+            result.status = status;
+            result.headers = headers;
+          },
+          end(body = "") {
+            result.body = String(body);
+            resolve(result);
+          },
+        };
+        Promise.resolve(handler(request, response)).catch(reject);
+      });
+    },
     close: async () => {
       await new Promise((resolve) => server.close(resolve));
       await rm(temporary, { recursive: true, force: true });
@@ -190,6 +217,36 @@ test("carga configuración válida y degrada de forma segura ante archivo ausent
   }
 });
 
+test("detecta herramientas en Windows y Unix con fallbacks controlados", async () => {
+  const calls = [];
+  const succeeds = async (command) => { calls.push(command); };
+  const fails = async () => { throw new Error("no encontrado"); };
+
+  assert.equal(await commandExists("git", { platform: "win32", runFile: succeeds }), true);
+  assert.equal(await commandExists("git", { platform: "linux", runFile: succeeds }), true);
+  assert.deepEqual(calls, ["where.exe", "which"]);
+  assert.equal(await commandExists("git", { platform: "linux", runFile: fails }), false);
+
+  let fallbackPath = "";
+  assert.equal(await commandExists("gcloud", {
+    platform: "win32",
+    environment: { LOCALAPPDATA: "C:/Local" },
+    runFile: fails,
+    pathExists: async (target) => { fallbackPath = target; return true; },
+  }), true);
+  assert.match(fallbackPath, /Google.*gcloud\.cmd$/);
+
+  assert.equal(await commandExists("docker", {
+    platform: "win32",
+    environment: { ProgramFiles: "C:/Programs" },
+    runFile: fails,
+    pathExists: async () => false,
+  }), false);
+  assert.equal(await commandExists("gcloud", { platform: "win32", environment: {}, runFile: fails }), false);
+  assert.equal(await commandExists("docker", { platform: "win32", environment: {}, runFile: fails }), false);
+  assert.equal(await commandExists("otra", { platform: "win32", environment: {}, runFile: fails }), false);
+});
+
 test("inspecciona scripts e imagen sin elevar permisos", async () => {
   const temporary = await mkdtemp(path.join(tmpdir(), "bot-control-inspect-"));
   try {
@@ -273,7 +330,7 @@ test("ejecuta deploy y rollback y conserva salida saneada", async () => {
     readTextFile: async () => "registry.example/project/image:latest\n",
     spawnProcess: (command, args, options) => {
       calls.push({ command, args, options });
-      return createChild({ stdout: "línea completa\nresto", stderr: "warning\n" });
+      return createChild({ stdout: "línea completa\n   \nresto", stderr: "warning\n" });
     },
   });
   const deploy = await waitForJob(manager.start(bot, "deploy"));
@@ -375,6 +432,8 @@ test("cubre rutas exitosas, preflight, CORS y consulta de jobs", async () => {
     const health = await fetch(`${harness.base}/api/health`);
     assert.equal(health.status, 200);
     assert.equal((await health.json()).activeJobs, 1);
+    const missingUrl = await harness.dispatch({ headers: { origin: allowedOrigin }, method: "GET", url: undefined });
+    assert.equal(missingUrl.status, 404);
 
     const missingOrigin = await fetch(`${harness.base}/api/health`, { method: "OPTIONS" });
     assert.equal(missingOrigin.status, 400);
@@ -416,11 +475,18 @@ test("cubre rutas exitosas, preflight, CORS y consulta de jobs", async () => {
 test("cubre rechazos de escritura y errores saneados de la API", async () => {
   let ready = true;
   let credentialFailure = false;
+  let plainJobFailure = false;
   const jobManager = {
     getActiveCount: () => 0,
     getActive: () => null,
     get: () => null,
-    start: () => ({ id: "job", status: "queued" }),
+    start: () => {
+      if (plainJobFailure) {
+        const failure = { toString: () => "fallo plano" };
+        throw failure;
+      }
+      return { id: "job", status: "queued" };
+    },
     stopChildren() {},
   };
   const botInspector = async () => ({
@@ -448,6 +514,7 @@ test("cubre rechazos de escritura y errores saneados de la API", async () => {
     assert.equal((await fetch(actionUrl, { method: "POST", headers: { Origin: allowedOrigin }, body: "{}" })).status, 415);
     assert.equal((await fetch(actionUrl, { method: "POST", headers: { Origin: allowedOrigin, "Content-Type": "application/json" }, body: "{}" })).status, 403);
     assert.equal((await fetch(actionUrl, { method: "POST", headers: actionHeaders, body: "{json roto" })).status, 400);
+    assert.equal((await fetch(actionUrl, { method: "POST", headers: actionHeaders })).status, 400);
     assert.equal((await fetch(actionUrl, { method: "POST", headers: actionHeaders, body: JSON.stringify({ confirmation: "otro" }) })).status, 400);
     assert.equal((await fetch(actionUrl, { method: "POST", headers: actionHeaders, body: JSON.stringify({ confirmation: "galerazo", tag: "tag inválido" }) })).status, 400);
     const hugeBody = `{"confirmation":"galerazo","padding":"${"x".repeat(33000)}"}`;
@@ -459,6 +526,8 @@ test("cubre rechazos de escritura y errores saneados de la API", async () => {
     assert.equal((await fetch(`${harness.base}/api/bots/desconocido/deploy`, { method: "POST", headers: actionHeaders, body: JSON.stringify({ confirmation: "desconocido" }) })).status, 409);
 
     assert.equal((await fetch(credentialUrl, { method: "POST", headers: { Origin: allowedOrigin }, body: "{}" })).status, 415);
+    assert.equal((await fetch(credentialUrl, { method: "POST", headers: { Origin: allowedOrigin, "X-Bot-Control-Action": "credentials" } })).status, 415);
+    assert.equal((await fetch(credentialUrl, { method: "POST", headers: { Origin: allowedOrigin, "Content-Type": "text/plain", "X-Bot-Control-Action": "credentials" }, body: "{}" })).status, 415);
     assert.equal((await fetch(credentialUrl, { method: "POST", headers: { "Content-Type": "application/json", "X-Bot-Control-Action": "credentials" }, body: "{}" })).status, 403);
     assert.equal((await fetch(credentialUrl, { method: "POST", headers: credentialHeaders, body: JSON.stringify({ confirmation: "otro", patch: {} }) })).status, 400);
     assert.equal((await fetch(credentialUrl, { method: "POST", headers: credentialHeaders, body: JSON.stringify({ confirmation: "galerazo", patch: {} }) })).status, 500);
@@ -475,24 +544,79 @@ test("cubre rechazos de escritura y errores saneados de la API", async () => {
     const failedText = await failedInspection.text();
     assert.equal(failedInspection.status, 502);
     assert.doesNotMatch(failedText, /valor-que-no-debe-salir/);
+
+    plainJobFailure = true;
+    const plainFailure = await fetch(credentialUrl, {
+      method: "POST",
+      headers: credentialHeaders,
+      body: JSON.stringify({ confirmation: "galerazo", patch: { updates: { OPENAI_API_KEY: "x" }, clear: [] } }),
+    });
+    assert.equal(plainFailure.status, 500);
+    assert.match(await plainFailure.text(), /fallo plano/);
   } finally {
     await harness.close();
   }
 });
 
-test("inicia y cierra el agente en un puerto efímero", async () => {
+test("ejecuta el entrypoint con éxito y reporta errores normalizados", async () => {
+  const reports = [];
+  const exits = [];
+  const report = (message) => { reports.push(message); };
+  const exit = (code) => { exits.push(code); };
+
+  await runAgentMain(async () => {}, report, exit);
+  await runAgentMain(async () => { throw new Error("fallo Error"); }, report, exit);
+  const plainFailure = { toString: () => "fallo plano" };
+  await runAgentMain(async () => { throw plainFailure; }, report, exit);
+  assert.deepEqual(reports, ["fallo Error", "fallo plano"]);
+  assert.deepEqual(exits, [1, 1]);
+
+  const serverPath = path.resolve("agent/server.mjs");
+  const serverUrl = pathToFileURL(serverPath).href;
+  let dependencies = null;
+  const started = startAgentIfMain(serverPath, serverUrl, async (...args) => {
+    dependencies = args;
+    return "iniciado";
+  });
+  assert.equal(await started, "iniciado");
+  assert.equal(dependencies[0], startAgent);
+  assert.equal(dependencies[1], console.error);
+  assert.equal(dependencies[2], process.exit);
+  assert.equal(startAgentIfMain(null, serverUrl, async () => {}), null);
+  assert.equal(startAgentIfMain(serverPath, "file:///otro-modulo.mjs", async () => {}), null);
+});
+
+test("resuelve el puerto, inicia el agente y procesa su señal de cierre", async () => {
   const previousSigint = new Set(process.listeners("SIGINT"));
   const previousSigterm = new Set(process.listeners("SIGTERM"));
   const originalLog = console.log;
+  const originalExit = process.exit;
+  const originalPort = process.env.BOT_CONTROL_CENTER_AGENT_PORT;
   let message = "";
   let server = null;
+  let exitCode = null;
+  let resolveExit;
+  const exited = new Promise((resolve) => { resolveExit = resolve; });
   console.log = (value) => { message = String(value); };
+  process.exit = (code) => { exitCode = code; resolveExit(); };
+  process.env.BOT_CONTROL_CENTER_AGENT_PORT = "0";
   try {
-    server = await startAgent({ port: 0 });
+    assert.equal(resolveAgentPort(undefined), 43121);
+    assert.equal(resolveAgentPort("0"), 0);
+    server = await startAgent();
     assert.equal(server.listening, true);
     assert.match(message, /Agente local listo/);
+    const shutdown = process.listeners("SIGINT").find((listener) => !previousSigint.has(listener));
+    assert.equal(typeof shutdown, "function");
+    shutdown();
+    await exited;
+    assert.equal(exitCode, 0);
+    assert.equal(server.listening, false);
   } finally {
     console.log = originalLog;
+    process.exit = originalExit;
+    if (originalPort === undefined) delete process.env.BOT_CONTROL_CENTER_AGENT_PORT;
+    else process.env.BOT_CONTROL_CENTER_AGENT_PORT = originalPort;
     if (server?.listening) await new Promise((resolve) => server.close(resolve));
     for (const listener of process.listeners("SIGINT")) {
       if (!previousSigint.has(listener)) process.removeListener("SIGINT", listener);

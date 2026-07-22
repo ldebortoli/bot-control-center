@@ -41,7 +41,7 @@ npm run test:coverage  # tests del agente y tabla de cobertura V8
 npm test               # build y suite completa
 ```
 
-`test:coverage` usa el motor incorporado en Node.js, muestra porcentajes por archivo y falla si el agente privilegiado baja de 95% de líneas, 90% de ramas o 95% de funciones. El alcance instrumentado es `agent/**/*.mjs`, donde viven la API local, la validación de configuración, los guardrails de credenciales y los jobs operativos. La interfaz, el launcher y el render continúan cubiertos por el build y las pruebas de integración de la suite completa.
+`test:coverage` usa el motor incorporado en Node.js, muestra porcentajes por archivo y falla si el agente privilegiado baja de 100% en líneas, ramas o funciones. El alcance instrumentado es `agent/**/*.mjs`, donde viven la API local, la validación de configuración, los guardrails de credenciales y los jobs operativos. La interfaz, el launcher y el render continúan cubiertos por el build y las pruebas de integración de la suite completa.
 
 ## Abrir como aplicación de Windows
 

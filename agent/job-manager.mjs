@@ -155,9 +155,12 @@ export class DeploymentJobManager {
       const consume = (level, chunk, flush = false) => {
         buffers[level] += chunk === null ? "" : String(chunk);
         const lines = buffers[level].split(/\r?\n/);
-        buffers[level] = flush ? "" : lines.pop() ?? "";
+        buffers[level] = lines.pop();
         for (const line of lines) this.#log(job, level, line);
-        if (flush && buffers[level]) this.#log(job, level, buffers[level]);
+        if (flush && buffers[level]) {
+          this.#log(job, level, buffers[level]);
+          buffers[level] = "";
+        }
         if (buffers[level].length > 8000) {
           this.#log(job, level, buffers[level]);
           buffers[level] = "";
