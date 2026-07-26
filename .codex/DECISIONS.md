@@ -141,3 +141,10 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-07-26.
 - Decisión: fijar Next y `eslint-config-next` en 16.2.12, React/RSC en 19.2.8 y actualizar las piezas compatibles del toolchain Vite/Cloudflare. Como Next 16.2.12 todavía declara PostCSS 8.4.31 y Sharp 0.34.x, usar overrides explícitos a PostCSS 8.5.23 y Sharp 0.35.3. Exigir `npm audit --omit=dev`, instalación limpia, lint, build, suite y cobertura antes de publicar. No forzar ESLint 10 ni reemplazar globalmente `brace-expansion` mientras los plugins de `eslint-config-next` no sean compatibles.
 - Motivo: eliminar las vulnerabilidades de la aplicación distribuida sin aceptar el downgrade erróneo de `npm audit fix --force`, romper el lint ni ocultar la deuda exclusivamente dev del preset upstream.
+
+## D-021 - Reinicio y recreación son operaciones diferentes
+
+- Estado: vigente.
+- Fecha: 2026-07-26.
+- Decisión: no presentar `docker compose restart bot` como mecanismo para aplicar credenciales. Galerazo declara `/etc/galerazo/bot.env` mediante `env_file`, por lo que el entorno se fija al crear el contenedor. Un futuro control `restart` sólo reiniciará el proceso existente; aplicar secretos requerirá un deploy o una acción `recreate` separada, confirmada y seguida de healthcheck.
+- Motivo: evitar que la interfaz informe que una rotación de secretos está activa cuando el contenedor todavía conserva los valores anteriores.

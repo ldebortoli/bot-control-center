@@ -1,7 +1,7 @@
 # TODO
 
 - [P1] [BLOCKED: requiere diseñar un contrato de consultas de solo lectura con allowlist, límites y auditoría; no es necesario para el estado ni los triggers ya conectados] Integrar SQL real de Galerazo.
-- [P2] [BLOCKED: pendiente de que el usuario elija el alcance; se recomienda habilitar sólo `start` y `restart` del contenedor `bot` con confirmación, exclusión mutua, auditoría y healthcheck posterior, manteniendo fuera reinicio de Docker/VM, shell y borrados] Evaluar reinicio y otras capacidades privilegiadas.
+- [P2] [BLOCKED: pendiente de que el usuario elija el alcance; se recomienda habilitar `start` y `restart` del contenedor `bot`, y evaluar por separado `recreate` para aplicar secretos, siempre con confirmación, exclusión mutua, auditoría y healthcheck posterior; mantener fuera reinicio de Docker/VM, shell y borrados] Evaluar reinicio y otras capacidades privilegiadas.
 
 # IN PROGRESS
 

@@ -74,7 +74,7 @@ Copy-Item config\runtime.example.json config\runtime.local.json
 
 Editá `config/runtime.local.json` con la ruta local del repositorio Galerazo, proyecto, región, repositorio, zona e instancia. El archivo está ignorado por Git y no debe contener tokens, claves ni el contenido de `.env`.
 
-La vista **Credenciales** usa ese mismo destino para consultar únicamente si cada variable está presente y aplicar parches parciales por IAP. Los campos quedan en blanco y enmascarados: vacío conserva el valor remoto, mientras que **Borrar** elimina sólo campos opcionales. El agente crea un archivo temporal privado, ejecuta scripts fijos del repositorio Galerazo y lo elimina al finalizar; ni la API, los jobs ni los logs conservan los valores enviados. Los cambios toman efecto en el próximo reinicio o deploy.
+La vista **Credenciales** usa ese mismo destino para consultar únicamente si cada variable está presente y aplicar parches parciales por IAP. Los campos quedan en blanco y enmascarados: vacío conserva el valor remoto, mientras que **Borrar** elimina sólo campos opcionales. El agente crea un archivo temporal privado, ejecuta scripts fijos del repositorio Galerazo y lo elimina al finalizar; ni la API, los jobs ni los logs conservan los valores enviados. Como Compose carga `/etc/galerazo/bot.env` al crear el contenedor, un `restart` común conserva el entorno anterior: los cambios toman efecto con un deploy o una recreación explícita.
 
 Al abrir la vista **Deploy**, el pre-flight verifica PowerShell, Git, Docker, `gcloud`, el repositorio y los scripts. Los controles son:
 

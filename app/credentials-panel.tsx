@@ -267,7 +267,7 @@ export function CredentialsPanel({ bot }: { bot: BotDefinition }) {
                 </div>
               </>
             ) : <p>No hay cambios de credenciales en esta sesión.</p>}
-            <p className="guardrail"><span>i</span> Los cambios quedan guardados en la VM, pero el proceso activo los toma recién al reiniciar o hacer deploy.</p>
+            <p className="guardrail"><span>i</span> Los cambios quedan guardados en la VM. El contenedor actual conserva su entorno: aplicalos con un deploy o una futura acción explícita de recreación.</p>
           </aside>
         </form>
       ) : null}

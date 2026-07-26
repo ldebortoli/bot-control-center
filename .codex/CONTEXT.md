@@ -60,5 +60,5 @@ En Windows también existe el acceso `C:\Users\calei\Documents\Codex\CODEX APPS\
 - Consultas SQLite reales requieren `mode=ro`, `PRAGMA query_only=ON`, authorizer, timeout y límite de filas.
 - La moderación remota de triggers usa permisos separados, confirmación, revalidación contra SQLite, resultado estructurado y aviso al chat; un fallo parcial del aviso se informa explícitamente.
 - El deploy usa un agente local separado, scripts fijos, confirmación, logs saneados y una sola operación por bot; restart y otras escrituras generales siguen fuera del MVP. La única excepción operativa adicional es detener de forma segura el servicio `bot` para cortar un bucle.
-- La edición de credenciales está separada del deploy, exige confirmación y no reinicia el bot; los cambios toman efecto en el siguiente reinicio o deploy.
+- La edición de credenciales está separada del deploy, exige confirmación y no reinicia el bot. Como Compose inyecta `/etc/galerazo/bot.env` al crear el contenedor, un simple `restart` no aplica el nuevo entorno; hace falta deploy o recreación explícita.
 - La superficie instalada en producción audita en 0 vulnerabilidades. El audit que incluye herramientas de desarrollo conserva avisos en la cadena de lint de `eslint-config-next`/`minimatch`; no debe forzarse ESLint 10 mientras los plugins del preset declaren compatibilidad sólo hasta ESLint 9.

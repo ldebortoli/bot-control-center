@@ -42,7 +42,7 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 
 ## Próximo paso exacto
 
-Si el usuario autoriza acciones operativas nuevas, implementar primero sólo `start` y `restart` del servicio Compose `bot`, con confirmación, job exclusivo, auditoría y healthcheck posterior. Mantener fuera del panel el reinicio del daemon Docker, reboot de VM, shell libre, borrado de datos y escritura SQL. SQL real y adaptadores adicionales siguen bloqueados por diseño/alcance.
+Si el usuario autoriza acciones operativas nuevas, implementar `start` y `restart` del servicio Compose `bot`, con confirmación, job exclusivo, auditoría y healthcheck posterior. Evaluar `recreate` como una acción distinta para aplicar cambios de `/etc/galerazo/bot.env`, porque `restart` conserva el entorno del contenedor existente. Mantener fuera del panel el reinicio del daemon Docker, reboot de VM, shell libre, borrado de datos y escritura SQL. SQL real y adaptadores adicionales siguen bloqueados por diseño/alcance.
 
 ## Riesgos y guardrails
 
