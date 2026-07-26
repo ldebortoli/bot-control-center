@@ -39,9 +39,12 @@ Los comandos de calidad generan y evalúan el resultado automáticamente:
 npm run test:unit      # suite rápida, sin build
 npm run test:coverage  # tests del agente y tabla de cobertura V8
 npm test               # build y suite completa
+npm audit --omit=dev   # dependencias que llegan a producción
 ```
 
 `test:coverage` usa el motor incorporado en Node.js, muestra porcentajes por archivo y falla si el agente privilegiado baja de 100% en líneas, ramas o funciones. El alcance instrumentado es `agent/**/*.mjs`, donde viven la API local, la validación de configuración, los guardrails de credenciales y los jobs operativos. La interfaz, el launcher y el render continúan cubiertos por el build y las pruebas de integración de la suite completa.
+
+Next está fijado en 16.2.12 y el proyecto sustituye sus versiones transitivas vulnerables de PostCSS y Sharp mediante overrides explícitos. La auditoría de producción debe permanecer en cero. El audit completo puede seguir mostrando avisos dentro de las herramientas de lint de `eslint-config-next`; no se usa `npm audit fix --force` mientras ese preset mantenga plugins incompatibles con ESLint 10.
 
 ## Abrir como aplicación de Windows
 

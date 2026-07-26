@@ -7,7 +7,7 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 ## Estado estable
 
 - Ruta: `C:\Users\calei\Documents\Codex\BotControlCenter\dashboard`
-- Stack: Node.js 22+, TypeScript, React 19, Next 16 y vinext/Vite para Cloudflare Sites.
+- Stack: Node.js 22+, TypeScript, React 19.2.8, Next 16.2.12 y vinext/Vite 8.1.5 para Cloudflare Sites. Los overrides de PostCSS 8.5.23 y Sharp 0.35.3 sustituyen dependencias transitivas vulnerables que Next todavía declara con versiones anteriores.
 - Git: repositorio privado en `https://github.com/ldebortoli/bot-control-center`, con `origin` configurado y rama principal `main`.
 - Idioma de la interfaz y documentación: español.
 - Hosting: no desplegado; `.openai/hosting.json` mantiene D1 y R2 desactivados.
@@ -43,6 +43,7 @@ Comandos verificados en Windows:
 - `npm run test:unit`
 - `npm run test:coverage`
 - `npm test`
+- `npm audit --omit=dev`
 
 El runner `scripts/run-vinext.mjs` hace que dev/build/start sean multiplataforma; `scripts/run-local.mjs` administra en conjunto UI y agente.
 
@@ -60,3 +61,4 @@ En Windows también existe el acceso `C:\Users\calei\Documents\Codex\CODEX APPS\
 - La moderación remota de triggers usa permisos separados, confirmación, revalidación contra SQLite, resultado estructurado y aviso al chat; un fallo parcial del aviso se informa explícitamente.
 - El deploy usa un agente local separado, scripts fijos, confirmación, logs saneados y una sola operación por bot; restart y otras escrituras generales siguen fuera del MVP. La única excepción operativa adicional es detener de forma segura el servicio `bot` para cortar un bucle.
 - La edición de credenciales está separada del deploy, exige confirmación y no reinicia el bot; los cambios toman efecto en el siguiente reinicio o deploy.
+- La superficie instalada en producción audita en 0 vulnerabilidades. El audit que incluye herramientas de desarrollo conserva avisos en la cadena de lint de `eslint-config-next`/`minimatch`; no debe forzarse ESLint 10 mientras los plugins del preset declaren compatibilidad sólo hasta ESLint 9.
