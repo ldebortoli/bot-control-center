@@ -6,6 +6,9 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 
 ## Estado actual
 
+- Auditoría del 2026-07-26: `main` está limpio y sincronizado con `origin/main` en `5bb0880`; UI y agente están detenidos; el acceso de CODEX APPS, el launcher y `runtime.local.json` existen. `npm test` pasa 34/34 y `npm run test:coverage` mantiene 100% de líneas, ramas y funciones del agente.
+- `npm audit --omit=dev` reporta tres vulnerabilidades altas transitivas en `next@16.2.6`, su PostCSS y `sharp@0.34.5`. La versión estable candidata es Next/eslint-config-next 16.2.12; no se aplicó durante esta revisión de estado y debe validarse junto con vinext antes de publicar el cambio.
+- El repositorio es privado y actualmente no contiene workflows de GitHub Actions; la validación reproducible se ejecuta localmente. Si se hace público, corresponde agregar un workflow rápido de calidad conforme a la política global, dejando suites costosas como opt-in.
 - Toda la flota aplica datos reales o estado explícito: Resumen y Logs consultan el endpoint remoto para cualquier bot; sin configuración/conexión muestran el error y no renderizan métricas ni logs estáticos. Triggers muestra la lectura real, `No hay triggers disponibles` o el error de conexión. SQL sin contrato real queda no disponible.
 - Spider Tracker, Reshare Stories y bots personalizados están desconectados hasta incorporar un adaptador. El catálogo ya no contiene métricas, versiones, commits, logs, SQL ni triggers ficticios; el visor tampoco genera multimedia local. Los registros antiguos guardados en `localStorage` se sanean automáticamente.
 - Galerazo ya no usa fixtures operativos: Resumen, Logs, Triggers y Deploy consultan por IAP el estado real de VM/contenedor, health, reinicios, imagen, recursos, Telegram, logs/errores y los triggers reales de SQLite. Si la conexión falla, la UI muestra un error explícito y no sustituye datos inventados.
@@ -33,12 +36,12 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 - Vistas funcionales: Resumen, Logs, Triggers, Credenciales y Deploy; SQL permanece deshabilitado hasta disponer de un contrato real y no muestra resultados de ejemplo.
 - Galerazo usa un `botctl` versionado y temporal por IAP para estado, triggers, multimedia, moderación y detención. No abre puertos administrativos, no acepta comandos libres y nunca devuelve el token de Telegram.
 - `npm run lint`, `npm run build`, `npm run test:coverage` y `npm test` pasan en Windows; la suite completa tiene 34 pruebas y la cobertura del agente es 100% en líneas, ramas y funciones.
-- La dependencia de producción mantiene dos avisos moderados transitivos de PostCSS dentro de Next; no hay fix estable compatible y no se forzó downgrade.
+- La deuda de dependencias vigente son tres avisos altos transitivos de Next/PostCSS/sharp; `npm audit fix --force` propone Next 16.2.12 fuera del pin exacto, por lo que la actualización debe hacerse de forma intencional y validada, no con `--force` ciego.
 - Repositorio privado publicado en `https://github.com/ldebortoli/bot-control-center`; `origin` apunta a ese repositorio y `main` sigue `origin/main`.
 
 ## Próximo paso exacto
 
-Abrir Bot Control Center desde CODEX APPS. Galerazo debe cargar datos reales; Spider Tracker, Reshare Stories y bots personalizados deben mostrar `Sin conexión` o `No hay triggers disponibles` hasta configurar sus adaptadores.
+Actualizar Next y eslint-config-next a la versión corregida compatible, regenerar el lock y ejecutar lint, build, las 34 pruebas, cobertura y audit. Después, abrir Bot Control Center desde CODEX APPS para una comprobación funcional; SQL real, reinicio y adaptadores adicionales siguen siendo mejoras separadas y bloqueadas por diseño/alcance.
 
 ## Riesgos y guardrails
 

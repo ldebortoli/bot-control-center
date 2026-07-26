@@ -1,8 +1,8 @@
 # TODO
 
+- [P1] Actualizar `next` y `eslint-config-next` desde 16.2.6 a una versión corregida compatible (16.2.12 es la candidata actual), regenerar el lock y validar vinext/build/tests/cobertura. `npm audit --omit=dev` del 2026-07-26 reporta tres vulnerabilidades altas en Next/PostCSS/sharp y propone un cambio fuera del rango exacto actual.
 - [P1] [BLOCKED: requiere diseñar un contrato de consultas de solo lectura con allowlist, límites y auditoría; no es necesario para el estado ni los triggers ya conectados] Integrar SQL real de Galerazo.
 - [P2] [BLOCKED: reinicio y otras escrituras siguen requiriendo autorización y un modelo específico; ya existe una detención segura y confirmada para cortar bucles] Evaluar reinicio y otras capacidades privilegiadas.
-- [P3] [BLOCKED: depende de una versión estable compatible de Next/PostCSS] Resolver los dos avisos moderados transitivos de `npm audit --omit=dev` sin downgrade forzado.
 
 # IN PROGRESS
 
