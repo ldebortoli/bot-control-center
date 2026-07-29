@@ -9,6 +9,8 @@ No hay tareas en curso.
 
 # DONE
 
+- [2026-07-29] Aplicar al HWND de la ventana Edge/Chrome el mismo icono embebido de `BotControlCenter.exe`, recompilar e instalar nuevamente el acceso de CODEX APPS. Verificación nativa: `WM_GETICON` devolvió un bitmap con hash idéntico al icono del launcher; cerrar la ventana terminó el launcher y dejó libres los puertos 3000 y 43121. Validación: lint, build y 34/34 pruebas OK; cobertura del agente 100%; audit de producción en 0.
+
 - [2026-07-29] Filtrar en el adaptador local los logs rutinarios de Telegram `getUpdates` que terminan en `HTTP 200 OK`, conservando `429`, timeouts, errores y otras llamadas HTTP. No se modificó Galerazobot. Validación: lint, build y 34/34 pruebas OK; cobertura del agente 100% en líneas, ramas y funciones; audit de producción en 0.
 
 - [2026-07-26] Actualizar Next y `eslint-config-next` de 16.2.6 a 16.2.12, React/RSC a 19.2.8 y el toolchain compatible de Vite/Cloudflare; fijar PostCSS 8.5.23 y Sharp 0.35.3 para sustituir las versiones transitivas vulnerables de Next. Validación: `npm ci`, lint, build y 34/34 pruebas OK; cobertura del agente 100% en líneas, ramas y funciones; `npm audit --omit=dev` en 0. El audit completo conserva nueve avisos altos sólo en la cadena de lint de `eslint-config-next` porque sus plugins todavía requieren `minimatch` 3/`brace-expansion` 1 y no aceptan ESLint 10; el intento de override incompatible se descartó al fallar lint.

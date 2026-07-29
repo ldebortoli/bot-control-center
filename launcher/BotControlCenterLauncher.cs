@@ -19,6 +19,7 @@ namespace BotControlCenter.WindowsLauncher
         private const int ServerPort = 3000;
         private const int AgentPort = 43121;
         private const string MutexName = "Local\\BotControlCenterWindowsLauncher";
+        private static Icon applicationIcon;
 
         [STAThread]
         private static void Main()
@@ -371,6 +372,7 @@ namespace BotControlCenter.WindowsLauncher
                         if (windowProcess != null)
                         {
                             TryAssignBrowserProcess(browserJob, windowProcess);
+                            ApplyApplicationIcon(windowProcess.MainWindowHandle);
                             startup.HideForApplication();
                             missingWindowChecks = 0;
                         }
@@ -463,6 +465,43 @@ namespace BotControlCenter.WindowsLauncher
             }
 
             return null;
+        }
+
+        internal static Icon GetApplicationIcon()
+        {
+            if (applicationIcon == null)
+            {
+                try
+                {
+                    applicationIcon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+                }
+                catch
+                {
+                    // Windows conserva el icono del navegador si no puede leer el embebido.
+                }
+            }
+
+            return applicationIcon;
+        }
+
+        private static void ApplyApplicationIcon(IntPtr windowHandle)
+        {
+            Icon icon = GetApplicationIcon();
+            if (windowHandle == IntPtr.Zero || icon == null)
+            {
+                return;
+            }
+
+            NativeMethods.SendMessage(
+                windowHandle,
+                NativeMethods.WmSetIcon,
+                new IntPtr(NativeMethods.IconSmall),
+                icon.Handle);
+            NativeMethods.SendMessage(
+                windowHandle,
+                NativeMethods.WmSetIcon,
+                new IntPtr(NativeMethods.IconBig),
+                icon.Handle);
         }
 
         private static void TryAssignBrowserProcess(KillOnCloseJob browserJob, Process browserProcess)
@@ -619,7 +658,7 @@ namespace BotControlCenter.WindowsLauncher
 
             try
             {
-                Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+                Icon = Program.GetApplicationIcon();
             }
             catch
             {
@@ -753,6 +792,10 @@ namespace BotControlCenter.WindowsLauncher
 
     internal static class NativeMethods
     {
+        internal const uint WmSetIcon = 0x0080;
+        internal const int IconSmall = 0;
+        internal const int IconBig = 1;
+
         [StructLayout(LayoutKind.Sequential)]
         internal struct IoCounters
         {
@@ -807,5 +850,12 @@ namespace BotControlCenter.WindowsLauncher
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool CloseHandle(IntPtr handle);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        internal static extern IntPtr SendMessage(
+            IntPtr window,
+            uint message,
+            IntPtr wordParameter,
+            IntPtr longParameter);
     }
 }

@@ -155,3 +155,10 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-07-29.
 - Decisión: filtrar en el adaptador local de Bot Control Center únicamente las líneas de Telegram `getUpdates` cuyo resultado sea `HTTP 200 OK`, sin cambiar el logging de Galerazo. Mantener visibles respuestas no exitosas, timeouts, excepciones y las demás llamadas HTTP.
 - Motivo: los polls correctos son repetitivos y desplazan señales operativas importantes, mientras que sus fallos sí son relevantes para diagnóstico.
+
+## D-023 - Icono nativo compartido con la ventana del navegador
+
+- Estado: vigente; amplía D-007 y D-015.
+- Fecha: 2026-07-29.
+- Decisión: conservar un único icono embebido en `BotControlCenter.exe` para el acceso de CODEX APPS y, después de detectar el HWND real de la ventana Edge/Chrome, asignarlo como icono grande y pequeño mediante `WM_SETICON`. Mantener la instancia de `Icon` viva mientras el launcher sea dueño de la ventana.
+- Motivo: el modo `--app` del navegador puede mostrar su propio icono en la barra de tareas aunque el acceso directo tenga icono personalizado; aplicarlo sobre la ventana garantiza una identidad visual coherente.
