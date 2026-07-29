@@ -15,7 +15,15 @@ test("el launcher liga la ventana al ciclo de vida del servidor", async () => {
   assert.match(source, /FindBrowserWindowProcess/);
   assert.match(source, /Process\.GetProcessesByName/);
   assert.match(source, /MainWindowTitle\.IndexOf/);
-  assert.match(source, /ApplyApplicationIcon\(windowProcess\.MainWindowHandle\)/);
+  assert.equal(source.match(/ApplyApplicationIcon\(windowProcess\.MainWindowHandle\)/g).length, 2);
+  assert.match(source, /ApplyWindowTaskbarIdentity\(windowProcess\.MainWindowHandle\)/);
+  assert.match(source, /SHGetPropertyStoreForWindow/);
+  assert.match(source, /AppUserModelRelaunchIconResource/);
+  assert.match(source, /AppUserModelRelaunchCommand/);
+  assert.match(source, /AppUserModelId/);
+  assert.match(source, /BotControlCenter\.LocalDashboard/);
+  assert.match(source, /propertyStore\.Commit\(\)/);
+  assert.match(source, /WmGetIcon = 0x007F/);
   assert.match(source, /WmSetIcon = 0x0080/);
   assert.match(source, /NativeMethods\.SendMessage/);
   assert.match(source, /Icon\.ExtractAssociatedIcon\(Application\.ExecutablePath\)/);
@@ -37,4 +45,6 @@ test("el instalador crea el acceso en CODEX APPS", async () => {
   assert.match(source, /CODEX APPS/);
   assert.match(source, /Bot Control Center\.lnk/);
   assert.match(build, /BotControlCenter\.exe/);
+  assert.match(build, /public/);
+  assert.match(build, /favicon\.ico/);
 });

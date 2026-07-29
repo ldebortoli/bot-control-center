@@ -4,10 +4,13 @@ $projectRoot = Split-Path -Parent $PSScriptRoot
 $sourcePath = Join-Path $projectRoot "launcher\BotControlCenterLauncher.cs"
 $assetsDirectory = Join-Path $projectRoot "assets"
 $iconPath = Join-Path $assetsDirectory "bot-control-center.ico"
+$publicDirectory = Join-Path $projectRoot "public"
+$webIconPath = Join-Path $publicDirectory "favicon.ico"
 $binDirectory = Join-Path $projectRoot "bin"
 $outputPath = Join-Path $binDirectory "BotControlCenter.exe"
 
 New-Item -ItemType Directory -Path $assetsDirectory -Force | Out-Null
+New-Item -ItemType Directory -Path $publicDirectory -Force | Out-Null
 New-Item -ItemType Directory -Path $binDirectory -Force | Out-Null
 
 Add-Type -AssemblyName System.Drawing
@@ -70,6 +73,7 @@ $iconWriter.Write([uint32] $pngBytes.Length)
 $iconWriter.Write([uint32] 22)
 $iconWriter.Write($pngBytes)
 $iconWriter.Dispose()
+Copy-Item -LiteralPath $iconPath -Destination $webIconPath -Force
 
 $pngStream.Dispose()
 $cellOutline.Dispose()

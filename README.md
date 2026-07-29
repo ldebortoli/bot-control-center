@@ -48,7 +48,7 @@ Next está fijado en 16.2.12 y el proyecto sustituye sus versiones transitivas v
 
 ## Abrir como aplicación de Windows
 
-El acceso `Bot Control Center` de la carpeta `CODEX APPS` muestra inmediatamente el estado de inicio, levanta la UI y el agente en segundo plano y abre el dashboard en una ventana independiente. El launcher aplica a esa ventana el mismo icono embebido que usa el acceso directo, por lo que también aparece en la barra de tareas de Windows. Al cerrar la ventana, termina automáticamente el árbol completo. Si hay un release activo, muestra una espera y deja que termine antes de apagarlo para no cortar un push o deploy a mitad de camino.
+El acceso `Bot Control Center` de la carpeta `CODEX APPS` muestra inmediatamente el estado de inicio, levanta la UI y el agente en segundo plano y abre el dashboard en una ventana independiente. El mismo recurso `.ico` se usa como icono embebido, favicon y manifest web. El launcher también asigna a la ventana una identidad propia de Windows (`AppUserModelID`) y un recurso de relanzamiento, para que la barra de tareas no la agrupe con el icono de Edge; durante toda la sesión reaplica el icono si el navegador intenta sustituirlo. Al cerrar la ventana, termina automáticamente el árbol completo. Si hay un release activo, muestra una espera y deja que termine antes de apagarlo para no cortar un push o deploy a mitad de camino.
 
 Para compilar o reinstalar el acceso:
 

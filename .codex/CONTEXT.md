@@ -24,7 +24,7 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 - `docs/ARCHITECTURE.md`: diseño de `botctl`, IAP/SSH y guardrails SQLite.
 - `build/` y `worker/`: integración requerida por Sites/vinext.
 - `public/og-bot-control-center.png`: imagen social generada para el proyecto.
-- `launcher/`, `bin/` y `scripts/*windows-launcher*`: app nativa de Windows que supervisa vinext y el agente, abre la UI en una ventana aislada, aplica al HWND de Edge/Chrome el mismo icono embebido del acceso de CODEX APPS y sigue la ventana real aunque el navegador derive el arranque a otro proceso.
+- `launcher/`, `bin/` y `scripts/*windows-launcher*`: app nativa de Windows que supervisa vinext y el agente, abre la UI en una ventana aislada, comparte un único `.ico` entre ejecutable/favicon/manifest y asigna al HWND su propio `AppUserModelID` y recurso de relanzamiento para separarlo del grupo de Edge. Reaplica el icono si Edge/Chrome intenta reemplazarlo y sigue la ventana real aunque el navegador derive el arranque a otro proceso.
 - El administrador de flota activa, quita y registra bots locales; conserva la selección y los registros personalizados en `localStorage`, sin credenciales ni métricas/logs/triggers. Los registros de versiones anteriores se sanean al hidratarse.
 - Los bots que declaran y tienen configurado `triggers` muestran un inspector genérico con autor, chat, texto y reproducción/descarga de imágenes, GIF, stickers WebP/WebM/TGS, audio, video y archivos. Galerazo consulta SQLite/Telegram reales y ejecuta moderación confirmada con aviso al chat. Sin capacidad se muestra `No hay triggers disponibles`; si falla el adaptador se informa el error de conexión.
 - Galerazo expone en Resumen, Logs y Deploy un panel real de VM/contenedor, health, reinicios, imagen, CPU/RAM/disco/SQLite, Telegram, logs/errores y alertas. Bot Control Center filtra sólo los accesos rutinarios `getUpdates` que terminan en `HTTP 200 OK`; conserva timeouts, errores, respuestas no exitosas y cualquier otra operación. Una detención confirmada usa `docker compose stop bot` para cortar bucles sin borrar datos.
@@ -50,6 +50,8 @@ El runner `scripts/run-vinext.mjs` hace que dev/build/start sean multiplataforma
 La cobertura usa el motor V8 incorporado en Node sobre `agent/**/*.mjs`, con umbrales automáticos de 100% en líneas, ramas y funciones. La suite completa conserva además el build y las pruebas de render, launcher e integración.
 
 En Windows también existe el acceso `C:\Users\calei\Documents\Codex\CODEX APPS\Bot Control Center.lnk`. Muestra una ventana de inicio inmediata, inicia UI y agente ocultos en localhost y apaga el árbol de procesos al cerrar. Si hay un job operativo activo, espera a que termine antes de apagar para no interrumpir un push o deploy.
+
+Computer Use/Windows Graphics Capture no pudo validar visualmente la ventana Edge de Bot Control Center en 2026-07 porque no determinó su URL con suficiente confianza. No repetir ese mecanismo antes de 2026-08 salvo cambio de versión/configuración o pedido explícito; usar como fallback verificación del HTML/manifest, hashes del recurso, APIs nativas de ventana y confirmación visual del usuario.
 
 ## Convenciones y seguridad
 

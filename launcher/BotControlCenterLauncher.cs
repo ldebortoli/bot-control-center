@@ -372,6 +372,7 @@ namespace BotControlCenter.WindowsLauncher
                         if (windowProcess != null)
                         {
                             TryAssignBrowserProcess(browserJob, windowProcess);
+                            ApplyWindowTaskbarIdentity(windowProcess.MainWindowHandle);
                             ApplyApplicationIcon(windowProcess.MainWindowHandle);
                             startup.HideForApplication();
                             missingWindowChecks = 0;
@@ -417,6 +418,7 @@ namespace BotControlCenter.WindowsLauncher
                         }
                         else
                         {
+                            ApplyApplicationIcon(windowProcess.MainWindowHandle);
                             missingWindowChecks = 0;
                         }
                     }
@@ -467,6 +469,79 @@ namespace BotControlCenter.WindowsLauncher
             return null;
         }
 
+        private static void ApplyWindowTaskbarIdentity(IntPtr windowHandle)
+        {
+            if (windowHandle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            NativeMethods.IPropertyStore propertyStore = null;
+            try
+            {
+                Guid interfaceId = typeof(NativeMethods.IPropertyStore).GUID;
+                int result = NativeMethods.SHGetPropertyStoreForWindow(
+                    windowHandle,
+                    ref interfaceId,
+                    out propertyStore);
+                if (result < 0 || propertyStore == null)
+                {
+                    return;
+                }
+
+                // Windows recomienda establecer las propiedades de relanzamiento antes
+                // del AppUserModelID, que separa esta ventana del grupo de Edge.
+                SetStringWindowProperty(
+                    propertyStore,
+                    NativeMethods.AppUserModelRelaunchIconResource,
+                    Application.ExecutablePath + ",0");
+                SetStringWindowProperty(
+                    propertyStore,
+                    NativeMethods.AppUserModelRelaunchCommand,
+                    QuoteArgument(Application.ExecutablePath));
+                SetStringWindowProperty(
+                    propertyStore,
+                    NativeMethods.AppUserModelId,
+                    "BotControlCenter.LocalDashboard");
+                int commitResult = propertyStore.Commit();
+                if (commitResult < 0)
+                {
+                    Marshal.ThrowExceptionForHR(commitResult);
+                }
+            }
+            catch
+            {
+                // WM_SETICON sigue siendo el respaldo si Windows no expone el Property Store.
+            }
+            finally
+            {
+                if (propertyStore != null)
+                {
+                    Marshal.FinalReleaseComObject(propertyStore);
+                }
+            }
+        }
+
+        private static void SetStringWindowProperty(
+            NativeMethods.IPropertyStore propertyStore,
+            NativeMethods.PropertyKey propertyKey,
+            string value)
+        {
+            NativeMethods.PropVariant propertyValue = NativeMethods.PropVariant.FromString(value);
+            try
+            {
+                int result = propertyStore.SetValue(ref propertyKey, ref propertyValue);
+                if (result < 0)
+                {
+                    Marshal.ThrowExceptionForHR(result);
+                }
+            }
+            finally
+            {
+                propertyValue.Clear();
+            }
+        }
+
         internal static Icon GetApplicationIcon()
         {
             if (applicationIcon == null)
@@ -492,16 +567,33 @@ namespace BotControlCenter.WindowsLauncher
                 return;
             }
 
-            NativeMethods.SendMessage(
+            IntPtr smallIcon = new IntPtr(NativeMethods.IconSmall);
+            IntPtr bigIcon = new IntPtr(NativeMethods.IconBig);
+            if (NativeMethods.SendMessage(
                 windowHandle,
-                NativeMethods.WmSetIcon,
-                new IntPtr(NativeMethods.IconSmall),
-                icon.Handle);
-            NativeMethods.SendMessage(
+                NativeMethods.WmGetIcon,
+                smallIcon,
+                IntPtr.Zero) != icon.Handle)
+            {
+                NativeMethods.SendMessage(
+                    windowHandle,
+                    NativeMethods.WmSetIcon,
+                    smallIcon,
+                    icon.Handle);
+            }
+
+            if (NativeMethods.SendMessage(
                 windowHandle,
-                NativeMethods.WmSetIcon,
-                new IntPtr(NativeMethods.IconBig),
-                icon.Handle);
+                NativeMethods.WmGetIcon,
+                bigIcon,
+                IntPtr.Zero) != icon.Handle)
+            {
+                NativeMethods.SendMessage(
+                    windowHandle,
+                    NativeMethods.WmSetIcon,
+                    bigIcon,
+                    icon.Handle);
+            }
         }
 
         private static void TryAssignBrowserProcess(KillOnCloseJob browserJob, Process browserProcess)
@@ -792,9 +884,77 @@ namespace BotControlCenter.WindowsLauncher
 
     internal static class NativeMethods
     {
+        internal const uint WmGetIcon = 0x007F;
         internal const uint WmSetIcon = 0x0080;
         internal const int IconSmall = 0;
         internal const int IconBig = 1;
+        private const ushort VariantTypeUnicodeString = 31;
+        private static readonly Guid AppUserModelFormatId =
+            new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3");
+
+        internal static readonly PropertyKey AppUserModelRelaunchCommand =
+            new PropertyKey(AppUserModelFormatId, 2);
+        internal static readonly PropertyKey AppUserModelRelaunchIconResource =
+            new PropertyKey(AppUserModelFormatId, 3);
+        internal static readonly PropertyKey AppUserModelId =
+            new PropertyKey(AppUserModelFormatId, 5);
+
+        [ComImport]
+        [Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99")]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        internal interface IPropertyStore
+        {
+            [PreserveSig]
+            int GetCount(out uint propertyCount);
+
+            [PreserveSig]
+            int GetAt(uint propertyIndex, out PropertyKey propertyKey);
+
+            [PreserveSig]
+            int GetValue(ref PropertyKey propertyKey, out PropVariant propertyValue);
+
+            [PreserveSig]
+            int SetValue(ref PropertyKey propertyKey, ref PropVariant propertyValue);
+
+            [PreserveSig]
+            int Commit();
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        internal struct PropertyKey
+        {
+            internal Guid FormatId;
+            internal uint PropertyId;
+
+            internal PropertyKey(Guid formatId, uint propertyId)
+            {
+                FormatId = formatId;
+                PropertyId = propertyId;
+            }
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        internal struct PropVariant
+        {
+            [FieldOffset(0)]
+            internal ushort ValueType;
+
+            [FieldOffset(8)]
+            internal IntPtr PointerValue;
+
+            internal static PropVariant FromString(string value)
+            {
+                PropVariant propertyValue = new PropVariant();
+                propertyValue.ValueType = VariantTypeUnicodeString;
+                propertyValue.PointerValue = Marshal.StringToCoTaskMemUni(value);
+                return propertyValue;
+            }
+
+            internal void Clear()
+            {
+                NativeMethods.PropVariantClear(ref this);
+            }
+        }
 
         [StructLayout(LayoutKind.Sequential)]
         internal struct IoCounters
@@ -857,5 +1017,14 @@ namespace BotControlCenter.WindowsLauncher
             uint message,
             IntPtr wordParameter,
             IntPtr longParameter);
+
+        [DllImport("shell32.dll")]
+        internal static extern int SHGetPropertyStoreForWindow(
+            IntPtr window,
+            ref Guid interfaceId,
+            [MarshalAs(UnmanagedType.Interface)] out IPropertyStore propertyStore);
+
+        [DllImport("ole32.dll")]
+        internal static extern int PropVariantClear(ref PropVariant propertyValue);
     }
 }

@@ -9,6 +9,8 @@ No hay tareas en curso.
 
 # DONE
 
+- [2026-07-29] Corregir el falso positivo del icono anterior: generar un favicon byte por byte idéntico al recurso de CODEX APPS, declararlo en metadata y manifest, asignar a la ventana un `AppUserModelID` y recurso de relanzamiento propios para separarla del grupo de Edge, y revertir cualquier reemplazo posterior mediante `WM_GETICON`/`WM_SETICON`. El acceso fue recompilado e instalado. Validación: compilación nativa, hashes SHA-256 idénticos, favicon y manifest presentes en el HTML construido, lint, build y 34/34 pruebas OK, cobertura del agente 100%, audit de producción en 0 y cierre con cero operaciones activas/listeners. La captura visual automática no pudo completarse porque el controlador de Windows no pudo determinar con confianza la URL del navegador; no se repitió ese mecanismo.
+
 - [2026-07-29] Aplicar al HWND de la ventana Edge/Chrome el mismo icono embebido de `BotControlCenter.exe`, recompilar e instalar nuevamente el acceso de CODEX APPS. Verificación nativa: `WM_GETICON` devolvió un bitmap con hash idéntico al icono del launcher; cerrar la ventana terminó el launcher y dejó libres los puertos 3000 y 43121. Validación: lint, build y 34/34 pruebas OK; cobertura del agente 100%; audit de producción en 0.
 
 - [2026-07-29] Filtrar en el adaptador local los logs rutinarios de Telegram `getUpdates` que terminan en `HTTP 200 OK`, conservando `429`, timeouts, errores y otras llamadas HTTP. No se modificó Galerazobot. Validación: lint, build y 34/34 pruebas OK; cobertura del agente 100% en líneas, ramas y funciones; audit de producción en 0.

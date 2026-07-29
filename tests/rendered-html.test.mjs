@@ -31,6 +31,8 @@ test("renderiza el dashboard local sin datos operativos inventados", async () =>
   const html = await response.text();
   assert.match(html, /<html[^>]*lang="es"/i);
   assert.match(html, /<title>Bot Control Center · Panel local<\/title>/i);
+  assert.match(html, /<link rel="icon"[^>]+favicon\.ico\?v=20260729-2/i);
+  assert.match(html, /<link rel="manifest"[^>]+manifest\.webmanifest/i);
   assert.match(html, /Galerazo Bot/);
   assert.match(html, /Spider Tracker/);
   assert.match(html, /Reshare Stories/);

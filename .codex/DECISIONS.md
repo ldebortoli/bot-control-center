@@ -162,3 +162,17 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-07-29.
 - Decisión: conservar un único icono embebido en `BotControlCenter.exe` para el acceso de CODEX APPS y, después de detectar el HWND real de la ventana Edge/Chrome, asignarlo como icono grande y pequeño mediante `WM_SETICON`. Mantener la instancia de `Icon` viva mientras el launcher sea dueño de la ventana.
 - Motivo: el modo `--app` del navegador puede mostrar su propio icono en la barra de tareas aunque el acceso directo tenga icono personalizado; aplicarlo sobre la ventana garantiza una identidad visual coherente.
+
+## D-024 - Favicon real y reaplicación persistente del icono
+
+- Estado: vigente; reemplaza D-023.
+- Fecha: 2026-07-29.
+- Decisión: generar `public/favicon.ico` desde el mismo recurso que se embebe en `BotControlCenter.exe`, declararlo con versión en metadata y manifest, y comprobar `WM_GETICON` durante todo el ciclo de vida de la ventana. Si Edge/Chrome sustituye el handle grande o pequeño, el launcher vuelve a aplicar el icono inmediatamente.
+- Motivo: la captura del usuario demostró que una única llamada a `WM_SETICON` podía dar un falso positivo inicial y ser reemplazada después por Edge; la identidad web y la supervisión persistente cubren ambas fuentes del icono.
+
+## D-025 - Identidad propia para el grupo de la barra de tareas
+
+- Estado: vigente; complementa y reemplaza el alcance de D-024 para la barra de tareas.
+- Fecha: 2026-07-29.
+- Decisión: establecer sobre el HWND de Edge/Chrome `System.AppUserModel.RelaunchIconResource`, `RelaunchCommand` y, al final, un `System.AppUserModel.ID` exclusivo mediante `SHGetPropertyStoreForWindow`; conservar favicon/manifest y `WM_GETICON`/`WM_SETICON` como capas complementarias.
+- Motivo: Windows puede tomar el icono del grupo de la barra de tareas de la identidad de la aplicación anfitriona aunque el HWND ya tenga un icono personalizado. La identidad explícita separa Bot Control Center de Edge y el recurso de relanzamiento determina el icono de ese grupo.

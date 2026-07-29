@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   title: "Bot Control Center",
   description:
     "Panel local para observar y administrar, de forma segura, una flota de bots remotos.",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [{ url: "/favicon.ico?v=20260729-2", type: "image/x-icon", sizes: "256x256" }],
+    shortcut: "/favicon.ico?v=20260729-2",
+  },
   openGraph: {
     title: "Bot Control Center",
     description: "Una consola. Toda tu flota.",
