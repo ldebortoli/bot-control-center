@@ -31,6 +31,7 @@ const execFileAsync = promisify(execFile);
 const defaultPort = 43121;
 const listenHost = "127.0.0.1";
 const moderationActions = new Set(["delete-trigger", "block-user", "delete-and-block"]);
+const successfulTelegramGetUpdatesLog = /\bgetUpdates\b[^\r\n]*\bHTTP\/[0-9.]+\s+200\s+OK"?\s*$/i;
 
 export async function commandExists(name, {
   platform = process.platform,
@@ -131,7 +132,10 @@ export async function inspectRuntimeStatus(bot, runFile = execFileAsync) {
   if (!payload.vm || !payload.container || !payload.telegram || !payload.resources || !Array.isArray(payload.logs)) {
     throw new Error("La VM devolvió un contrato operativo incompleto.");
   }
-  return payload;
+  return {
+    ...payload,
+    logs: payload.logs.filter((line) => !successfulTelegramGetUpdatesLog.test(String(line))),
+  };
 }
 
 export async function inspectRemoteTriggers(bot, runFile = execFileAsync) {

@@ -148,3 +148,10 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-07-26.
 - Decisión: no presentar `docker compose restart bot` como mecanismo para aplicar credenciales. Galerazo declara `/etc/galerazo/bot.env` mediante `env_file`, por lo que el entorno se fija al crear el contenedor. Un futuro control `restart` sólo reiniciará el proceso existente; aplicar secretos requerirá un deploy o una acción `recreate` separada, confirmada y seguida de healthcheck.
 - Motivo: evitar que la interfaz informe que una rotación de secretos está activa cuando el contenedor todavía conserva los valores anteriores.
+
+## D-022 - Reducir ruido de polling sin ocultar fallos
+
+- Estado: vigente.
+- Fecha: 2026-07-29.
+- Decisión: filtrar en el adaptador local de Bot Control Center únicamente las líneas de Telegram `getUpdates` cuyo resultado sea `HTTP 200 OK`, sin cambiar el logging de Galerazo. Mantener visibles respuestas no exitosas, timeouts, excepciones y las demás llamadas HTTP.
+- Motivo: los polls correctos son repetitivos y desplazan señales operativas importantes, mientras que sus fallos sí son relevantes para diagnóstico.

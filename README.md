@@ -6,7 +6,7 @@ Dashboard local para observar varios bots remotos desde una sola interfaz. Galer
 
 - selector de bots y estado general de la flota;
 - estado real de VM/contenedor, healthcheck, reinicios, imagen, Telegram, CPU, RAM, disco y SQLite;
-- últimos logs y errores obtenidos desde el adaptador remoto;
+- últimos logs y errores obtenidos desde el adaptador remoto, omitiendo únicamente los polls rutinarios `getUpdates` que terminaron en `HTTP 200 OK`;
 - visualizador genérico de triggers con texto, imágenes, GIF, stickers, audio/video, autor, chat y auditoría de moderación;
 - estado explícito cuando SQL, triggers u otra capacidad real no están configurados;
 - publicación y deploy controlado de Galerazo en Google Compute Engine, con logs y rollback;

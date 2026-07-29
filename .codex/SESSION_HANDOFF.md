@@ -6,6 +6,7 @@ Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante c
 
 ## Estado actual
 
+- Desde 2026-07-29 el adaptador local omite únicamente las líneas exitosas `getUpdates`/`HTTP 200 OK`; conserva `429`, timeouts, errores y las demás operaciones. Galerazobot no fue modificado. Validación: lint, build y 34/34 pruebas OK; cobertura del agente 100%; audit de producción en 0.
 - Actualización de seguridad completada: Next/`eslint-config-next` 16.2.12, React/RSC 19.2.8, Vite 8.1.5, Cloudflare Vite Plugin 1.47.0 y Wrangler 4.114.0. Los overrides fijan PostCSS 8.5.23 y Sharp 0.35.3 porque Next aún declara versiones vulnerables.
 - Validación del 2026-07-26: instalación limpia con `npm ci`, lint, build y 34/34 pruebas OK; `npm run test:coverage` mantiene 100% de líneas, ramas y funciones del agente; `npm audit --omit=dev` informa 0 vulnerabilidades. UI y agente permanecieron detenidos.
 - El audit completo conserva nueve avisos altos exclusivamente dentro de la cadena dev de `eslint-config-next` (`minimatch` 3/`brace-expansion` 1). ESLint 10 deja peers inválidos y el override global corregido rompe la API esperada por `minimatch`; ambos intentos se descartaron. Esperar una actualización compatible del preset, sin usar `npm audit fix --force`.

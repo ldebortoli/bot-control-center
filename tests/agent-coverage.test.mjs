@@ -366,20 +366,29 @@ test("construye y valida el contrato fijo de botctl", () => {
   assert.throws(() => createModerationStep(bot, "YWJj", "otra"));
 });
 
-test("interpreta estado, triggers, moderación y multimedia de botctl", async () => {
+test("interpreta estado, filtra polls exitosos y procesa triggers, moderación y multimedia", async () => {
   const bot = parseRuntimeConfig(sampleConfig(path.resolve("C:/bots/galerazo"))).bots.galerazo;
   const runtime = {
     vm: { status: "running" },
     container: { status: "running" },
     telegram: { connected: true },
     resources: {},
-    logs: [],
+    logs: [
+      '2026-07-29T21:03:22Z INFO httpx: HTTP Request: POST https://api.telegram.org/bot[OCULTO]/getUpdates "HTTP/1.1 200 OK"',
+      '2026-07-29T21:03:23Z INFO HTTPX: POST https://api.telegram.org/bot[OCULTO]/GETUPDATES "HTTP/2 200 OK"',
+      '2026-07-29T21:03:24Z WARNING httpx: POST https://api.telegram.org/bot[OCULTO]/getUpdates "HTTP/1.1 429 Too Many Requests"',
+      '2026-07-29T21:03:25Z ERROR telegram: getUpdates falló por timeout',
+      '2026-07-29T21:03:26Z INFO httpx: POST https://api.telegram.org/bot[OCULTO]/sendMessage "HTTP/1.1 200 OK"',
+    ],
   };
   const runJson = (payload) => async (_command, _args, options) => {
     assert.equal(options.shell, false);
     return { stdout: `gcloud info\n{json roto\n${JSON.stringify(payload)}\n` };
   };
-  assert.deepEqual(await inspectRuntimeStatus(bot, runJson(runtime)), runtime);
+  assert.deepEqual(await inspectRuntimeStatus(bot, runJson(runtime)), {
+    ...runtime,
+    logs: runtime.logs.slice(2),
+  });
   await assert.rejects(() => inspectRuntimeStatus(bot, runJson({ vm: {} })), /incompleto/);
   await assert.rejects(() => inspectRuntimeStatus(bot, async () => ({ stdout: "sin json" })), /estado operativo válido/);
 

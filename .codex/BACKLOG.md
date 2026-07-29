@@ -9,6 +9,8 @@ No hay tareas en curso.
 
 # DONE
 
+- [2026-07-29] Filtrar en el adaptador local los logs rutinarios de Telegram `getUpdates` que terminan en `HTTP 200 OK`, conservando `429`, timeouts, errores y otras llamadas HTTP. No se modificó Galerazobot. Validación: lint, build y 34/34 pruebas OK; cobertura del agente 100% en líneas, ramas y funciones; audit de producción en 0.
+
 - [2026-07-26] Actualizar Next y `eslint-config-next` de 16.2.6 a 16.2.12, React/RSC a 19.2.8 y el toolchain compatible de Vite/Cloudflare; fijar PostCSS 8.5.23 y Sharp 0.35.3 para sustituir las versiones transitivas vulnerables de Next. Validación: `npm ci`, lint, build y 34/34 pruebas OK; cobertura del agente 100% en líneas, ramas y funciones; `npm audit --omit=dev` en 0. El audit completo conserva nueve avisos altos sólo en la cadena de lint de `eslint-config-next` porque sus plugins todavía requieren `minimatch` 3/`brace-expansion` 1 y no aceptan ESLint 10; el intento de override incompatible se descartó al fallar lint.
 
 - [2026-07-22] Eliminar todos los fixtures operativos del catálogo y del visor multimedia. Resumen y Logs consultan siempre el adaptador real; un destino ausente o inaccesible muestra `Sin conexión con el bot`. Triggers sólo consulta una capacidad realmente configurada y, en caso contrario, muestra `No hay triggers disponibles`; SQL tampoco presenta resultados de ejemplo. Spider Tracker, Reshare Stories y bots personalizados quedan desconectados con colecciones operativas inexistentes, y los registros antiguos de `localStorage` se sanean al cargarse. Validación: 34/34 pruebas, lint y build OK; agente con 100% de líneas, ramas y funciones.
