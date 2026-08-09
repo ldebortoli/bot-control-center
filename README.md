@@ -10,6 +10,7 @@ Dashboard local para observar varios bots remotos desde una sola interfaz. Galer
 - visualizador genérico de triggers con texto, imágenes, GIF, stickers, audio/video, autor, chat y auditoría de moderación;
 - estado explícito cuando SQL, triggers u otra capacidad real no están configurados;
 - publicación y deploy controlado de Galerazo en Google Compute Engine, con logs y rollback;
+- releases mensuales configurables que fijan un commit, publican sólo cambios confirmados y continúan aunque la UI esté cerrada;
 - registro declarativo y contrato de transporte extensible;
 - diseño responsive, sin guardar credenciales en el navegador ni en Git.
 
@@ -44,7 +45,7 @@ npm audit --omit=dev   # dependencias que llegan a producción
 
 `test:coverage` usa el motor incorporado en Node.js, muestra porcentajes por archivo y falla si el agente privilegiado baja de 100% en líneas, ramas o funciones. El alcance instrumentado es `agent/**/*.mjs`, donde viven la API local, la validación de configuración, los guardrails de credenciales y los jobs operativos. La interfaz, el launcher y el render continúan cubiertos por el build y las pruebas de integración de la suite completa.
 
-Next está fijado en 16.2.12 y el proyecto sustituye sus versiones transitivas vulnerables de PostCSS y Sharp mediante overrides explícitos. La auditoría de producción debe permanecer en cero. El audit completo puede seguir mostrando avisos dentro de las herramientas de lint de `eslint-config-next`; no se usa `npm audit fix --force` mientras ese preset mantenga plugins incompatibles con ESLint 10.
+Next está fijado en 16.2.12 y el proyecto sustituye sus versiones transitivas vulnerables de Nanoid, PostCSS y Sharp mediante overrides explícitos. La auditoría de producción debe permanecer en cero. El audit completo puede seguir mostrando avisos dentro de las herramientas de lint de `eslint-config-next`; no se usa `npm audit fix --force` mientras ese preset mantenga plugins incompatibles con ESLint 10.
 
 ## Abrir como aplicación de Windows
 
@@ -83,6 +84,14 @@ Al abrir la vista **Deploy**, el pre-flight verifica PowerShell, Git, Docker, `g
 - **Rollback**: restaura la imagen anterior registrada en la VM.
 
 Cada acción pide confirmación, admite una sola operación activa por bot y muestra la salida saneada. El script remoto de Galerazo crea un backup y revierte automáticamente si el contenedor nuevo no queda healthy.
+
+### Releases mensuales seguros
+
+La vista **Deploy** permite activar un corte mensual por bot, elegir día (1 a 28) y hora local, ver la última ejecución y lanzar el mismo flujo manualmente con **Ejecutar corte seguro ahora**. La programación se instala como una tarea de Windows independiente de la UI; por eso puede ejecutarse con Bot Control Center cerrado. Si el equipo estaba apagado, Windows intenta iniciar la tarea cuando vuelva a estar disponible y reintenta hasta 12 veces con una hora de separación.
+
+El corte automático nunca agrega ni confirma archivos por su cuenta. Exige un árbol Git limpio, sincroniza el remoto configurado y sólo sube commits ya confirmados de la rama elegida mediante un push sin `force`. Después fija el hash exacto y construye/despliega desde un `git worktree` temporal desacoplado: cualquier commit o edición que aparezca durante el build queda para el ciclo siguiente. Si la rama diverge, hay archivos sin commit, existe otra operación activa o faltan Docker/Google Cloud CLI, el release se pospone en lugar de pisar trabajo. Si el tag del commit ya coincide con la última imagen publicada, termina sin reconstruir ni tocar producción.
+
+La configuración de Galerazo queda localmente en `config/runtime.local.json`, que está ignorado por Git. La tarea instalada se puede inspeccionar en el Programador de tareas con el nombre `Bot Control Center - Release - galerazo`. Para un release programado deben estar disponibles la sesión local de `gcloud`, Docker Desktop y el repositorio; los errores y el último resultado quedan visibles en el panel.
 
 Las vistas **Resumen**, **Logs** y **Deploy** incluyen el estado remoto actualizado bajo demanda: running/stopped, healthy/unhealthy, reinicios totales y recientes, imagen desplegada, conectividad con Telegram, CPU/RAM/disco, tamaño de SQLite y los últimos logs/errores. Si se detecta un bucle, **Detener contenedor** ejecuta únicamente `docker compose stop bot`; conserva base, imagen, secretos y Compose para poder corregir y reintentar el deploy. **Verificar** muestra progreso, hora y cantidad de requisitos listos o un error explícito.
 

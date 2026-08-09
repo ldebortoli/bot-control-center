@@ -4,7 +4,7 @@ import http from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   createCredentialStatusStep,
   createCredentialUpdateStep,
@@ -22,14 +22,17 @@ import {
   isValidOpaqueId,
   isValidTag,
   redactOutput,
+  validateReleaseSchedule,
   validateCredentialPatch,
 } from "./core.mjs";
 import { DeploymentJobManager } from "./job-manager.mjs";
-import { defaultConfigPath, loadRuntimeConfig } from "./runtime-config.mjs";
+import { readScheduledRunState } from "./release-scheduler.mjs";
+import { defaultConfigPath, loadRuntimeConfig, saveBotReleaseSchedule } from "./runtime-config.mjs";
 
 const execFileAsync = promisify(execFile);
 const defaultPort = 43121;
 const listenHost = "127.0.0.1";
+const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const moderationActions = new Set(["delete-trigger", "block-user", "delete-and-block"]);
 const successfulTelegramGetUpdatesLog = /\bgetUpdates\b[^\r\n]*\bHTTP\/[0-9.]+\s+200\s+OK"?\s*$/i;
 
@@ -70,6 +73,44 @@ async function readLatestImage(bot) {
   } catch {
     return null;
   }
+}
+
+export async function installWindowsReleaseSchedule(configPath, botId, schedule, {
+  platform = process.platform,
+  runFile = execFileAsync,
+  nodePath = process.execPath,
+} = {}) {
+  if (platform !== "win32") {
+    throw Object.assign(new Error("La programación persistente sólo está disponible en Windows."), { statusCode: 409 });
+  }
+  const normalized = validateReleaseSchedule(schedule);
+  const scriptPath = path.join(projectRoot, "scripts", "Install-ReleaseSchedule.ps1");
+  const args = [
+    "-NoProfile",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-File",
+    scriptPath,
+    "-ConfigPath",
+    path.resolve(configPath),
+    "-NodePath",
+    path.resolve(nodePath),
+    "-BotId",
+    botId,
+    "-DayOfMonth",
+    String(normalized.dayOfMonth),
+    "-At",
+    normalized.time,
+  ];
+  if (!normalized.enabled) args.push("-Disable");
+  const { stdout } = await runFile("powershell.exe", args, {
+    cwd: projectRoot,
+    env: process.env,
+    shell: false,
+    windowsHide: true,
+    maxBuffer: 1024 * 1024,
+  });
+  return parseJsonOutput(stdout, "Windows no devolvió el estado de la tarea programada.");
 }
 
 export async function inspectCredentialStatus(bot, runFile = execFileAsync) {
@@ -184,7 +225,8 @@ export async function inspectBot(configState, botId) {
       configError: configState.error ?? `No existe configuración local para ${botId}.`,
       target: null,
       latestImage: null,
-      readiness: { release: false, deploy: false, rollback: false, credentials: false, runtime: false, triggers: false, stop: false },
+      releaseSchedule: null,
+      readiness: { release: false, "scheduled-release": false, deploy: false, rollback: false, credentials: false, runtime: false, triggers: false, stop: false },
       checks: [],
     };
   }
@@ -195,7 +237,8 @@ export async function inspectBot(configState, botId) {
   const credentialStatusStep = createCredentialStatusStep(bot);
   const credentialUpdateStep = createCredentialUpdateStep(bot, path.join(bot.repositoryPath, "credential-probe.json"));
   const runtimeStep = createRuntimeStatusStep(bot);
-  const [repositoryOk, publishOk, deployOk, rollbackOk, credentialStatusOk, credentialUpdateOk, botctlScriptOk, botctlRuntimeOk, powershellOk, dockerOk, gcloudOk, gitOk, latestImage] = await Promise.all([
+  const scheduleScript = path.join(projectRoot, "scripts", "Install-ReleaseSchedule.ps1");
+  const [repositoryOk, publishOk, deployOk, rollbackOk, credentialStatusOk, credentialUpdateOk, botctlScriptOk, botctlRuntimeOk, scheduleScriptOk, powershellOk, dockerOk, gcloudOk, gitOk, latestImage] = await Promise.all([
     fileExists(bot.repositoryPath),
     fileExists(publishStep.args[4]),
     fileExists(deployStep.args[4]),
@@ -204,6 +247,7 @@ export async function inspectBot(configState, botId) {
     fileExists(credentialUpdateStep.args[4]),
     fileExists(runtimeStep.args[4]),
     fileExists(botctlRuntimePath(bot)),
+    fileExists(scheduleScript),
     commandExists("powershell.exe"),
     commandExists("docker"),
     commandExists("gcloud"),
@@ -221,6 +265,7 @@ export async function inspectBot(configState, botId) {
     { id: "scripts", label: "Scripts de deploy versionados", ok: publishOk && deployOk && rollbackOk },
     { id: "credential-scripts", label: "Scripts de credenciales versionados", ok: credentialStatusOk && credentialUpdateOk },
     { id: "botctl", label: "Contrato remoto de estado y triggers", ok: botctlScriptOk && botctlRuntimeOk },
+    { id: "scheduler", label: "Programador mensual versionado", ok: scheduleScriptOk },
   ];
   const scriptsAndBase = repositoryOk && powershellOk && publishOk && deployOk && rollbackOk;
   const credentialBase = repositoryOk && powershellOk && gcloudOk && credentialStatusOk && credentialUpdateOk;
@@ -237,8 +282,10 @@ export async function inspectBot(configState, botId) {
       instance: bot.instance,
     },
     latestImage,
+    releaseSchedule: bot.releaseSchedule,
     readiness: {
       release: scriptsAndBase && dockerOk && gcloudOk && gitOk,
+      "scheduled-release": scriptsAndBase && scheduleScriptOk && dockerOk && gcloudOk && gitOk,
       deploy: scriptsAndBase && gcloudOk && Boolean(latestImage),
       rollback: scriptsAndBase && gcloudOk,
       credentials: credentialBase,
@@ -304,6 +351,9 @@ export function createAgentServer({
   triggerMediaFetcher = fetchRemoteTriggerMedia,
   triggerModerator = moderateRemoteTrigger,
   botInspector = inspectBot,
+  scheduleInstaller = installWindowsReleaseSchedule,
+  scheduleSaver = saveBotReleaseSchedule,
+  scheduleStateReader = readScheduledRunState,
 } = {}) {
   const server = http.createServer(async (request, response) => {
     const origin = request.headers.origin;
@@ -347,12 +397,69 @@ export function createAgentServer({
     if (request.method === "GET" && deploymentMatch) {
       const botId = deploymentMatch[1];
       const deployment = await botInspector(configState, botId);
+      const lastScheduledRun = await scheduleStateReader(botId);
       json(response, 200, {
         agent: { status: "online", localOnly: true },
         botId,
         ...deployment,
         activeJob: jobManager.getActive(botId),
+        lastScheduledRun,
       }, origin, allowedOrigins);
+      return;
+    }
+
+    const scheduleMatch = url.pathname.match(/^\/api\/bots\/([A-Za-z0-9._:-]+)\/release-schedule$/);
+    if (request.method === "POST" && scheduleMatch) {
+      try {
+        const botId = scheduleMatch[1];
+        if (!origin || !isAllowedOrigin(origin, allowedOrigins)) {
+          throw Object.assign(new Error("Falta un origen local autorizado."), { statusCode: 403 });
+        }
+        if (!String(request.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) {
+          throw Object.assign(new Error("Se requiere Content-Type application/json."), { statusCode: 415 });
+        }
+        if (request.headers["x-bot-control-action"] !== "release-schedule") {
+          throw Object.assign(new Error("Falta la cabecera de confirmación de acción."), { statusCode: 403 });
+        }
+        const body = await readJsonBody(request);
+        if (body.confirmation !== botId) {
+          throw Object.assign(new Error("La confirmación no coincide con el bot."), { statusCode: 400 });
+        }
+        const schedule = validateReleaseSchedule(body.schedule);
+        const bot = configState.config.bots[botId];
+        if (!bot) {
+          throw Object.assign(new Error(configState.error ?? "Bot sin configuración local."), { statusCode: 409 });
+        }
+        const inspection = await botInspector(configState, botId);
+        if (schedule.enabled && !inspection.readiness["scheduled-release"]) {
+          throw Object.assign(new Error("El release programado no está listo. Revisá Git, Docker, gcloud y los scripts."), { statusCode: 409 });
+        }
+
+        const previousSchedule = bot.releaseSchedule;
+        const task = await scheduleInstaller(configPath, botId, schedule);
+        try {
+          await scheduleSaver(configPath, botId, schedule);
+        } catch (error) {
+          const rollbackSchedule = previousSchedule ?? {
+            enabled: false,
+            dayOfMonth: schedule.dayOfMonth,
+            time: schedule.time,
+            branch: schedule.branch,
+            remote: schedule.remote,
+          };
+          try {
+            await scheduleInstaller(configPath, botId, rollbackSchedule);
+          } catch {
+            // El error original de persistencia conserva prioridad sobre el rollback best-effort.
+          }
+          throw error;
+        }
+        json(response, 200, { botId, schedule, task }, origin, allowedOrigins);
+      } catch (error) {
+        json(response, error?.statusCode ?? 500, {
+          error: redactOutput(error instanceof Error ? error.message : String(error)),
+        }, origin, allowedOrigins);
+      }
       return;
     }
 
@@ -469,7 +576,7 @@ export function createAgentServer({
       return;
     }
 
-    const actionMatch = url.pathname.match(/^\/api\/bots\/([A-Za-z0-9._:-]+)\/(release|deploy|rollback|stop)$/);
+    const actionMatch = url.pathname.match(/^\/api\/bots\/([A-Za-z0-9._:-]+)\/(release|scheduled-release|deploy|rollback|stop)$/);
     if (request.method === "POST" && actionMatch) {
       try {
         const [, botId, action] = actionMatch;

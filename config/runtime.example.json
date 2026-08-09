@@ -11,7 +11,14 @@
       "repository": "bots",
       "zone": "us-central1-a",
       "instance": "galerazo-prod",
-      "imageFile": "deploy\\out\\last-image.txt"
+      "imageFile": "deploy\\out\\last-image.txt",
+      "releaseSchedule": {
+        "enabled": false,
+        "dayOfMonth": 1,
+        "time": "03:00",
+        "branch": "main",
+        "remote": "origin"
+      }
     }
   }
 }

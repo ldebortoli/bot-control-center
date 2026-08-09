@@ -6,14 +6,25 @@ import { RuntimeStatusPanel } from "./runtime-status-panel";
 
 const agentBaseUrl = "http://127.0.0.1:43121";
 
-type DeployAction = "release" | "deploy" | "rollback";
+type DeployAction = "release" | "scheduled-release" | "deploy" | "rollback";
 type AgentCheck = { id: string; label: string; ok: boolean };
+type ReleaseSchedule = {
+  enabled: boolean;
+  dayOfMonth: number;
+  time: string;
+  branch: string;
+  remote: string;
+};
 type DeploymentJob = {
   id: string;
   action: DeployAction;
-  status: "queued" | "running" | "succeeded" | "failed";
+  status: "queued" | "running" | "succeeded" | "failed" | "skipped";
   currentStep: string | null;
   image: string | null;
+  targetCommit: string | null;
+  skipReason: string | null;
+  startedAt?: string | null;
+  finishedAt?: string | null;
   error: string | null;
   logs: { at: string; level: string; message: string }[];
 };
@@ -28,15 +39,24 @@ type DeploymentInfo = {
     instance: string;
   } | null;
   latestImage: string | null;
+  releaseSchedule: ReleaseSchedule | null;
   readiness: Record<DeployAction, boolean>;
   checks: AgentCheck[];
   activeJob: DeploymentJob | null;
+  lastScheduledRun: DeploymentJob | null;
 };
 
 async function readResponse<T>(response: Response): Promise<T> {
   const body = await response.json() as T & { error?: string };
   if (!response.ok) throw new Error(body.error ?? `Error HTTP ${response.status}`);
   return body;
+}
+
+function formatNextMonthlyRun(dayOfMonth: number, time: string, now: Date) {
+  const [hour, minute] = time.split(":").map(Number);
+  const next = new Date(now.getFullYear(), now.getMonth(), dayOfMonth, hour, minute, 0, 0);
+  if (next <= now) next.setMonth(next.getMonth() + 1);
+  return next.toLocaleString("es-AR");
 }
 
 export function DeployPanel({ bot }: { bot: BotDefinition }) {
@@ -47,6 +67,13 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
   const [actionError, setActionError] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState("");
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduleDay, setScheduleDay] = useState(1);
+  const [scheduleTime, setScheduleTime] = useState("03:00");
+  const [savingSchedule, setSavingSchedule] = useState(false);
+  const [scheduleMessage, setScheduleMessage] = useState("");
+  const [scheduledRunIsCurrent, setScheduledRunIsCurrent] = useState(false);
+  const [nextRunLabel, setNextRunLabel] = useState("");
 
   const refreshInfo = useCallback(async (manual = false) => {
     if (manual) {
@@ -60,6 +87,15 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
       const next = await readResponse<DeploymentInfo>(response);
       setInfo(next);
       if (next.activeJob) setJob(next.activeJob);
+      setScheduleEnabled(next.releaseSchedule?.enabled ?? false);
+      const nextDay = next.releaseSchedule?.dayOfMonth ?? 1;
+      const nextTime = next.releaseSchedule?.time ?? "03:00";
+      setScheduleDay(nextDay);
+      setScheduleTime(nextTime);
+      setNextRunLabel(formatNextMonthlyRun(nextDay, nextTime, new Date()));
+      setScheduledRunIsCurrent(next.lastScheduledRun?.status === "running"
+        && Boolean(next.lastScheduledRun.startedAt)
+        && Date.now() - new Date(next.lastScheduledRun.startedAt as string).getTime() < 4 * 60 * 60 * 1000);
       setAgentError("");
       if (manual) {
         const ready = next.checks.filter((check) => check.ok).length;
@@ -87,7 +123,7 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
         const response = await fetch(`${agentBaseUrl}/api/jobs/${job.id}`, { cache: "no-store" });
         const next = await readResponse<DeploymentJob>(response);
         setJob(next);
-        if (next.status === "succeeded" || next.status === "failed") void refreshInfo();
+        if (next.status === "succeeded" || next.status === "failed" || next.status === "skipped") void refreshInfo();
       } catch (error) {
         setActionError(error instanceof Error ? error.message : "No se pudo actualizar la operación.");
       }
@@ -98,6 +134,7 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
   async function runAction(action: DeployAction) {
     const copy = {
       release: "construir, probar y publicar una imagen nueva, y después desplegarla en producción",
+      "scheduled-release": "ejecutar ahora el mismo corte seguro de la programación mensual",
       deploy: "desplegar la última imagen ya publicada en producción",
       rollback: "restaurar en producción la imagen anterior",
     }[action];
@@ -121,10 +158,54 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
     }
   }
 
-  const busy = job?.status === "queued" || job?.status === "running";
+  async function saveSchedule() {
+    if (scheduleEnabled && !window.confirm(`¿Confirmás el release automático mensual de ${bot.name} el día ${scheduleDay} a las ${scheduleTime}?`)) return;
+    setSavingSchedule(true);
+    setScheduleMessage("");
+    setActionError("");
+    try {
+      const response = await fetch(`${agentBaseUrl}/api/bots/${encodeURIComponent(bot.id)}/release-schedule`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Bot-Control-Action": "release-schedule",
+        },
+        body: JSON.stringify({
+          confirmation: bot.id,
+          schedule: {
+            enabled: scheduleEnabled,
+            dayOfMonth: scheduleDay,
+            time: scheduleTime,
+            branch: info?.releaseSchedule?.branch ?? "main",
+            remote: info?.releaseSchedule?.remote ?? "origin",
+          },
+        }),
+      });
+      const saved = await readResponse<{ schedule: ReleaseSchedule; task: { nextRunAt: string | null } }>(response);
+      setScheduleMessage(saved.schedule.enabled
+        ? `Programación guardada. Próxima ejecución: ${saved.task.nextRunAt ? new Date(saved.task.nextRunAt).toLocaleString("es-AR") : "el próximo día configurado"}.`
+        : "Programación deshabilitada.");
+      await refreshInfo();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "No se pudo guardar la programación.");
+    } finally {
+      setSavingSchedule(false);
+    }
+  }
+
+  const busy = job?.status === "queued" || job?.status === "running" || scheduledRunIsCurrent;
   const statusLabel = job
-    ? { queued: "En cola", running: "En curso", succeeded: "Completado", failed: "Falló" }[job.status]
+    ? { queued: "En cola", running: "En curso", succeeded: "Completado", failed: "Falló", skipped: "Sin deploy" }[job.status]
     : "Sin operaciones";
+  const scheduledStatus = info?.lastScheduledRun
+    ? {
+        queued: "En cola",
+        running: "En curso",
+        succeeded: "Desplegado",
+        failed: "Falló",
+        skipped: info.lastScheduledRun.skipReason === "no-changes" ? "Sin cambios" : "Pospuesto",
+      }[info.lastScheduledRun.status]
+    : "Todavía no ejecutado";
 
   return (
     <div className="deploy-workspace">
@@ -201,6 +282,31 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
         </div>
       ) : null}
 
+      {!agentError && info?.configured ? (
+        <section className="panel deploy-schedule-panel">
+          <div className="panel__header">
+            <div><span className="eyebrow">RELEASE PROGRAMADO</span><h2>Corte mensual seguro</h2></div>
+            <span className={scheduleEnabled ? "contract-badge" : "pending-badge"}>{scheduleEnabled ? "ACTIVO" : "DESACTIVADO"}</span>
+          </div>
+          <div className="deploy-schedule-grid">
+            <label className="deploy-schedule-toggle">
+              <input checked={scheduleEnabled} onChange={(event) => setScheduleEnabled(event.target.checked)} type="checkbox" />
+              <span><strong>Publicar sólo si hay commits nuevos</strong><small>La tarea funciona aunque Bot Control Center esté cerrado.</small></span>
+            </label>
+            <label><span>Día del mes</span><input max={28} min={1} onChange={(event) => { const value = Number(event.target.value); setScheduleDay(value); setNextRunLabel(formatNextMonthlyRun(value, scheduleTime, new Date())); }} type="number" value={scheduleDay} /></label>
+            <label><span>Hora local</span><input onChange={(event) => { const value = event.target.value; setScheduleTime(value); setNextRunLabel(formatNextMonthlyRun(scheduleDay, value, new Date())); }} type="time" value={scheduleTime} /></label>
+            <div className="deploy-schedule-next"><span>Próximo corte</span><strong>{nextRunLabel || "Calculando…"}</strong><small>{info.releaseSchedule?.remote ?? "origin"}/{info.releaseSchedule?.branch ?? "main"}</small></div>
+          </div>
+          <div className="deploy-schedule-actions">
+            <button disabled={savingSchedule || busy} onClick={() => void saveSchedule()} type="button">{savingSchedule ? "Guardando…" : "Guardar programación"}</button>
+            <button disabled={busy || !info.readiness["scheduled-release"]} onClick={() => void runAction("scheduled-release")} type="button">Ejecutar corte seguro ahora</button>
+            <div><span>Última ejecución</span><strong>{scheduledStatus}</strong>{info.lastScheduledRun?.targetCommit ? <code>{info.lastScheduledRun.targetCommit.slice(0, 12)}</code> : null}</div>
+          </div>
+          {scheduleMessage ? <p className="verification-feedback" role="status">{scheduleMessage}</p> : null}
+          <p className="guardrail"><span>i</span> Sube sin force todos los commits confirmados de <code>{info.releaseSchedule?.branch ?? "main"}</code> y construye un worktree del commit fijado. Si detecta archivos sin commit, ramas divergentes u otro deploy, pospone y reintenta; nunca incluye cambios que aparezcan durante el build.</p>
+        </section>
+      ) : null}
+
       {!agentError && job ? (
         <section className="panel deploy-job-panel" aria-live="polite">
           <div className="panel__header">
@@ -208,6 +314,7 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
             <span className={`deploy-job-status deploy-job-status--${job.status}`}>{statusLabel}</span>
           </div>
           {job.image ? <p className="deploy-job-image"><span>Imagen</span><code>{job.image}</code></p> : null}
+          {job.targetCommit ? <p className="deploy-job-image"><span>Commit fijado</span><code>{job.targetCommit}</code></p> : null}
           <div className="deploy-terminal" role="log">
             {job.logs.length ? job.logs.map((entry, index) => (
               <div key={`${entry.at}-${index}`} className={`deploy-terminal__line deploy-terminal__line--${entry.level}`}>

@@ -176,3 +176,17 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-07-29.
 - Decisión: establecer sobre el HWND de Edge/Chrome `System.AppUserModel.RelaunchIconResource`, `RelaunchCommand` y, al final, un `System.AppUserModel.ID` exclusivo mediante `SHGetPropertyStoreForWindow`; conservar favicon/manifest y `WM_GETICON`/`WM_SETICON` como capas complementarias.
 - Motivo: Windows puede tomar el icono del grupo de la barra de tareas de la identidad de la aplicación anfitriona aunque el HWND ya tenga un icono personalizado. La identidad explícita separa Bot Control Center de Edge y el recurso de relanzamiento determina el icono de ese grupo.
+
+## D-026 - Releases programados sobre un commit inmutable
+
+- Estado: vigente; amplía D-013.
+- Fecha: 2026-08-09.
+- Decisión: cada release mensual se ejecuta desde una tarea local independiente de la UI. Antes de publicar adquiere un lock por bot compartido con las acciones manuales, exige un árbol Git limpio, hace fetch del remoto y acepta únicamente ramas alineadas por fast-forward. Si el commit local está adelantado, sube ese hash exacto sin `force`; si el remoto está adelantado, usa el hash remoto sin modificar el worktree vivo. El build y el deploy se ejecutan desde un worktree detached del hash fijado. Un tag ya publicado produce un no-op; cambios sin commit, divergencias o concurrencia posponen el corte y habilitan reintentos.
+- Motivo: automatizar releases sin mezclar ediciones que aparecen durante el build, sobrescribir cambios remotos ni publicar trabajo incompleto o secretos accidentales.
+
+## D-027 - Override acotado de Nanoid
+
+- Estado: vigente; amplía D-020.
+- Fecha: 2026-08-09.
+- Decisión: fijar Nanoid transitivo en 3.3.17 mediante `overrides`, conservando PostCSS 8.5.23 y Sharp 0.35.3, y validar con `npm audit --omit=dev`, lint, build y tests. No aplicar correcciones forzadas sobre la cadena de herramientas de desarrollo.
+- Motivo: la auditoría de producción detectó la vulnerabilidad GHSA-2v37-7h3g-55p8 en Nanoid 3.3.16 a través de PostCSS; 3.3.17 corrige el problema sin cambiar la API ni el resto del toolchain.

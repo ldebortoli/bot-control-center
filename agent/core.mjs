@@ -3,6 +3,7 @@ import path from "node:path";
 const identifierPattern = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
 const imagePattern = /^[A-Za-z0-9][A-Za-z0-9._/:@-]+$/;
 const tagPattern = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
+const gitRefPattern = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$/;
 const opaqueIdPattern = /^[A-Za-z0-9_-]{1,2048}$/;
 const moderationActions = new Set(["delete-trigger", "block-user", "delete-and-block"]);
 
@@ -54,6 +55,31 @@ function assertLocalOrigin(value) {
   return origin.origin;
 }
 
+export function validateReleaseSchedule(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    throw new Error("releaseSchedule debe ser un objeto JSON.");
+  }
+  if (typeof raw.enabled !== "boolean") {
+    throw new Error("releaseSchedule.enabled debe ser booleano.");
+  }
+  if (!Number.isInteger(raw.dayOfMonth) || raw.dayOfMonth < 1 || raw.dayOfMonth > 28) {
+    throw new Error("releaseSchedule.dayOfMonth debe estar entre 1 y 28.");
+  }
+  const time = assertString(raw.time, "releaseSchedule.time");
+  if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+    throw new Error("releaseSchedule.time debe usar el formato HH:MM.");
+  }
+  const branch = assertString(raw.branch ?? "main", "releaseSchedule.branch");
+  const remote = assertString(raw.remote ?? "origin", "releaseSchedule.remote");
+  if (!gitRefPattern.test(branch) || branch.includes("..") || branch.endsWith("/")) {
+    throw new Error("releaseSchedule.branch no es una referencia Git válida.");
+  }
+  if (!identifierPattern.test(remote)) {
+    throw new Error("releaseSchedule.remote no es un remoto Git válido.");
+  }
+  return { enabled: raw.enabled, dayOfMonth: raw.dayOfMonth, time, branch, remote };
+}
+
 export function resolveInside(root, relativePath, label) {
   const resolvedRoot = path.resolve(root);
   const resolved = path.resolve(resolvedRoot, relativePath);
@@ -100,6 +126,9 @@ export function parseRuntimeConfig(raw) {
         entry.imageFile ?? path.join("deploy", "out", "last-image.txt"),
         `${id}.imageFile`,
       ),
+      releaseSchedule: entry.releaseSchedule === undefined
+        ? null
+        : validateReleaseSchedule(entry.releaseSchedule),
     };
   }
 

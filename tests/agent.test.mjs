@@ -18,6 +18,8 @@ import {
 import { DeploymentJobManager } from "../agent/job-manager.mjs";
 import { createAgentServer, inspectCredentialStatus } from "../agent/server.mjs";
 
+const noOperationLock = async () => async () => {};
+
 function sampleConfig(repositoryPath) {
   return {
     allowedOrigins: ["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -87,6 +89,7 @@ test("el job de credenciales usa un archivo privado temporal y lo elimina", asyn
   };
   const bot = parseRuntimeConfig(sampleConfig(path.resolve("C:/bots/galerazo"))).bots.galerazo;
   const manager = new DeploymentJobManager({
+    acquireOperationLock: noOperationLock,
     spawnProcess,
     makeTempDirectory: async () => path.resolve("C:/private/bot-control-test"),
     writePrivateFile: async (...args) => { writes.push(args); },
@@ -234,7 +237,7 @@ test("el job de release publica y después despliega sin usar shell", async () =
     return child;
   };
   const bot = parseRuntimeConfig(sampleConfig(path.resolve("C:/bots/galerazo"))).bots.galerazo;
-  const manager = new DeploymentJobManager({ spawnProcess, readTextFile: async () => image });
+  const manager = new DeploymentJobManager({ acquireOperationLock: noOperationLock, spawnProcess, readTextFile: async () => image });
   const job = manager.start(bot, "release", { tag: "abc123" });
 
   for (let index = 0; index < 20 && job.status === "running"; index += 1) {

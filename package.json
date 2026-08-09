@@ -12,8 +12,8 @@
     "build": "node scripts/run-vinext.mjs build",
     "start": "node scripts/run-vinext.mjs start",
     "test": "npm run build && npm run test:unit",
-    "test:unit": "node --test tests/agent.test.mjs tests/agent-coverage.test.mjs tests/rendered-html.test.mjs tests/windows-launcher.test.mjs",
-    "test:coverage": "node --experimental-test-coverage --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 --test-coverage-include=agent/**/*.mjs --test tests/agent.test.mjs tests/agent-coverage.test.mjs",
+    "test:unit": "node --test tests/agent.test.mjs tests/agent-coverage.test.mjs tests/scheduled-release.test.mjs tests/rendered-html.test.mjs tests/windows-launcher.test.mjs",
+    "test:coverage": "node --experimental-test-coverage --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 --test-coverage-include=agent/**/*.mjs --test tests/agent.test.mjs tests/agent-coverage.test.mjs tests/scheduled-release.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },
   "dependencies": {
@@ -40,6 +40,7 @@
     "wrangler": "4.114.0"
   },
   "overrides": {
+    "nanoid": "3.3.17",
     "postcss": "8.5.23",
     "sharp": "0.35.3"
   },

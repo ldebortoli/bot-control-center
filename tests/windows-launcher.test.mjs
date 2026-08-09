@@ -5,6 +5,8 @@ import test from "node:test";
 const launcherSource = new URL("../launcher/BotControlCenterLauncher.cs", import.meta.url);
 const installerSource = new URL("../scripts/install-codex-app.ps1", import.meta.url);
 const buildSource = new URL("../scripts/build-windows-launcher.ps1", import.meta.url);
+const scheduleInstallerSource = new URL("../scripts/Install-ReleaseSchedule.ps1", import.meta.url);
+const scheduleRunnerSource = new URL("../scripts/run-scheduled-release.mjs", import.meta.url);
 
 test("el launcher liga la ventana al ciclo de vida del servidor", async () => {
   const source = await readFile(launcherSource, "utf8");
@@ -47,4 +49,16 @@ test("el instalador crea el acceso en CODEX APPS", async () => {
   assert.match(build, /BotControlCenter\.exe/);
   assert.match(build, /public/);
   assert.match(build, /favicon\.ico/);
+});
+
+test("el programador mensual persiste fuera de la UI y evita instancias superpuestas", async () => {
+  const installer = await readFile(scheduleInstallerSource, "utf8");
+  const runner = await readFile(scheduleRunnerSource, "utf8");
+  assert.match(installer, /TASK_TRIGGER_MONTHLY/);
+  assert.match(installer, /StartWhenAvailable/);
+  assert.match(installer, /TASK_INSTANCES_IGNORE_NEW/);
+  assert.match(installer, /RestartCount = 12/);
+  assert.match(installer, /run-scheduled-release\.mjs/);
+  assert.match(runner, /scheduled-release/);
+  assert.match(runner, /schedule-disabled/);
 });

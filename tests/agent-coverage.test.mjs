@@ -40,6 +40,11 @@ import {
 } from "../agent/server.mjs";
 
 const allowedOrigin = "http://localhost:3000";
+const noOperationLock = async () => async () => {};
+
+function deploymentManager(options = {}) {
+  return new DeploymentJobManager({ acquireOperationLock: noOperationLock, ...options });
+}
 
 function sampleConfig(repositoryPath) {
   return {
@@ -436,7 +441,7 @@ test("interpreta estado, filtra polls exitosos y procesa triggers, moderación y
 test("ejecuta deploy y rollback y conserva salida saneada", async () => {
   const bot = parseRuntimeConfig(sampleConfig(path.resolve("C:/bots/galerazo"))).bots.galerazo;
   const calls = [];
-  const manager = new DeploymentJobManager({
+  const manager = deploymentManager({
     readTextFile: async () => "registry.example/project/image:latest\n",
     spawnProcess: (command, args, options) => {
       calls.push({ command, args, options });
@@ -459,7 +464,7 @@ test("ejecuta deploy y rollback y conserva salida saneada", async () => {
 test("falla jobs inválidos, limita logs y evita operaciones simultáneas", async () => {
   const bot = parseRuntimeConfig(sampleConfig(path.resolve("C:/bots/galerazo"))).bots.galerazo;
   const pendingChild = createChild({ autoFinish: false });
-  const pendingManager = new DeploymentJobManager({
+  const pendingManager = deploymentManager({
     readTextFile: async () => "registry.example/project/image:latest",
     spawnProcess: () => pendingChild,
   });
@@ -469,37 +474,39 @@ test("falla jobs inválidos, limita logs y evita operaciones simultáneas", asyn
   assert.equal(pendingManager.getActive(bot.id), pending);
   assert.equal(pendingManager.getActiveCount(), 1);
   assert.throws(() => pendingManager.start(bot, "rollback"), (error) => error.statusCode === 409);
-  await new Promise((resolve) => setImmediate(resolve));
+  for (let index = 0; index < 100 && !pending.currentStep; index += 1) {
+    await new Promise((resolve) => setImmediate(resolve));
+  }
   pendingManager.stopChildren();
   assert.equal(pendingChild.killed, true);
   pendingChild.emit("close", 0);
   await waitForJob(pending);
 
   const lines = Array.from({ length: 510 }, (_, index) => `línea ${index}`).join("\n");
-  const noisyManager = new DeploymentJobManager({
+  const noisyManager = deploymentManager({
     readTextFile: async () => "registry.example/project/image:latest",
     spawnProcess: () => createChild({ stdout: lines }),
   });
   const noisy = await waitForJob(noisyManager.start(bot, "deploy"));
   assert.equal(noisy.logs.length, 500);
 
-  const bufferedManager = new DeploymentJobManager({
+  const bufferedManager = deploymentManager({
     readTextFile: async () => "registry.example/project/image:latest",
     spawnProcess: () => createChild({ stdout: "x".repeat(8101) }),
   });
   const buffered = await waitForJob(bufferedManager.start(bot, "deploy"));
   assert.ok(buffered.logs.some((entry) => entry.message.length === 2000));
 
-  const invalidImage = new DeploymentJobManager({
+  const invalidImage = deploymentManager({
     readTextFile: async () => "imagen inválida",
     spawnProcess: () => createChild(),
   });
   assert.equal((await waitForJob(invalidImage.start(bot, "release"))).status, "failed");
 
-  const forbidden = new DeploymentJobManager();
+  const forbidden = deploymentManager();
   assert.match((await waitForJob(forbidden.start(bot, "desconocida"))).error, /no permitida/i);
 
-  const failedProcess = new DeploymentJobManager({
+  const failedProcess = deploymentManager({
     readTextFile: async () => "registry.example/project/image:latest",
     spawnProcess: () => createChild({ code: null, stderr: "password=secreto" }),
   });
@@ -507,7 +514,7 @@ test("falla jobs inválidos, limita logs y evita operaciones simultáneas", asyn
   assert.equal(failed.status, "failed");
   assert.doesNotMatch(JSON.stringify(failed), /password=secreto/);
 
-  const spawnError = new DeploymentJobManager({
+  const spawnError = deploymentManager({
     readTextFile: async () => "registry.example/project/image:latest",
     spawnProcess: () => createChild({ error: new Error("spawn falló") }),
   });

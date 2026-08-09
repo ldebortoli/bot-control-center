@@ -1,8 +1,9 @@
-import { spawn } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { execFile, spawn } from "node:child_process";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
 import {
   createCredentialUpdateStep,
   createDeployStep,
@@ -13,8 +14,13 @@ import {
   redactOutput,
   validateCredentialPatch,
 } from "./core.mjs";
+import {
+  acquireBotOperationLock,
+  writeScheduledRunState,
+} from "./release-scheduler.mjs";
 
 const maxLogEntries = 500;
+const execFileAsync = promisify(execFile);
 
 function timestamp() {
   return new Date().toISOString();
@@ -25,14 +31,24 @@ export class DeploymentJobManager {
     spawnProcess = spawn,
     readTextFile = readFile,
     makeTempDirectory = mkdtemp,
+    makeDirectory = mkdir,
     writePrivateFile = writeFile,
+    writeTextFile = writeFile,
     removePath = rm,
+    runFile = execFileAsync,
+    acquireOperationLock = acquireBotOperationLock,
+    writeScheduleState = writeScheduledRunState,
   } = {}) {
     this.spawnProcess = spawnProcess;
     this.readTextFile = readTextFile;
     this.makeTempDirectory = makeTempDirectory;
+    this.makeDirectory = makeDirectory;
     this.writePrivateFile = writePrivateFile;
+    this.writeTextFile = writeTextFile;
     this.removePath = removePath;
+    this.runFile = runFile;
+    this.acquireOperationLock = acquireOperationLock;
+    this.writeScheduleState = writeScheduleState;
     this.jobs = new Map();
     this.activeByBot = new Map();
     this.children = new Set();
@@ -68,6 +84,8 @@ export class DeploymentJobManager {
       startedAt: null,
       finishedAt: null,
       image: null,
+      targetCommit: null,
+      skipReason: null,
       currentStep: null,
       logs: [],
       error: null,
@@ -90,11 +108,17 @@ export class DeploymentJobManager {
   }
 
   async #run(job, bot, { tag, credentialPatch }) {
+    let releaseOperationLock = null;
+    let finalStatus = "failed";
     job.status = "running";
     job.startedAt = timestamp();
     this.#log(job, "info", `Operación ${job.action} iniciada para ${bot.id}.`);
+    await this.#recordScheduleState(job);
     try {
-      if (job.action === "release") {
+      releaseOperationLock = await this.acquireOperationLock(bot.id);
+      if (job.action === "scheduled-release") {
+        await this.#runScheduledRelease(job, bot);
+      } else if (job.action === "release") {
         await this.#runStep(job, bot, createPublishStep(bot, tag));
         job.image = (await this.readTextFile(bot.imageFile, "utf8")).trim();
         if (!isValidImageReference(job.image)) {
@@ -114,16 +138,152 @@ export class DeploymentJobManager {
       } else {
         throw new Error("Acción no permitida.");
       }
-      job.status = "succeeded";
-      this.#log(job, "success", "Operación completada correctamente.");
+      if (job.skipReason) {
+        finalStatus = "skipped";
+      } else {
+        finalStatus = "succeeded";
+        this.#log(job, "success", "Operación completada correctamente.");
+      }
     } catch (error) {
-      job.status = "failed";
+      finalStatus = "failed";
       job.error = redactOutput(error instanceof Error ? error.message : String(error));
       this.#log(job, "error", job.error);
     } finally {
       job.currentStep = null;
       job.finishedAt = timestamp();
+      if (releaseOperationLock) await releaseOperationLock();
       this.activeByBot.delete(bot.id);
+      await this.#recordScheduleState(job, finalStatus);
+      job.status = finalStatus;
+    }
+  }
+
+  async #recordScheduleState(job, status = job.status) {
+    if (job.action !== "scheduled-release") return;
+    try {
+      await this.writeScheduleState(job.botId, { ...job, status });
+    } catch (error) {
+      this.#log(job, "warning", `No se pudo guardar el estado del release programado: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  async #git(repositoryPath, args) {
+    const { stdout = "" } = await this.runFile("git", args, {
+      cwd: repositoryPath,
+      env: process.env,
+      shell: false,
+      windowsHide: true,
+      maxBuffer: 4 * 1024 * 1024,
+    });
+    return String(stdout).trim();
+  }
+
+  async #isAncestor(repositoryPath, ancestor, descendant) {
+    try {
+      await this.#git(repositoryPath, ["merge-base", "--is-ancestor", ancestor, descendant]);
+      return true;
+    } catch (error) {
+      if (error?.code === 1) return false;
+      throw error;
+    }
+  }
+
+  #skip(job, reason, message) {
+    job.skipReason = reason;
+    this.#log(job, reason === "no-changes" ? "success" : "warning", message);
+  }
+
+  async #runScheduledRelease(job, bot) {
+    const schedule = bot.releaseSchedule ?? { branch: "main", remote: "origin" };
+    this.#log(job, "info", "Verificando que el repositorio esté estable antes de fijar el release.");
+    const workingTree = await this.#git(bot.repositoryPath, ["status", "--porcelain=v1", "--untracked-files=normal"]);
+    if (workingTree) {
+      this.#skip(
+        job,
+        "working-tree-dirty",
+        "Release pospuesto: hay cambios locales sin commit. No se subirá trabajo a medio editar.",
+      );
+      return;
+    }
+
+    await this.#git(bot.repositoryPath, ["fetch", "--prune", schedule.remote, schedule.branch]);
+    const localCommit = await this.#git(bot.repositoryPath, ["rev-parse", `refs/heads/${schedule.branch}`]);
+    const remoteCommit = await this.#git(bot.repositoryPath, ["rev-parse", `refs/remotes/${schedule.remote}/${schedule.branch}`]);
+    let targetCommit;
+
+    if (localCommit === remoteCommit) {
+      targetCommit = localCommit;
+    } else if (await this.#isAncestor(bot.repositoryPath, remoteCommit, localCommit)) {
+      targetCommit = localCommit;
+      this.#log(job, "info", `Subiendo el corte ${targetCommit.slice(0, 12)} a ${schedule.remote}/${schedule.branch}.`);
+      await this.#git(bot.repositoryPath, [
+        "push",
+        "--porcelain",
+        schedule.remote,
+        `${targetCommit}:refs/heads/${schedule.branch}`,
+      ]);
+    } else if (await this.#isAncestor(bot.repositoryPath, localCommit, remoteCommit)) {
+      targetCommit = remoteCommit;
+      this.#log(job, "info", `El remoto está adelantado; se usará ${targetCommit.slice(0, 12)} sin modificar el directorio vivo.`);
+    } else {
+      this.#skip(
+        job,
+        "branches-diverged",
+        `Release pospuesto: ${schedule.branch} local y ${schedule.remote}/${schedule.branch} divergen.`,
+      );
+      return;
+    }
+
+    job.targetCommit = targetCommit;
+    const targetTag = targetCommit.slice(0, 12);
+    let latestImage = "";
+    try {
+      latestImage = (await this.readTextFile(bot.imageFile, "utf8")).trim();
+    } catch {
+      // La ausencia de una imagen previa significa que existe algo para publicar.
+    }
+    if (latestImage.slice(latestImage.lastIndexOf(":") + 1) === targetTag) {
+      this.#skip(job, "no-changes", `Sin cambios nuevos: ${targetTag} ya es la última imagen publicada.`);
+      return;
+    }
+
+    const temporaryRoot = await this.makeTempDirectory(path.join(tmpdir(), "bot-control-release-"));
+    const snapshotRoot = path.join(temporaryRoot, "source");
+    let worktreeAdded = false;
+    try {
+      this.#log(job, "info", `Corte inmutable fijado en ${targetCommit}. Los commits posteriores quedan para el próximo ciclo.`);
+      await this.#git(bot.repositoryPath, ["worktree", "add", "--detach", snapshotRoot, targetCommit]);
+      worktreeAdded = true;
+      const imageRelativePath = path.relative(bot.repositoryPath, bot.imageFile);
+      const snapshotBot = {
+        ...bot,
+        repositoryPath: snapshotRoot,
+        imageFile: path.resolve(snapshotRoot, imageRelativePath),
+      };
+
+      await this.#runStep(job, snapshotBot, createPublishStep(snapshotBot, targetTag));
+      job.image = (await this.readTextFile(snapshotBot.imageFile, "utf8")).trim();
+      if (!isValidImageReference(job.image)) {
+        throw new Error("El publicador no dejó una referencia de imagen válida.");
+      }
+      this.#log(job, "info", `Imagen del corte lista: ${job.image}`);
+      await this.#runStep(job, snapshotBot, createDeployStep(snapshotBot, job.image));
+      await this.makeDirectory(path.dirname(bot.imageFile), { recursive: true });
+      await this.writeTextFile(bot.imageFile, `${job.image}\n`, "utf8");
+    } finally {
+      if (worktreeAdded) {
+        try {
+          await this.#git(bot.repositoryPath, ["worktree", "remove", "--force", snapshotRoot]);
+        } catch (error) {
+          this.#log(job, "warning", `No se pudo retirar el worktree temporal: ${error instanceof Error ? error.message : String(error)}`);
+          try {
+            await this.#git(bot.repositoryPath, ["worktree", "prune"]);
+          } catch {
+            // La limpieza del directorio temporal continúa aunque Git no pueda podar metadata.
+          }
+        }
+      }
+      await this.removePath(temporaryRoot, { recursive: true, force: true });
     }
   }
 

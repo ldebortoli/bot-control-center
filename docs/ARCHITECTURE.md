@@ -54,6 +54,23 @@ No existe un endpoint de shell ni un campo para ingresar comandos. El ejecutable
 
 El agente no guarda credenciales. Docker y Google Cloud CLI usan sus almacenes locales; los secretos del bot siguen únicamente en `/etc/galerazo/bot.env` y `/etc/galerazo/secrets` dentro de la VM.
 
+## Flujo de release programado
+
+La programación mensual vive en `runtime.local.json` y se materializa con una tarea de Windows por bot. El Programador de tareas ejecuta directamente un runner Node local, de modo que no depende de que la ventana o los servidores de desarrollo estén abiertos. La tarea usa `StartWhenAvailable`, impide instancias paralelas y reintenta los fallos operativos de forma acotada.
+
+```text
+Tarea mensual
+  → adquiere un lock por bot compartido con las acciones manuales
+  → exige un árbol Git limpio y hace fetch de remote/branch
+  → rechaza divergencias o publica el commit local con push no forzado
+  → compara el tag de 12 caracteres con la última imagen
+  → crea un worktree detached del commit objetivo
+  → ejecuta Publish-DockerImage.ps1 y Deploy-Gce.ps1 desde ese snapshot
+  → conserva imagen/resultado fuera del repositorio y libera worktree + lock
+```
+
+El hash objetivo queda fijado antes del build. Los cambios posteriores no pueden entrar en el artefacto aunque ocurran durante la ejecución. El sistema no crea commits automáticos: una edición sin confirmar se considera trabajo incompleto y pospone el corte. Un release sin commits nuevos es un resultado exitoso sin cambios; un repositorio sucio, una divergencia o una operación concurrente produce un resultado pospuesto para que Windows lo reintente sin sobrescribir nada.
+
 ## Flujo de credenciales remotas
 
 La UI consulta un inspector root remoto que responde exclusivamente booleanos por variable. Para una actualización exige origen local, cabecera de acción, confirmación del bot y una allowlist cerrada. El parche nunca forma parte de los argumentos ni del job: se escribe con permisos privados en un directorio temporal, se copia por IAP, preserva valores omitidos, valida el host y se elimina en ambos extremos. El token principal no se puede borrar desde el panel. Esta capacidad permanece separada de deploy y no reinicia el proceso automáticamente.

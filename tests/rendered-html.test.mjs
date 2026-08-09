@@ -145,6 +145,10 @@ test("incluye deploy local de una sola acción con confirmación y rollback", as
 
   assert.match(controlCenter, /id: "deploy"/);
   assert.match(deployPanel, /Publicar y deployar/);
+  assert.match(deployPanel, /Corte mensual seguro/);
+  assert.match(deployPanel, /Publicar sólo si hay commits nuevos/);
+  assert.match(deployPanel, /Ejecutar corte seguro ahora/);
+  assert.match(deployPanel, /worktree del commit fijado/);
   assert.match(deployPanel, /window\.confirm/);
   assert.match(deployPanel, /Rollback/);
   assert.match(deployPanel, /deploy-target__image/);
@@ -153,6 +157,9 @@ test("incluye deploy local de una sola acción con confirmación y rollback", as
   assert.match(agent, /127\.0\.0\.1/);
   assert.match(agent, /X-Bot-Control-Action|x-bot-control-action/);
   assert.match(jobManager, /shell: false/);
+  assert.match(jobManager, /worktree.*add/);
+  assert.match(jobManager, /"push",\s*"--porcelain"/);
+  assert.doesNotMatch(jobManager, /--force-with-lease/);
   assert.match(launcher, /run-local\.mjs/);
 });
 
