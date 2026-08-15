@@ -290,7 +290,11 @@ test("inspecciona scripts e imagen sin elevar permisos", async () => {
     assert.equal(ready.latestImage, "registry.example/project/image:latest");
     assert.equal(ready.checks.find((check) => check.id === "scripts").ok, true);
     assert.equal(ready.checks.find((check) => check.id === "botctl").ok, true);
-    assert.equal(ready.readiness.stop, true);
+    const readinessChecks = Object.fromEntries(ready.checks.map((check) => [check.id, check.ok]));
+    assert.equal(
+      ready.readiness.stop,
+      readinessChecks.repository && readinessChecks.powershell && readinessChecks.gcloud && readinessChecks.botctl,
+    );
 
     await rm(path.join(botctlDirectory, "botctl.py"));
     const missingBotctlRuntime = await inspectBot(state, "galerazo");

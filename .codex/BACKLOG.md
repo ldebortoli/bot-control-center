@@ -7,7 +7,7 @@
 
 # DONE
 
-- [2026-08-15] Paginar el visor real de triggers de a 10 y agregar filtros por ID/nombre de chat, tipo y rango de fechas, orden por fecha/nombre/chat y estado vacío; agregar CI público de calidad y actualizar Nanoid a 3.3.18. Validación: lint, build y 48/48 pruebas OK; cobertura del agente 100% en líneas, ramas y funciones; `npm audit --omit=dev` en 0 vulnerabilidades.
+- [2026-08-15] Paginar el visor real de triggers de a 10 y agregar filtros por ID/nombre de chat, tipo y rango de fechas, orden por fecha/nombre/chat y estado vacío; agregar CI público de calidad y actualizar Nanoid a 3.3.18. Corregir la prueba de readiness para validar el conjunto de herramientas informado sin asumir PowerShell/GCloud en runners Linux. Validación local: lint, build y 48/48 pruebas OK; cobertura del agente 100% en líneas, ramas y funciones; `npm audit --omit=dev` en 0 vulnerabilidades.
 
 - [2026-08-09] Implementar releases mensuales seguros por bot y habilitarlos para Galerazo el día 1 a las 03:00: configuración editable en Deploy, tarea de Windows independiente de la UI, lock interproceso, árbol limpio, fetch y push no forzado, selección fast-forward, snapshot inmutable mediante worktree, no-op sin cambios, estado persistido y reintentos ante bloqueos. La tarea quedó `Ready` para 2026-09-01 03:00 y no se ejecutó un deploy durante la instalación. Validación: lint, build y 48/48 pruebas OK; cobertura del agente 100% en líneas, ramas y funciones; audit de producción en 0 vulnerabilidades.
 
