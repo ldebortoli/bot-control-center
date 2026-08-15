@@ -217,7 +217,7 @@ export async function fetchRemoteTriggerMedia(bot, triggerId, {
   }
 }
 
-export async function inspectBot(configState, botId) {
+export async function inspectBot(configState, botId, { commandChecker = commandExists } = {}) {
   const bot = configState.config.bots[botId];
   if (!bot) {
     return {
@@ -248,10 +248,10 @@ export async function inspectBot(configState, botId) {
     fileExists(runtimeStep.args[4]),
     fileExists(botctlRuntimePath(bot)),
     fileExists(scheduleScript),
-    commandExists("powershell.exe"),
-    commandExists("docker"),
-    commandExists("gcloud"),
-    commandExists("git"),
+    commandChecker("powershell.exe"),
+    commandChecker("docker"),
+    commandChecker("gcloud"),
+    commandChecker("git"),
     readLatestImage(bot),
   ]);
 

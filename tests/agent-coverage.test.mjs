@@ -285,16 +285,12 @@ test("inspecciona scripts e imagen sin elevar permisos", async () => {
     await writeFile(path.join(outputDirectory, "last-image.txt"), "registry.example/project/image:latest\n", "utf8");
     const config = parseRuntimeConfig(sampleConfig(temporary));
     const state = { config, error: null };
-    const ready = await inspectBot(state, "galerazo");
+    const ready = await inspectBot(state, "galerazo", { commandChecker: async () => true });
     assert.equal(ready.configured, true);
     assert.equal(ready.latestImage, "registry.example/project/image:latest");
     assert.equal(ready.checks.find((check) => check.id === "scripts").ok, true);
     assert.equal(ready.checks.find((check) => check.id === "botctl").ok, true);
-    const readinessChecks = Object.fromEntries(ready.checks.map((check) => [check.id, check.ok]));
-    assert.equal(
-      ready.readiness.stop,
-      readinessChecks.repository && readinessChecks.powershell && readinessChecks.gcloud && readinessChecks.botctl,
-    );
+    assert.equal(ready.readiness.stop, true);
 
     await rm(path.join(botctlDirectory, "botctl.py"));
     const missingBotctlRuntime = await inspectBot(state, "galerazo");
