@@ -190,3 +190,24 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-08-09.
 - Decisión: fijar Nanoid transitivo en 3.3.17 mediante `overrides`, conservando PostCSS 8.5.23 y Sharp 0.35.3, y validar con `npm audit --omit=dev`, lint, build y tests. No aplicar correcciones forzadas sobre la cadena de herramientas de desarrollo.
 - Motivo: la auditoría de producción detectó la vulnerabilidad GHSA-2v37-7h3g-55p8 en Nanoid 3.3.16 a través de PostCSS; 3.3.17 corrige el problema sin cambiar la API ni el resto del toolchain.
+
+## D-028 - Navegacion local de triggers reales
+
+- Estado: vigente.
+- Fecha: 2026-08-15.
+- Decision: conservar la consulta remota sin parametros y aplicar en la UI paginacion de a 10, busqueda por chat, filtros de tipo/fecha y ordenamiento sobre el conjunto ya recibido.
+- Motivo: mejorar la exploracion sin ampliar el contrato privilegiado ni sumar consultas remotas hasta que el volumen real justifique paginacion en el origen.
+
+## D-029 - Repositorio publico con CI de calidad
+
+- Estado: vigente; reemplaza D-010 respecto de la visibilidad observada y complementa D-016/D-017.
+- Fecha: 2026-08-15.
+- Decision: registrar la visibilidad publica actual de GitHub y ejecutar en un unico workflow rapido lint, build, tests, cobertura con umbrales del 100% para el agente y auditoria de produccion, con cache, cancelacion y timeout.
+- Motivo: reconciliar la memoria con el estado real del remoto y proteger la rama publica sin duplicar trabajos costosos.
+
+## D-030 - Actualizacion del override de Nanoid
+
+- Estado: vigente; reemplaza D-027.
+- Fecha: 2026-08-15.
+- Decision: elevar el override transitivo de Nanoid a 3.3.18 y mantener PostCSS 8.5.23 y Sharp 0.35.3.
+- Motivo: la auditoria de produccion actualizada considera vulnerables las versiones de Nanoid anteriores a 3.3.18; la nueva fijacion deja `npm audit --omit=dev` en cero sin forzar cambios incompatibles del toolchain.

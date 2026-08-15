@@ -7,7 +7,7 @@ Dashboard local para observar varios bots remotos desde una sola interfaz. Galer
 - selector de bots y estado general de la flota;
 - estado real de VM/contenedor, healthcheck, reinicios, imagen, Telegram, CPU, RAM, disco y SQLite;
 - últimos logs y errores obtenidos desde el adaptador remoto, omitiendo únicamente los polls rutinarios `getUpdates` que terminaron en `HTTP 200 OK`;
-- visualizador genérico de triggers con texto, imágenes, GIF, stickers, audio/video, autor, chat y auditoría de moderación;
+- visualizador genérico de triggers con texto, imágenes, GIF, stickers, audio/video, autor, chat, filtros, paginación de a 10 y auditoría de moderación;
 - estado explícito cuando SQL, triggers u otra capacidad real no están configurados;
 - publicación y deploy controlado de Galerazo en Google Compute Engine, con logs y rollback;
 - releases mensuales configurables que fijan un commit, publican sólo cambios confirmados y continúan aunque la UI esté cerrada;
@@ -44,6 +44,8 @@ npm audit --omit=dev   # dependencias que llegan a producción
 ```
 
 `test:coverage` usa el motor incorporado en Node.js, muestra porcentajes por archivo y falla si el agente privilegiado baja de 100% en líneas, ramas o funciones. El alcance instrumentado es `agent/**/*.mjs`, donde viven la API local, la validación de configuración, los guardrails de credenciales y los jobs operativos. La interfaz, el launcher y el render continúan cubiertos por el build y las pruebas de integración de la suite completa.
+
+GitHub Actions ejecuta en cada push y pull request contra `main` una única verificación rápida con caché de npm, cancelación de ejecuciones reemplazadas y un timeout de 15 minutos: lint, build, suite unitaria, cobertura y auditoría de dependencias de producción.
 
 Next está fijado en 16.2.12 y el proyecto sustituye sus versiones transitivas vulnerables de Nanoid, PostCSS y Sharp mediante overrides explícitos. La auditoría de producción debe permanecer en cero. El audit completo puede seguir mostrando avisos dentro de las herramientas de lint de `eslint-config-next`; no se usa `npm audit fix --force` mientras ese preset mantenga plugins incompatibles con ESLint 10.
 
@@ -97,7 +99,7 @@ Las vistas **Resumen**, **Logs** y **Deploy** incluyen el estado remoto actualiz
 
 ## Visualizar y moderar triggers
 
-Cualquier bot que declare y tenga configurada la capacidad real `triggers` muestra una biblioteca con su contenido, archivo multimedia, usuario creador y chat de origen. El panel admite texto; imágenes PNG, JPEG, WebP y GIF; stickers estáticos WebP/PNG; stickers animados WebM y TGS; además de audio y video. Todo archivo se puede descargar, y los formatos animados se reproducen dentro de la aplicación. Si el bot no declara esa capacidad, la vista dice **No hay triggers disponibles**; si la declara pero falla la lectura, muestra el error de conexión.
+Cualquier bot que declare y tenga configurada la capacidad real `triggers` muestra una biblioteca con su contenido, archivo multimedia, usuario creador y chat de origen. La biblioteca muestra 10 elementos por página y permite buscar por ID o nombre de chat, filtrar por tipo y rango de fechas, y ordenar por fecha, nombre o chat. El panel admite texto; imágenes PNG, JPEG, WebP y GIF; stickers estáticos WebP/PNG; stickers animados WebM y TGS; además de audio y video. Todo archivo se puede descargar, y los formatos animados se reproducen dentro de la aplicación. Si el bot no declara esa capacidad, la vista dice **No hay triggers disponibles**; si la declara pero falla la lectura, muestra el error de conexión.
 
 En Galerazo la lista se lee directamente de SQLite por IAP; si la VM o el bot no son accesibles se muestra un error de conexión y nunca se sustituyen los datos por fixtures. Los archivos se obtienen desde Telegram bajo demanda mediante el token que permanece en la VM.
 

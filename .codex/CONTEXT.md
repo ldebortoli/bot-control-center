@@ -7,8 +7,8 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 ## Estado estable
 
 - Ruta: `C:\Users\calei\Documents\Codex\BotControlCenter\dashboard`
-- Stack: Node.js 22+, TypeScript, React 19.2.8, Next 16.2.12 y vinext/Vite 8.1.5 para Cloudflare Sites. Los overrides de Nanoid 3.3.17, PostCSS 8.5.23 y Sharp 0.35.3 sustituyen dependencias transitivas vulnerables que el árbol todavía declara con versiones anteriores.
-- Git: repositorio privado en `https://github.com/ldebortoli/bot-control-center`, con `origin` configurado y rama principal `main`.
+- Stack: Node.js 22+, TypeScript, React 19.2.8, Next 16.2.12 y vinext/Vite 8.1.5 para Cloudflare Sites. Los overrides de Nanoid 3.3.18, PostCSS 8.5.23 y Sharp 0.35.3 sustituyen dependencias transitivas vulnerables que el árbol todavía declara con versiones anteriores.
+- Git: repositorio publico en `https://github.com/ldebortoli/bot-control-center`, con `origin` configurado y rama principal `main`.
 - Idioma de la interfaz y documentación: español.
 - Hosting: no desplegado; `.openai/hosting.json` mantiene D1 y R2 desactivados.
 - Datos de observación: reales para Galerazo mediante un `botctl` efímero por IAP; un error de conexión queda explícito y nunca se reemplaza por fixtures. `config/runtime.local.json` existe localmente, está ignorado y apunta a `bot-fleet-production/us-central1-a/galerazo-prod`; no contiene secretos.
@@ -26,7 +26,7 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 - `public/og-bot-control-center.png`: imagen social generada para el proyecto.
 - `launcher/`, `bin/` y `scripts/*windows-launcher*`: app nativa de Windows que supervisa vinext y el agente, abre la UI en una ventana aislada, comparte un único `.ico` entre ejecutable/favicon/manifest y asigna al HWND su propio `AppUserModelID` y recurso de relanzamiento para separarlo del grupo de Edge. Reaplica el icono si Edge/Chrome intenta reemplazarlo y sigue la ventana real aunque el navegador derive el arranque a otro proceso.
 - El administrador de flota activa, quita y registra bots locales; conserva la selección y los registros personalizados en `localStorage`, sin credenciales ni métricas/logs/triggers. Los registros de versiones anteriores se sanean al hidratarse.
-- Los bots que declaran y tienen configurado `triggers` muestran un inspector genérico con autor, chat, texto y reproducción/descarga de imágenes, GIF, stickers WebP/WebM/TGS, audio, video y archivos. Galerazo consulta SQLite/Telegram reales y ejecuta moderación confirmada con aviso al chat. Sin capacidad se muestra `No hay triggers disponibles`; si falla el adaptador se informa el error de conexión.
+- Los bots que declaran y tienen configurado `triggers` muestran un inspector genérico con autor, chat, texto y reproducción/descarga de imágenes, GIF, stickers WebP/WebM/TGS, audio, video y archivos. La lista se pagina de a 10 y permite filtrar por ID/nombre de chat, tipo y rango de fechas, y ordenar por fecha, nombre o chat. Galerazo consulta SQLite/Telegram reales y ejecuta moderación confirmada con aviso al chat. Sin capacidad se muestra `No hay triggers disponibles`; si falla el adaptador se informa el error de conexión.
 - Galerazo expone en Resumen, Logs y Deploy un panel real de VM/contenedor, health, reinicios, imagen, CPU/RAM/disco/SQLite, Telegram, logs/errores y alertas. Bot Control Center filtra sólo los accesos rutinarios `getUpdates` que terminan en `HTTP 200 OK`; conserva timeouts, errores, respuestas no exitosas y cualquier otra operación. Una detención confirmada usa `docker compose stop bot` para cortar bucles sin borrar datos.
 - Galerazo declara `credentials`: la UI muestra sólo presencia/ausencia, recibe reemplazos enmascarados, conserva campos vacíos y permite borrar únicamente opcionales. El agente usa un parche temporal privado por IAP y nunca guarda ni devuelve los valores.
 - Galerazo tiene un release mensual seguro habilitado para el día 1 a las 03:00 (hora local de Windows). Una tarea persistente ejecuta el runner aunque la UI esté cerrada, exige un árbol Git limpio, sincroniza `origin/main` sin `force`, fija el commit y publica/despliega desde un worktree detached. Si no hay commits nuevos no toca producción; ante divergencias, cambios sin commit u otra operación activa pospone el corte.
@@ -49,6 +49,8 @@ Comandos verificados en Windows:
 El runner `scripts/run-vinext.mjs` hace que dev/build/start sean multiplataforma; `scripts/run-local.mjs` administra en conjunto UI y agente.
 
 La cobertura usa el motor V8 incorporado en Node sobre `agent/**/*.mjs`, con umbrales automáticos de 100% en líneas, ramas y funciones. La suite completa conserva además el build y las pruebas de render, launcher e integración.
+
+El workflow `.github/workflows/quality.yml` ejecuta lint, build, suite unitaria, cobertura y auditoria de produccion en pushes y pull requests contra `main`, con cache, cancelacion por concurrencia y timeout de 15 minutos.
 
 En Windows también existe el acceso `C:\Users\calei\Documents\Codex\CODEX APPS\Bot Control Center.lnk`. Muestra una ventana de inicio inmediata, inicia UI y agente ocultos en localhost y apaga el árbol de procesos al cerrar. Si hay un job operativo activo, espera a que termine antes de apagar para no interrumpir un push o deploy.
 

@@ -77,6 +77,12 @@ test("incluye visor multimedia y moderación auditada para triggers reales", asy
   assert.match(remoteTriggers, /Eliminar trigger/);
   assert.match(remoteTriggers, /Bloquear usuario/);
   assert.match(remoteTriggers, /Eliminar y bloquear/);
+  assert.match(remoteTriggers, /const triggersPerPage = 10/);
+  assert.match(remoteTriggers, /Chat ID o nombre/);
+  assert.match(remoteTriggers, /Más recientes/);
+  assert.match(remoteTriggers, /type="date"/);
+  assert.match(remoteTriggers, /Página \{currentPage\} de \{totalPages\} · 10 por página/);
+  assert.match(remoteTriggers, /Ningún trigger coincide con los filtros/);
   assert.match(remoteTriggers, /No se muestran fixtures/);
   assert.match(mediaViewer, /<video/);
   assert.match(mediaViewer, /<audio/);
