@@ -153,6 +153,8 @@ test("incluye deploy local de una sola acción con confirmación y rollback", as
   assert.match(deployPanel, /Publicar y deployar/);
   assert.match(deployPanel, /Corte mensual seguro/);
   assert.match(deployPanel, /Publicar sólo si hay commits nuevos/);
+  assert.match(deployPanel, /Actualizar librerías antes del corte/);
+  assert.match(deployPanel, /requirements\.txt/);
   assert.match(deployPanel, /Ejecutar corte seguro ahora/);
   assert.match(deployPanel, /worktree del commit fijado/);
   assert.match(deployPanel, /window\.confirm/);

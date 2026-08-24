@@ -6,7 +6,7 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 
 ## Estado estable
 
-- Ruta: `C:\Users\calei\Documents\Codex\BotControlCenter\dashboard`
+- Ruta: `%USERPROFILE%\Documents\Codex\BotControlCenter\dashboard`
 - Stack: Node.js 22+, TypeScript, React 19.2.8, Next 16.2.12 y vinext/Vite 8.1.5 para Cloudflare Sites. Los overrides de Nanoid 3.3.18, PostCSS 8.5.23 y Sharp 0.35.3 sustituyen dependencias transitivas vulnerables que el árbol todavía declara con versiones anteriores.
 - Git: repositorio publico en `https://github.com/ldebortoli/bot-control-center`, con `origin` configurado y rama principal `main`.
 - Idioma de la interfaz y documentación: español.
@@ -29,7 +29,7 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 - Los bots que declaran y tienen configurado `triggers` muestran un inspector genérico con autor, chat, texto y reproducción/descarga de imágenes, GIF, stickers WebP/WebM/TGS, audio, video y archivos. La lista se pagina de a 10 y permite filtrar por ID/nombre de chat, tipo y rango de fechas, y ordenar por fecha, nombre o chat. Galerazo consulta SQLite/Telegram reales y ejecuta moderación confirmada con aviso al chat. Sin capacidad se muestra `No hay triggers disponibles`; si falla el adaptador se informa el error de conexión.
 - Galerazo expone en Resumen, Logs y Deploy un panel real de VM/contenedor, health, reinicios, imagen, CPU/RAM/disco/SQLite, Telegram, logs/errores y alertas. Bot Control Center filtra sólo los accesos rutinarios `getUpdates` que terminan en `HTTP 200 OK`; conserva timeouts, errores, respuestas no exitosas y cualquier otra operación. Una detención confirmada usa `docker compose stop bot` para cortar bucles sin borrar datos.
 - Galerazo declara `credentials`: la UI muestra sólo presencia/ausencia, recibe reemplazos enmascarados, conserva campos vacíos y permite borrar únicamente opcionales. El agente usa un parche temporal privado por IAP y nunca guarda ni devuelve los valores.
-- Galerazo tiene un release mensual seguro habilitado para el día 1 a las 03:00 (hora local de Windows). Una tarea persistente ejecuta el runner aunque la UI esté cerrada, exige un árbol Git limpio, sincroniza `origin/main` sin `force`, fija el commit y publica/despliega desde un worktree detached. Si no hay commits nuevos no toca producción; ante divergencias, cambios sin commit u otra operación activa pospone el corte.
+- Galerazo tiene un release mensual seguro habilitado para el día 1 a las 03:00 (hora local de Windows), con actualización estable de dependencias previa. Una tarea persistente ejecuta el runner aunque la UI esté cerrada, exige un árbol Git limpio, sincroniza `origin/main` sin `force` y fija la base en un worktree detached. Allí resuelve y valida el lock mediante el script versionado de Galerazo; solo permite que cambie `requirements.txt`, crea y sube un commit acotado sin `force`, y publica/despliega el hash final únicamente si todavía no tiene imagen. Si no cambia código ni lock no toca producción; cualquier validación fallida, divergencia, archivo inesperado, cambio sin commit u otra operación activa cancela o pospone el corte.
 
 ## Ejecución y tests
 
@@ -52,7 +52,7 @@ La cobertura usa el motor V8 incorporado en Node sobre `agent/**/*.mjs`, con umb
 
 El workflow `.github/workflows/quality.yml` ejecuta lint, build, suite unitaria, cobertura y auditoria de produccion en pushes y pull requests contra `main`, con cache, cancelacion por concurrencia y timeout de 15 minutos.
 
-En Windows también existe el acceso `C:\Users\calei\Documents\Codex\CODEX APPS\Bot Control Center.lnk`. Muestra una ventana de inicio inmediata, inicia UI y agente ocultos en localhost y apaga el árbol de procesos al cerrar. Si hay un job operativo activo, espera a que termine antes de apagar para no interrumpir un push o deploy.
+En Windows también existe el acceso `%USERPROFILE%\Documents\Codex\CODEX APPS\Bot Control Center.lnk`. Muestra una ventana de inicio inmediata con X nativa y cancelación por Escape, inicia UI y agente ocultos en localhost y apaga el árbol de procesos al cerrar. Si hay un job operativo activo, espera a que termine antes de apagar para no interrumpir un push o deploy.
 
 La tarea `Bot Control Center - Release - galerazo` está instalada en el Programador de tareas, usa `StartWhenAvailable`, `IgnoreNew`, un límite de 3 horas y hasta 12 reintentos horarios. Su próxima ejecución verificada es el 2026-09-01 a las 03:00. La configuración real permanece en el archivo ignorado `config/runtime.local.json`.
 
@@ -67,6 +67,8 @@ Computer Use/Windows Graphics Capture no pudo validar visualmente la ventana Edg
 - Consultas SQLite reales requieren `mode=ro`, `PRAGMA query_only=ON`, authorizer, timeout y límite de filas.
 - La moderación remota de triggers usa permisos separados, confirmación, revalidación contra SQLite, resultado estructurado y aviso al chat; un fallo parcial del aviso se informa explícitamente.
 - El deploy usa un agente local separado, scripts fijos, confirmación, logs saneados y una sola operación por bot; restart y otras escrituras generales siguen fuera del MVP. La única excepción operativa adicional es detener de forma segura el servicio `bot` para cortar un bucle.
-- Los releases programados nunca crean commits ni incluyen archivos sin confirmar: sólo publican commits existentes de la rama configurada, usan push no forzado y un snapshot por hash. El lock por bot se comparte entre procesos y con todas las acciones manuales.
+- Los releases programados no incluyen archivos del worktree vivo ni aceptan mutaciones arbitrarias. La única creación automática permitida es un commit de `requirements.txt` producido y validado por el actualizador fijo dentro del snapshot; siempre usa push no forzado. El lock por bot se comparte entre procesos y con todas las acciones manuales.
+- El repositorio publico mantiene Secret Scanning y Push Protection habilitados. Los commits usan el correo `noreply` de GitHub y los artefactos versionados no contienen rutas personales cuando `%USERPROFILE%` o una ruta relativa es suficiente.
+- Las validaciones locales son obligatorias antes de publicar cambios; GitHub Actions es una segunda capa. No esperar, sondear ni monitorear CI remota despues del push salvo pedido explicito del usuario en la solicitud actual.
 - La edición de credenciales está separada del deploy, exige confirmación y no reinicia el bot. Como Compose inyecta `/etc/galerazo/bot.env` al crear el contenedor, un simple `restart` no aplica el nuevo entorno; hace falta deploy o recreación explícita.
 - La superficie instalada en producción audita en 0 vulnerabilidades. El audit que incluye herramientas de desarrollo conserva avisos en la cadena de lint de `eslint-config-next`/`minimatch`; no debe forzarse ESLint 10 mientras los plugins del preset declaren compatibilidad sólo hasta ESLint 9.

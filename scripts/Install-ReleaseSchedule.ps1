@@ -45,7 +45,7 @@ if ($Disable) {
 }
 
 $definition = $service.NewTask(0)
-$definition.RegistrationInfo.Description = "Publica y despliega un corte inmutable de $BotId solo cuando hay commits nuevos."
+$definition.RegistrationInfo.Description = "Actualiza dependencias estables si corresponde y publica/despliega $BotId solo cuando hay cambios validados."
 $definition.RegistrationInfo.Author = "Bot Control Center"
 $definition.Principal.LogonType = 3 # TASK_LOGON_INTERACTIVE_TOKEN
 $definition.Principal.RunLevel = 0 # TASK_RUNLEVEL_LUA

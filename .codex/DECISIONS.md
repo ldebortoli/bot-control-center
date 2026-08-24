@@ -211,3 +211,31 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-08-15.
 - Decision: elevar el override transitivo de Nanoid a 3.3.18 y mantener PostCSS 8.5.23 y Sharp 0.35.3.
 - Motivo: la auditoria de produccion actualizada considera vulnerables las versiones de Nanoid anteriores a 3.3.18; la nueva fijacion deja `npm audit --omit=dev` en cero sin forzar cambios incompatibles del toolchain.
+
+## D-031 - Dependencias estables dentro del release mensual
+
+- Estado: vigente; amplía D-026.
+- Fecha: 2026-08-24.
+- Decision: cuando `releaseSchedule.updateDependencies` esta activo, crear primero el worktree detached de la base fijada y ejecutar alli el actualizador versionado del bot. Solo se acepta como resultado un unico `requirements.txt` modificado y ya validado; el agente lo confirma, obtiene el nuevo hash y lo sube a la rama configurada mediante push no forzado. La comparacion con la ultima imagen y el deploy se hacen sobre ese hash final. Si no cambia el lock ni el codigo, terminar sin imagen ni deploy; cualquier fallo de resolucion, pruebas, archivo inesperado o rechazo del push cancela el corte.
+- Motivo: incorporar mantenimiento mensual de librerias sin mezclar cambios locales, desplegar locks rotos ni generar releases vacios.
+
+## D-032 - Pantalla de inicio cancelable
+
+- Estado: vigente.
+- Fecha: 2026-08-24.
+- Decision: la unica pantalla bloqueante nativa, `StartupForm`, conserva la X visible desde el primer frame y acepta Escape. Ambas rutas marcan la misma cancelacion y dejan que el ciclo existente con Job Objects y disposicion estructurada cierre todos los procesos propiedad del launcher.
+- Motivo: permitir salir incluso si la inicializacion se demora o falla, sin ventanas atrapadas ni procesos huerfanos.
+
+## D-033 - Proteccion del repositorio publico y privacidad del autor
+
+- Estado: vigente.
+- Fecha: 2026-08-24.
+- Decision: mantener Secret Scanning y Push Protection activos, revisar alertas abiertas, usar el correo `noreply` de la cuenta autenticada y reemplazar rutas absolutas personales por `%USERPROFILE%` o rutas relativas en archivos versionados. No reescribir historial por esta convencion.
+- Motivo: reducir exposicion accidental de secretos y datos personales sin alterar el historial ni el remoto existente.
+
+## D-034 - CI como segunda capa no monitoreada por defecto
+
+- Estado: vigente.
+- Fecha: 2026-08-24.
+- Decision: ejecutar primero las validaciones locales reproducibles y publicar los commits correspondientes. No esperar, consultar repetidamente ni monitorear GitHub Actions despues del push salvo que el usuario lo pida explicitamente en la solicitud vigente.
+- Motivo: conservar feedback local inmediato y evitar consumo innecesario de tiempo y cuota en una segunda capa asincronica.

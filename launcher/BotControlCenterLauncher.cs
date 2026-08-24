@@ -742,6 +742,8 @@ namespace BotControlCenter.WindowsLauncher
             StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(430, 172);
             FormBorderStyle = FormBorderStyle.FixedDialog;
+            ControlBox = true;
+            KeyPreview = true;
             MaximizeBox = false;
             MinimizeBox = false;
             BackColor = Color.FromArgb(8, 11, 11);
@@ -792,14 +794,28 @@ namespace BotControlCenter.WindowsLauncher
             {
                 if (!allowClose)
                 {
-                    CancellationRequested = true;
                     eventArgs.Cancel = true;
-                    Hide();
+                    RequestCancellation();
+                }
+            };
+            KeyDown += delegate(object sender, KeyEventArgs eventArgs)
+            {
+                if (eventArgs.KeyCode == Keys.Escape)
+                {
+                    eventArgs.Handled = true;
+                    eventArgs.SuppressKeyPress = true;
+                    RequestCancellation();
                 }
             };
         }
 
         internal bool CancellationRequested { get; private set; }
+
+        private void RequestCancellation()
+        {
+            CancellationRequested = true;
+            Hide();
+        }
 
         internal void SetStatus(string status)
         {

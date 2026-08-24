@@ -273,6 +273,7 @@ test("inspecciona scripts e imagen sin elevar permisos", async () => {
     await mkdir(botctlDirectory, { recursive: true });
     for (const script of [
       "Publish-DockerImage.ps1",
+      "Update-Dependencies.ps1",
       "Deploy-Gce.ps1",
       "Rollback-Gce.ps1",
       "Get-GceBotSecretStatus.ps1",
@@ -289,8 +290,36 @@ test("inspecciona scripts e imagen sin elevar permisos", async () => {
     assert.equal(ready.configured, true);
     assert.equal(ready.latestImage, "registry.example/project/image:latest");
     assert.equal(ready.checks.find((check) => check.id === "scripts").ok, true);
+    assert.equal(ready.checks.find((check) => check.id === "dependency-update").ok, true);
     assert.equal(ready.checks.find((check) => check.id === "botctl").ok, true);
     assert.equal(ready.readiness.stop, true);
+
+    await rm(path.join(deployDirectory, "Update-Dependencies.ps1"));
+    const scheduledConfig = sampleConfig(temporary);
+    scheduledConfig.bots.galerazo.releaseSchedule = {
+      enabled: true,
+      updateDependencies: true,
+      dayOfMonth: 1,
+      time: "03:00",
+      branch: "main",
+      remote: "origin",
+    };
+    const missingDependencyUpdater = await inspectBot(
+      { config: parseRuntimeConfig(scheduledConfig), error: null },
+      "galerazo",
+      { commandChecker: async () => true },
+    );
+    assert.equal(missingDependencyUpdater.checks.find((check) => check.id === "dependency-update").ok, false);
+    assert.equal(missingDependencyUpdater.readiness["scheduled-release"], false);
+    await writeFile(path.join(deployDirectory, "Update-Dependencies.ps1"), "# test", "utf8");
+
+    const missingPythonLauncher = await inspectBot(
+      { config: parseRuntimeConfig(scheduledConfig), error: null },
+      "galerazo",
+      { commandChecker: async (command) => command !== "py" },
+    );
+    assert.equal(missingPythonLauncher.checks.find((check) => check.id === "python-launcher").ok, false);
+    assert.equal(missingPythonLauncher.readiness["scheduled-release"], false);
 
     await rm(path.join(botctlDirectory, "botctl.py"));
     const missingBotctlRuntime = await inspectBot(state, "galerazo");

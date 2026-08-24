@@ -7,6 +7,7 @@ import test from "node:test";
 import {
   createCredentialStatusStep,
   createCredentialUpdateStep,
+  createDependencyUpdateStep,
   createDeployStep,
   createPublishStep,
   isAllowedOrigin,
@@ -209,11 +210,13 @@ test("valida configuración local y mantiene las rutas dentro del repositorio", 
 test("construye únicamente invocaciones PowerShell de scripts versionados", () => {
   const bot = parseRuntimeConfig(sampleConfig(path.resolve("C:/bots/galerazo"))).bots.galerazo;
   const publish = createPublishStep(bot, "abc123");
+  const dependencies = createDependencyUpdateStep(bot);
   const deploy = createDeployStep(bot, "us-central1-docker.pkg.dev/demo/bots/galerazobot:abc123");
 
   assert.equal(publish.command, "powershell.exe");
   assert.deepEqual(publish.args.slice(0, 4), ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"]);
   assert.match(publish.args[4], /Publish-DockerImage\.ps1$/);
+  assert.match(dependencies.args[4], /Update-Dependencies\.ps1$/);
   assert.match(deploy.args[4], /Deploy-Gce\.ps1$/);
   assert.ok(!deploy.args.includes(";"));
 });

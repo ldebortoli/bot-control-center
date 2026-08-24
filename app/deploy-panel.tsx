@@ -10,6 +10,7 @@ type DeployAction = "release" | "scheduled-release" | "deploy" | "rollback";
 type AgentCheck = { id: string; label: string; ok: boolean };
 type ReleaseSchedule = {
   enabled: boolean;
+  updateDependencies: boolean;
   dayOfMonth: number;
   time: string;
   branch: string;
@@ -68,6 +69,7 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
   const [verifying, setVerifying] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState("");
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduleUpdatesDependencies, setScheduleUpdatesDependencies] = useState(false);
   const [scheduleDay, setScheduleDay] = useState(1);
   const [scheduleTime, setScheduleTime] = useState("03:00");
   const [savingSchedule, setSavingSchedule] = useState(false);
@@ -88,6 +90,7 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
       setInfo(next);
       if (next.activeJob) setJob(next.activeJob);
       setScheduleEnabled(next.releaseSchedule?.enabled ?? false);
+      setScheduleUpdatesDependencies(next.releaseSchedule?.updateDependencies ?? false);
       const nextDay = next.releaseSchedule?.dayOfMonth ?? 1;
       const nextTime = next.releaseSchedule?.time ?? "03:00";
       setScheduleDay(nextDay);
@@ -159,7 +162,7 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
   }
 
   async function saveSchedule() {
-    if (scheduleEnabled && !window.confirm(`¿Confirmás el release automático mensual de ${bot.name} el día ${scheduleDay} a las ${scheduleTime}?`)) return;
+    if (scheduleEnabled && !window.confirm(`¿Confirmás el release automático mensual de ${bot.name} el día ${scheduleDay} a las ${scheduleTime}?${scheduleUpdatesDependencies ? " Antes del corte buscará y validará actualizaciones estables de las dependencias." : ""}`)) return;
     setSavingSchedule(true);
     setScheduleMessage("");
     setActionError("");
@@ -174,6 +177,7 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
           confirmation: bot.id,
           schedule: {
             enabled: scheduleEnabled,
+            updateDependencies: scheduleUpdatesDependencies,
             dayOfMonth: scheduleDay,
             time: scheduleTime,
             branch: info?.releaseSchedule?.branch ?? "main",
@@ -296,6 +300,10 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
             <label><span>Día del mes</span><input max={28} min={1} onChange={(event) => { const value = Number(event.target.value); setScheduleDay(value); setNextRunLabel(formatNextMonthlyRun(value, scheduleTime, new Date())); }} type="number" value={scheduleDay} /></label>
             <label><span>Hora local</span><input onChange={(event) => { const value = event.target.value; setScheduleTime(value); setNextRunLabel(formatNextMonthlyRun(scheduleDay, value, new Date())); }} type="time" value={scheduleTime} /></label>
             <div className="deploy-schedule-next"><span>Próximo corte</span><strong>{nextRunLabel || "Calculando…"}</strong><small>{info.releaseSchedule?.remote ?? "origin"}/{info.releaseSchedule?.branch ?? "main"}</small></div>
+            <label className="deploy-schedule-toggle deploy-schedule-toggle--dependencies">
+              <input checked={scheduleUpdatesDependencies} disabled={!scheduleEnabled} onChange={(event) => setScheduleUpdatesDependencies(event.target.checked)} type="checkbox" />
+              <span><strong>Actualizar librerías antes del corte</strong><small>Si encuentra versiones estables nuevas, las valida, confirma y sube antes del deploy. Si no cambia nada, no crea ningún commit.</small></span>
+            </label>
           </div>
           <div className="deploy-schedule-actions">
             <button disabled={savingSchedule || busy} onClick={() => void saveSchedule()} type="button">{savingSchedule ? "Guardando…" : "Guardar programación"}</button>
@@ -303,7 +311,7 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
             <div><span>Última ejecución</span><strong>{scheduledStatus}</strong>{info.lastScheduledRun?.targetCommit ? <code>{info.lastScheduledRun.targetCommit.slice(0, 12)}</code> : null}</div>
           </div>
           {scheduleMessage ? <p className="verification-feedback" role="status">{scheduleMessage}</p> : null}
-          <p className="guardrail"><span>i</span> Sube sin force todos los commits confirmados de <code>{info.releaseSchedule?.branch ?? "main"}</code> y construye un worktree del commit fijado. Si detecta archivos sin commit, ramas divergentes u otro deploy, pospone y reintenta; nunca incluye cambios que aparezcan durante el build.</p>
+          <p className="guardrail"><span>i</span> Trabaja sobre un worktree del commit fijado. Cuando la actualización de librerías está activa, sólo permite confirmar un <code>requirements.txt</code> validado y lo sube sin force; después despliega únicamente si el commit final todavía no tiene imagen. Si detecta archivos inesperados, pruebas fallidas, ramas divergentes u otro deploy, pospone y reintenta.</p>
         </section>
       ) : null}
 

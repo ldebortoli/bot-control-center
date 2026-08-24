@@ -6,6 +6,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import {
   createCredentialUpdateStep,
+  createDependencyUpdateStep,
   createDeployStep,
   createPublishStep,
   createRollbackStep,
@@ -234,24 +235,11 @@ export class DeploymentJobManager {
       return;
     }
 
-    job.targetCommit = targetCommit;
-    const targetTag = targetCommit.slice(0, 12);
-    let latestImage = "";
-    try {
-      latestImage = (await this.readTextFile(bot.imageFile, "utf8")).trim();
-    } catch {
-      // La ausencia de una imagen previa significa que existe algo para publicar.
-    }
-    if (latestImage.slice(latestImage.lastIndexOf(":") + 1) === targetTag) {
-      this.#skip(job, "no-changes", `Sin cambios nuevos: ${targetTag} ya es la última imagen publicada.`);
-      return;
-    }
-
     const temporaryRoot = await this.makeTempDirectory(path.join(tmpdir(), "bot-control-release-"));
     const snapshotRoot = path.join(temporaryRoot, "source");
     let worktreeAdded = false;
     try {
-      this.#log(job, "info", `Corte inmutable fijado en ${targetCommit}. Los commits posteriores quedan para el próximo ciclo.`);
+      this.#log(job, "info", `Base inmutable fijada en ${targetCommit}. Los commits posteriores quedan para el próximo ciclo.`);
       await this.#git(bot.repositoryPath, ["worktree", "add", "--detach", snapshotRoot, targetCommit]);
       worktreeAdded = true;
       const imageRelativePath = path.relative(bot.repositoryPath, bot.imageFile);
@@ -260,6 +248,52 @@ export class DeploymentJobManager {
         repositoryPath: snapshotRoot,
         imageFile: path.resolve(snapshotRoot, imageRelativePath),
       };
+
+      if (schedule.updateDependencies) {
+        await this.#runStep(job, snapshotBot, createDependencyUpdateStep(snapshotBot));
+        const dependencyStatus = await this.#git(snapshotRoot, [
+          "status",
+          "--porcelain=v1",
+          "--untracked-files=normal",
+        ]);
+        if (dependencyStatus) {
+          const changedFiles = dependencyStatus
+            .split(/\r?\n/)
+            .filter(Boolean)
+            .map((line) => line.trimStart().replace(/^(?:\?\?|[A-Z]{1,2})\s+/, "").trim());
+          if (JSON.stringify(changedFiles) !== '["requirements.txt"]') {
+            throw new Error(
+              `El actualizador modificó archivos no permitidos: ${changedFiles.join(", ")}.`,
+            );
+          }
+          this.#log(job, "info", "Se encontraron dependencias estables nuevas; guardando el lock validado.");
+          await this.#git(snapshotRoot, ["add", "--", "requirements.txt"]);
+          await this.#git(snapshotRoot, ["commit", "-m", "Update locked dependencies"]);
+          targetCommit = await this.#git(snapshotRoot, ["rev-parse", "HEAD"]);
+          this.#log(job, "info", `Subiendo la actualización validada ${targetCommit.slice(0, 12)} sin force.`);
+          await this.#git(snapshotRoot, [
+            "push",
+            "--porcelain",
+            schedule.remote,
+            `${targetCommit}:refs/heads/${schedule.branch}`,
+          ]);
+        } else {
+          this.#log(job, "success", "Las dependencias estables ya están actualizadas.");
+        }
+      }
+
+      job.targetCommit = targetCommit;
+      const targetTag = targetCommit.slice(0, 12);
+      let latestImage = "";
+      try {
+        latestImage = (await this.readTextFile(bot.imageFile, "utf8")).trim();
+      } catch {
+        // La ausencia de una imagen previa significa que existe algo para publicar.
+      }
+      if (latestImage.slice(latestImage.lastIndexOf(":") + 1) === targetTag) {
+        this.#skip(job, "no-changes", `Sin cambios nuevos: ${targetTag} ya es la última imagen publicada.`);
+        return;
+      }
 
       await this.#runStep(job, snapshotBot, createPublishStep(snapshotBot, targetTag));
       job.image = (await this.readTextFile(snapshotBot.imageFile, "utf8")).trim();

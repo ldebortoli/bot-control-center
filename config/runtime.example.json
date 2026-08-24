@@ -14,6 +14,7 @@
       "imageFile": "deploy\\out\\last-image.txt",
       "releaseSchedule": {
         "enabled": false,
+        "updateDependencies": false,
         "dayOfMonth": 1,
         "time": "03:00",
         "branch": "main",

@@ -38,6 +38,10 @@ test("el launcher liga la ventana al ciclo de vida del servidor", async () => {
   assert.match(source, /activeJobs/);
   assert.match(source, /StartupForm/);
   assert.match(source, /El primer inicio puede demorar unos segundos/);
+  assert.match(source, /ControlBox = true/);
+  assert.match(source, /KeyPreview = true/);
+  assert.match(source, /Keys\.Escape/);
+  assert.match(source, /RequestCancellation\(\)/);
 });
 
 test("el instalador crea el acceso en CODEX APPS", async () => {

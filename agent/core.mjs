@@ -62,6 +62,10 @@ export function validateReleaseSchedule(raw) {
   if (typeof raw.enabled !== "boolean") {
     throw new Error("releaseSchedule.enabled debe ser booleano.");
   }
+  const updateDependencies = raw.updateDependencies ?? false;
+  if (typeof updateDependencies !== "boolean") {
+    throw new Error("releaseSchedule.updateDependencies debe ser booleano.");
+  }
   if (!Number.isInteger(raw.dayOfMonth) || raw.dayOfMonth < 1 || raw.dayOfMonth > 28) {
     throw new Error("releaseSchedule.dayOfMonth debe estar entre 1 y 28.");
   }
@@ -77,7 +81,7 @@ export function validateReleaseSchedule(raw) {
   if (!identifierPattern.test(remote)) {
     throw new Error("releaseSchedule.remote no es un remoto Git válido.");
   }
-  return { enabled: raw.enabled, dayOfMonth: raw.dayOfMonth, time, branch, remote };
+  return { enabled: raw.enabled, updateDependencies, dayOfMonth: raw.dayOfMonth, time, branch, remote };
 }
 
 export function resolveInside(root, relativePath, label) {
@@ -247,6 +251,17 @@ export function createPublishStep(bot, tag) {
     "Construir, probar y publicar imagen",
     resolveInside(bot.repositoryPath, path.join("scripts", "deploy", "Publish-DockerImage.ps1"), "publishScript"),
     namedArguments,
+  );
+}
+
+export function createDependencyUpdateStep(bot) {
+  return powershellStep(
+    "Buscar y validar actualizaciones estables de dependencias",
+    resolveInside(
+      bot.repositoryPath,
+      path.join("scripts", "deploy", "Update-Dependencies.ps1"),
+      "dependencyUpdateScript",
+    ),
   );
 }
 

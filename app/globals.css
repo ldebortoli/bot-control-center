@@ -1289,6 +1289,7 @@ button {
 .deploy-schedule-grid input[type="number"],
 .deploy-schedule-grid input[type="time"] { background: #080c0b; border: 1px solid #34413d; border-radius: 5px; color: #d1d9d6; min-height: 36px; outline: 0; padding: 0 10px; }
 .deploy-schedule-grid .deploy-schedule-toggle { align-items: center; flex-direction: row; gap: 11px; }
+.deploy-schedule-grid .deploy-schedule-toggle--dependencies { grid-column: 1 / -1; }
 .deploy-schedule-toggle input { accent-color: var(--lime); height: 17px; width: 17px; }
 .deploy-schedule-toggle span { letter-spacing: 0; text-transform: none; }
 .deploy-schedule-toggle strong,

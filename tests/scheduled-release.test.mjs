@@ -21,10 +21,12 @@ import { runScheduledRelease } from "../scripts/run-scheduled-release.mjs";
 const allowedOrigin = "http://localhost:3000";
 const localCommit = "b".repeat(40);
 const remoteCommit = "a".repeat(40);
+const dependencyCommit = "c".repeat(40);
 const publishedImage = `us-central1-docker.pkg.dev/demo/bots/galerazobot:${localCommit.slice(0, 12)}`;
 
 function runtimeConfig(repositoryPath, releaseSchedule = {
   enabled: true,
+  updateDependencies: false,
   dayOfMonth: 1,
   time: "03:00",
   branch: "main",
@@ -66,6 +68,8 @@ async function waitForJob(job) {
 
 function scheduledHarness({
   status = "",
+  dependencyStatus = "",
+  updatedCommit = dependencyCommit,
   local = localCommit,
   remote = remoteCommit,
   ancestors = new Set([[remoteCommit, localCommit].join(" ")]),
@@ -93,7 +97,10 @@ function scheduledHarness({
     assert.equal(options.shell, false);
     gitCalls.push(args);
     if (failGit && args.join(" ").includes(failGit.match)) throw failGit.error;
-    if (args[0] === "status") return { stdout: status };
+    if (args[0] === "status") {
+      return { stdout: options.cwd === snapshotRoot ? dependencyStatus : status };
+    }
+    if (args[0] === "rev-parse" && args[1] === "HEAD") return { stdout: updatedCommit };
     if (args[0] === "rev-parse" && args[1].startsWith("refs/heads/")) return { stdout: local };
     if (args[0] === "rev-parse" && args[1].startsWith("refs/remotes/")) return { stdout: remote };
     if (args[0] === "merge-base") {
@@ -137,13 +144,15 @@ function scheduledHarness({
 
 test("valida la programación mensual y la incorpora a cada bot", () => {
   const normalized = validateReleaseSchedule({ enabled: true, dayOfMonth: 1, time: "03:00" });
-  assert.deepEqual(normalized, { enabled: true, dayOfMonth: 1, time: "03:00", branch: "main", remote: "origin" });
+  assert.deepEqual(normalized, { enabled: true, updateDependencies: false, dayOfMonth: 1, time: "03:00", branch: "main", remote: "origin" });
+  assert.equal(validateReleaseSchedule({ ...normalized, updateDependencies: true }).updateDependencies, true);
   assert.deepEqual(parseRuntimeConfig(runtimeConfig(path.resolve("C:/bot"))).bots.galerazo.releaseSchedule, normalized);
   assert.equal(parseRuntimeConfig(runtimeConfig(path.resolve("C:/bot"), null)).bots.galerazo.releaseSchedule, null);
   for (const invalid of [
     null,
     [],
     { enabled: "sí", dayOfMonth: 1, time: "03:00" },
+    { enabled: true, updateDependencies: "sí", dayOfMonth: 1, time: "03:00" },
     { enabled: true, dayOfMonth: 0, time: "03:00" },
     { enabled: true, dayOfMonth: 29, time: "03:00" },
     { enabled: true, dayOfMonth: 1.5, time: "03:00" },
@@ -161,7 +170,7 @@ test("guarda la programación local de forma atómica y limpia temporales ante e
   const writes = [];
   const moves = [];
   const removed = [];
-  const schedule = { enabled: true, dayOfMonth: 2, time: "04:15", branch: "main", remote: "origin" };
+  const schedule = { enabled: true, updateDependencies: false, dayOfMonth: 2, time: "04:15", branch: "main", remote: "origin" };
   const saved = await saveBotReleaseSchedule("C:/config.json", "galerazo", schedule, {
     readText: async () => JSON.stringify(raw),
     writeText: async (...args) => { writes.push(args); },
@@ -329,7 +338,7 @@ test("rechaza locks activos, recupera locks huérfanos y limpia fallos de escrit
 test("publica el commit local fijado, lo sube sin force y despliega desde un worktree", async () => {
   const harness = scheduledHarness();
   const job = await waitForJob(harness.manager.start(harness.bot, "scheduled-release"));
-  assert.equal(job.status, "succeeded");
+  assert.equal(job.status, "succeeded", JSON.stringify(job, null, 2));
   assert.equal(job.targetCommit, localCommit);
   assert.equal(job.image, publishedImage);
   assert.equal(harness.processCalls.length, 2);
@@ -341,6 +350,82 @@ test("publica el commit local fijado, lo sube sin force y despliega desde un wor
   assert.equal(harness.stateWrites.at(-1).status, "succeeded");
   assert.equal(harness.wasLockReleased(), true);
   assert.equal(harness.wasRemoved(), true);
+});
+
+test("actualiza, valida y confirma dependencias antes de publicar el hash final", async () => {
+  const schedule = {
+    enabled: true,
+    updateDependencies: true,
+    dayOfMonth: 1,
+    time: "03:00",
+    branch: "main",
+    remote: "origin",
+  };
+  const dependencyImage = `us-central1-docker.pkg.dev/demo/bots/galerazobot:${dependencyCommit.slice(0, 12)}`;
+  const harness = scheduledHarness({
+    dependencyStatus: " M requirements.txt",
+    releaseSchedule: schedule,
+    snapshotImage: dependencyImage,
+  });
+  const job = await waitForJob(harness.manager.start(harness.bot, "scheduled-release"));
+  assert.equal(job.status, "succeeded", JSON.stringify(job, null, 2));
+  assert.equal(job.targetCommit, dependencyCommit);
+  assert.equal(job.image, dependencyImage);
+  assert.equal(harness.processCalls.length, 3);
+  assert.match(harness.processCalls[0].args[4], /Update-Dependencies\.ps1$/);
+  assert.ok(harness.gitCalls.some((args) => args[0] === "add" && args.includes("requirements.txt")));
+  assert.ok(harness.gitCalls.some((args) => args[0] === "commit" && args.includes("Update locked dependencies")));
+  const dependencyPush = harness.gitCalls.filter((args) => args[0] === "push").at(-1);
+  assert.equal(dependencyPush.at(-1), `${dependencyCommit}:refs/heads/main`);
+  assert.doesNotMatch(dependencyPush.join(" "), /--force/);
+});
+
+test("revisa dependencias sin desplegar cuando el lock y la imagen ya están actuales", async () => {
+  const schedule = {
+    enabled: true,
+    updateDependencies: true,
+    dayOfMonth: 1,
+    time: "03:00",
+    branch: "main",
+    remote: "origin",
+  };
+  const harness = scheduledHarness({
+    local: localCommit,
+    remote: localCommit,
+    liveImage: publishedImage,
+    releaseSchedule: schedule,
+  });
+  const job = await waitForJob(harness.manager.start(harness.bot, "scheduled-release"));
+  assert.equal(job.status, "skipped");
+  assert.equal(job.skipReason, "no-changes");
+  assert.equal(harness.processCalls.length, 1);
+  assert.ok(job.logs.some((entry) => /dependencias estables ya están actualizadas/.test(entry.message)));
+});
+
+test("rechaza archivos inesperados o una validación fallida de dependencias", async () => {
+  const schedule = {
+    enabled: true,
+    updateDependencies: true,
+    dayOfMonth: 1,
+    time: "03:00",
+    branch: "main",
+    remote: "origin",
+  };
+  const unexpected = scheduledHarness({
+    dependencyStatus: " M requirements.txt\n M app.py",
+    releaseSchedule: schedule,
+  });
+  const unexpectedJob = await waitForJob(unexpected.manager.start(unexpected.bot, "scheduled-release"));
+  assert.equal(unexpectedJob.status, "failed");
+  assert.match(unexpectedJob.error, /archivos no permitidos/);
+  assert.equal(unexpected.processCalls.length, 1);
+
+  const invalid = scheduledHarness({ releaseSchedule: schedule });
+  invalid.manager.spawnProcess = () => childProcess(1);
+  const invalidJob = await waitForJob(invalid.manager.start(invalid.bot, "scheduled-release"));
+  assert.equal(invalidJob.status, "failed");
+  assert.match(invalidJob.error, /actualizaciones estables.*código 1/i);
+  assert.equal(invalid.gitCalls.some((args) => args[0] === "commit"), false);
 });
 
 test("omite un release sin commits nuevos y pospone árboles sucios o ramas divergentes", async () => {
@@ -444,7 +529,7 @@ test("cubre fallos previos al worktree y errores planos sin perder el resultado"
 
 test("construye la tarea de Windows con argumentos fijos y soporta deshabilitarla", async () => {
   const calls = [];
-  const schedule = { enabled: true, dayOfMonth: 1, time: "03:00", branch: "main", remote: "origin" };
+  const schedule = { enabled: true, updateDependencies: false, dayOfMonth: 1, time: "03:00", branch: "main", remote: "origin" };
   const installed = await installWindowsReleaseSchedule("C:/config.json", "galerazo", schedule, {
     platform: "win32",
     nodePath: "C:/node/node.exe",
@@ -550,7 +635,7 @@ test("protege la configuración programada y revierte la tarea si falla el guard
     scheduleStateReader: async () => null,
   }, config);
   const url = `${harness.base}/api/bots/galerazo/release-schedule`;
-  const schedule = { enabled: true, dayOfMonth: 1, time: "03:00", branch: "main", remote: "origin" };
+  const schedule = { enabled: true, updateDependencies: false, dayOfMonth: 1, time: "03:00", branch: "main", remote: "origin" };
   const headers = { Origin: allowedOrigin, "Content-Type": "application/json", "X-Bot-Control-Action": "release-schedule" };
   const request = (body, customHeaders = headers) => fetch(url, { method: "POST", headers: customHeaders, body: JSON.stringify(body) });
   try {

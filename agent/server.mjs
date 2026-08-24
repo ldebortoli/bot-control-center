@@ -8,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   createCredentialStatusStep,
   createCredentialUpdateStep,
+  createDependencyUpdateStep,
   createDeployStep,
   createModerationStep,
   createPublishStep,
@@ -232,15 +233,17 @@ export async function inspectBot(configState, botId, { commandChecker = commandE
   }
 
   const publishStep = createPublishStep(bot);
+  const dependencyUpdateStep = createDependencyUpdateStep(bot);
   const deployStep = createDeployStep(bot, "registry.invalid/project/repository/image:probe");
   const rollbackStep = createRollbackStep(bot);
   const credentialStatusStep = createCredentialStatusStep(bot);
   const credentialUpdateStep = createCredentialUpdateStep(bot, path.join(bot.repositoryPath, "credential-probe.json"));
   const runtimeStep = createRuntimeStatusStep(bot);
   const scheduleScript = path.join(projectRoot, "scripts", "Install-ReleaseSchedule.ps1");
-  const [repositoryOk, publishOk, deployOk, rollbackOk, credentialStatusOk, credentialUpdateOk, botctlScriptOk, botctlRuntimeOk, scheduleScriptOk, powershellOk, dockerOk, gcloudOk, gitOk, latestImage] = await Promise.all([
+  const [repositoryOk, publishOk, dependencyUpdateOk, deployOk, rollbackOk, credentialStatusOk, credentialUpdateOk, botctlScriptOk, botctlRuntimeOk, scheduleScriptOk, powershellOk, dockerOk, gcloudOk, gitOk, pythonLauncherOk, latestImage] = await Promise.all([
     fileExists(bot.repositoryPath),
     fileExists(publishStep.args[4]),
+    fileExists(dependencyUpdateStep.args[4]),
     fileExists(deployStep.args[4]),
     fileExists(rollbackStep.args[4]),
     fileExists(credentialStatusStep.args[4]),
@@ -252,6 +255,7 @@ export async function inspectBot(configState, botId, { commandChecker = commandE
     commandChecker("docker"),
     commandChecker("gcloud"),
     commandChecker("git"),
+    commandChecker("py"),
     readLatestImage(bot),
   ]);
 
@@ -262,12 +266,16 @@ export async function inspectBot(configState, botId, { commandChecker = commandE
     { id: "docker", label: "Docker", ok: dockerOk },
     { id: "gcloud", label: "Google Cloud CLI", ok: gcloudOk },
     { id: "git", label: "Git", ok: gitOk },
+    { id: "python-launcher", label: "Python Launcher", ok: pythonLauncherOk },
     { id: "scripts", label: "Scripts de deploy versionados", ok: publishOk && deployOk && rollbackOk },
+    { id: "dependency-update", label: "Actualizador validado de dependencias", ok: dependencyUpdateOk },
     { id: "credential-scripts", label: "Scripts de credenciales versionados", ok: credentialStatusOk && credentialUpdateOk },
     { id: "botctl", label: "Contrato remoto de estado y triggers", ok: botctlScriptOk && botctlRuntimeOk },
     { id: "scheduler", label: "Programador mensual versionado", ok: scheduleScriptOk },
   ];
   const scriptsAndBase = repositoryOk && powershellOk && publishOk && deployOk && rollbackOk;
+  const scheduledScripts = scriptsAndBase
+    && (!bot.releaseSchedule?.updateDependencies || (dependencyUpdateOk && pythonLauncherOk));
   const credentialBase = repositoryOk && powershellOk && gcloudOk && credentialStatusOk && credentialUpdateOk;
   const botctlBase = repositoryOk && powershellOk && gcloudOk && botctlScriptOk && botctlRuntimeOk;
 
@@ -285,7 +293,7 @@ export async function inspectBot(configState, botId, { commandChecker = commandE
     releaseSchedule: bot.releaseSchedule,
     readiness: {
       release: scriptsAndBase && dockerOk && gcloudOk && gitOk,
-      "scheduled-release": scriptsAndBase && scheduleScriptOk && dockerOk && gcloudOk && gitOk,
+      "scheduled-release": scheduledScripts && scheduleScriptOk && dockerOk && gcloudOk && gitOk,
       deploy: scriptsAndBase && gcloudOk && Boolean(latestImage),
       rollback: scriptsAndBase && gcloudOk,
       credentials: credentialBase,

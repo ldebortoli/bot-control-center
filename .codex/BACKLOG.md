@@ -5,7 +5,17 @@
 
 # IN PROGRESS
 
+- Ninguna.
+
 # DONE
+
+- [2026-08-24] [USER_REQUEST] El release mensual de Galerazo ahora puede actualizar dependencias antes del corte. Trabaja en un worktree detached, ejecuta el actualizador fijo del bot, solo acepta un `requirements.txt` validado, crea un commit acotado y lo sube sin `force`; despues publica/despliega el hash final solo si no tiene imagen. Sin cambios de codigo o lock termina en no-op. La configuracion local real quedo habilitada y la tarea mensual reinstalada para 2026-09-01 03:00, sin ejecutar un deploy. Validacion: 51 pruebas unitarias, cobertura 100% de lineas/ramas/funciones, lint, build y audit de produccion sin vulnerabilidades.
+
+- [2026-08-24] [USER_QUEUE] Auditada la unica pantalla de inicio bloqueante. `StartupForm` conserva X nativa desde el primer frame, acepta Escape y ambas rutas usan la misma cancelacion; los Job Objects y `using` existentes eliminan UI/agente/navegador al salir. Launcher recompilado, acceso de CODEX APPS reinstalado y contrato cubierto por pruebas automatizadas.
+
+- [2026-08-24] [USER_QUEUE] Repositorio publico auditado: Secret Scanning y Push Protection quedaron habilitados, cero alertas abiertas, autor Git efectivo con correo `noreply` y rutas personales reemplazadas por `%USERPROFILE%` en artefactos versionados. Sin reescritura de historial ni cambio de remoto.
+
+- [2026-08-24] [USER_QUEUE] Registrada la politica estable de ejecutar validaciones locales antes del push y no esperar ni monitorear CI remota salvo pedido explicito del usuario en la solicitud vigente.
 
 - [2026-08-15] Paginar el visor real de triggers de a 10 y agregar filtros por ID/nombre de chat, tipo y rango de fechas, orden por fecha/nombre/chat y estado vacío; agregar CI público de calidad y actualizar Nanoid a 3.3.18. Hacer determinista y multiplataforma la prueba de readiness mediante inyeccion del detector de herramientas, y actualizar las acciones oficiales a v7. Validación local: lint, build y 48/48 pruebas OK; cobertura del agente 100% en líneas, ramas y funciones; `npm audit --omit=dev` en 0 vulnerabilidades.
 
