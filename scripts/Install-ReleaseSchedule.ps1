@@ -19,6 +19,7 @@ $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $resolvedConfig = (Resolve-Path -LiteralPath $ConfigPath).Path
 $resolvedNode = (Resolve-Path -LiteralPath $NodePath).Path
 $runnerPath = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "run-scheduled-release.mjs")).Path
+$progressLauncher = (Resolve-Path -LiteralPath (Join-Path $projectRoot "bin\BotControlCenterScheduledRelease.exe")).Path
 $taskName = "Bot Control Center - Release - $BotId"
 
 $service = New-Object -ComObject "Schedule.Service"
@@ -81,9 +82,12 @@ function Quote-TaskArgument {
 }
 
 $action = $definition.Actions.Create(0) # TASK_ACTION_EXEC
-$action.Path = $resolvedNode
+$action.Path = $progressLauncher
 $action.WorkingDirectory = $projectRoot
 $action.Arguments = @(
+    "--node",
+    (Quote-TaskArgument $resolvedNode),
+    "--runner",
     (Quote-TaskArgument $runnerPath),
     "--config",
     (Quote-TaskArgument $resolvedConfig),
@@ -111,4 +115,5 @@ $nextRun = if ($registered.NextRunTime.Year -gt 1900) { $registered.NextRunTime.
     nextRunAt = $nextRun
     startWhenAvailable = $true
     retryHours = 12
+    progressUi = $true
 } | ConvertTo-Json -Compress

@@ -4,7 +4,11 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { parseRuntimeConfig, validateReleaseSchedule } from "../agent/core.mjs";
+import {
+  createScheduledNotificationStep,
+  parseRuntimeConfig,
+  validateReleaseSchedule,
+} from "../agent/core.mjs";
 import { DeploymentJobManager } from "../agent/job-manager.mjs";
 import {
   acquireBotOperationLock,
@@ -80,6 +84,8 @@ function scheduledHarness({
   worktreeRemovalError = null,
   failPrune = false,
   stateFailure = false,
+  failNotification = false,
+  plainNotificationFailure = false,
   releaseSchedule,
 } = {}) {
   const repositoryPath = path.resolve("C:/bots/galerazo");
@@ -117,7 +123,10 @@ function scheduledHarness({
     runFile,
     spawnProcess: (command, args, options) => {
       processCalls.push({ command, args, options });
-      return childProcess();
+      if (plainNotificationFailure && args.includes("notify-release")) {
+        throw { toString: () => "aviso plano" };
+      }
+      return childProcess(failNotification && args.includes("notify-release") ? 1 : 0);
     },
     readTextFile: async (target) => target.startsWith(snapshotRoot) ? snapshotImage : liveImage,
     makeTempDirectory: async () => temporaryRoot,
@@ -144,8 +153,17 @@ function scheduledHarness({
 
 test("valida la programación mensual y la incorpora a cada bot", () => {
   const normalized = validateReleaseSchedule({ enabled: true, dayOfMonth: 1, time: "03:00" });
-  assert.deepEqual(normalized, { enabled: true, updateDependencies: false, dayOfMonth: 1, time: "03:00", branch: "main", remote: "origin" });
+  assert.deepEqual(normalized, {
+    enabled: true,
+    updateDependencies: false,
+    notifyLogChannel: false,
+    dayOfMonth: 1,
+    time: "03:00",
+    branch: "main",
+    remote: "origin",
+  });
   assert.equal(validateReleaseSchedule({ ...normalized, updateDependencies: true }).updateDependencies, true);
+  assert.equal(validateReleaseSchedule({ ...normalized, notifyLogChannel: true }).notifyLogChannel, true);
   assert.deepEqual(parseRuntimeConfig(runtimeConfig(path.resolve("C:/bot"))).bots.galerazo.releaseSchedule, normalized);
   assert.equal(parseRuntimeConfig(runtimeConfig(path.resolve("C:/bot"), null)).bots.galerazo.releaseSchedule, null);
   for (const invalid of [
@@ -153,6 +171,7 @@ test("valida la programación mensual y la incorpora a cada bot", () => {
     [],
     { enabled: "sí", dayOfMonth: 1, time: "03:00" },
     { enabled: true, updateDependencies: "sí", dayOfMonth: 1, time: "03:00" },
+    { enabled: true, notifyLogChannel: "sí", dayOfMonth: 1, time: "03:00" },
     { enabled: true, dayOfMonth: 0, time: "03:00" },
     { enabled: true, dayOfMonth: 29, time: "03:00" },
     { enabled: true, dayOfMonth: 1.5, time: "03:00" },
@@ -163,6 +182,10 @@ test("valida la programación mensual y la incorpora a cada bot", () => {
     { enabled: true, dayOfMonth: 1, time: "03:00", branch: "feature/" },
     { enabled: true, dayOfMonth: 1, time: "03:00", remote: "origin inválido" },
   ]) assert.throws(() => validateReleaseSchedule(invalid));
+  assert.throws(
+    () => createScheduledNotificationStep(parseRuntimeConfig(runtimeConfig("C:/bot")).bots.galerazo, "otro"),
+    /evento de notificación/,
+  );
 });
 
 test("guarda la programación local de forma atómica y limpia temporales ante error", async () => {
@@ -170,7 +193,7 @@ test("guarda la programación local de forma atómica y limpia temporales ante e
   const writes = [];
   const moves = [];
   const removed = [];
-  const schedule = { enabled: true, updateDependencies: false, dayOfMonth: 2, time: "04:15", branch: "main", remote: "origin" };
+  const schedule = { enabled: true, updateDependencies: false, notifyLogChannel: false, dayOfMonth: 2, time: "04:15", branch: "main", remote: "origin" };
   const saved = await saveBotReleaseSchedule("C:/config.json", "galerazo", schedule, {
     readText: async () => JSON.stringify(raw),
     writeText: async (...args) => { writes.push(args); },
@@ -350,6 +373,65 @@ test("publica el commit local fijado, lo sube sin force y despliega desde un wor
   assert.equal(harness.stateWrites.at(-1).status, "succeeded");
   assert.equal(harness.wasLockReleased(), true);
   assert.equal(harness.wasRemoved(), true);
+});
+
+test("avisa inicio y resultado en Codex - Logs sin comprometer el release", async () => {
+  const notifyingSchedule = {
+    enabled: true,
+    updateDependencies: false,
+    notifyLogChannel: true,
+    dayOfMonth: 1,
+    time: "03:00",
+    branch: "main",
+    remote: "origin",
+  };
+  const succeeded = scheduledHarness({ releaseSchedule: notifyingSchedule });
+  const succeededJob = await waitForJob(succeeded.manager.start(succeeded.bot, "scheduled-release"));
+  assert.equal(succeededJob.status, "succeeded");
+  const succeededEvents = succeeded.processCalls
+    .filter((call) => call.args.includes("notify-release"))
+    .map((call) => call.args[call.args.indexOf("-ReleaseEvent") + 1]);
+  assert.deepEqual(succeededEvents, ["started", "succeeded"]);
+
+  const skipped = scheduledHarness({
+    local: localCommit,
+    remote: localCommit,
+    liveImage: publishedImage,
+    releaseSchedule: notifyingSchedule,
+  });
+  const skippedJob = await waitForJob(skipped.manager.start(skipped.bot, "scheduled-release"));
+  assert.equal(skippedJob.status, "skipped");
+  assert.ok(skipped.processCalls.some((call) => call.args.includes("skipped")));
+
+  const failed = scheduledHarness({
+    failGit: { match: "status", error: new Error("git no disponible") },
+    releaseSchedule: notifyingSchedule,
+  });
+  const failedJob = await waitForJob(failed.manager.start(failed.bot, "scheduled-release"));
+  assert.equal(failedJob.status, "failed");
+  assert.ok(failed.processCalls.some((call) => call.args.includes("failed")));
+
+  const warningOnly = scheduledHarness({
+    local: localCommit,
+    remote: localCommit,
+    liveImage: publishedImage,
+    failNotification: true,
+    releaseSchedule: notifyingSchedule,
+  });
+  const warningJob = await waitForJob(warningOnly.manager.start(warningOnly.bot, "scheduled-release"));
+  assert.equal(warningJob.status, "skipped");
+  assert.equal(warningJob.logs.filter((entry) => /Codex - Logs/.test(entry.message)).length, 2);
+
+  const plainWarning = scheduledHarness({
+    local: localCommit,
+    remote: localCommit,
+    liveImage: publishedImage,
+    plainNotificationFailure: true,
+    releaseSchedule: notifyingSchedule,
+  });
+  const plainWarningJob = await waitForJob(plainWarning.manager.start(plainWarning.bot, "scheduled-release"));
+  assert.equal(plainWarningJob.status, "skipped");
+  assert.ok(plainWarningJob.logs.some((entry) => /aviso plano/.test(entry.message)));
 });
 
 test("actualiza, valida y confirma dependencias antes de publicar el hash final", async () => {

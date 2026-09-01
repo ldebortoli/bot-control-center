@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const launcherSource = new URL("../launcher/BotControlCenterLauncher.cs", import.meta.url);
+const scheduledReleaseLauncherSource = new URL("../launcher/ScheduledReleaseProgress.cs", import.meta.url);
 const installerSource = new URL("../scripts/install-codex-app.ps1", import.meta.url);
 const buildSource = new URL("../scripts/build-windows-launcher.ps1", import.meta.url);
 const scheduleInstallerSource = new URL("../scripts/Install-ReleaseSchedule.ps1", import.meta.url);
@@ -58,11 +59,30 @@ test("el instalador crea el acceso en CODEX APPS", async () => {
 test("el programador mensual persiste fuera de la UI y evita instancias superpuestas", async () => {
   const installer = await readFile(scheduleInstallerSource, "utf8");
   const runner = await readFile(scheduleRunnerSource, "utf8");
+  const build = await readFile(buildSource, "utf8");
+  const progress = await readFile(scheduledReleaseLauncherSource, "utf8");
   assert.match(installer, /TASK_TRIGGER_MONTHLY/);
   assert.match(installer, /StartWhenAvailable/);
   assert.match(installer, /TASK_INSTANCES_IGNORE_NEW/);
   assert.match(installer, /RestartCount = 12/);
   assert.match(installer, /run-scheduled-release\.mjs/);
+  assert.match(installer, /BotControlCenterScheduledRelease\.exe/);
+  assert.match(installer, /--node/);
+  assert.match(installer, /--runner/);
+  assert.match(build, /ScheduledReleaseProgress\.cs/);
+  assert.match(build, /BotControlCenterScheduledRelease\.exe/);
+  assert.match(progress, /SetCurrentProcessExplicitAppUserModelID/);
+  assert.match(progress, /BotControlCenter\.LocalDashboard/);
+  assert.match(progress, /Icon\.ExtractAssociatedIcon\(Application\.ExecutablePath\)/);
+  assert.match(progress, /CreateNoWindow = true/);
+  assert.match(progress, /BeginOutputReadLine/);
+  assert.match(progress, /FormClosing/);
+  assert.match(progress, /Keys\.Escape/);
+  assert.match(progress, /Hide\(\)/);
+  assert.match(progress, /AutoScroll = false/);
+  assert.match(progress, /ProgressBarStyle\.Marquee/);
+  assert.match(progress, /se cerrará automáticamente/);
   assert.match(runner, /scheduled-release/);
   assert.match(runner, /schedule-disabled/);
+  assert.match(runner, /printLogEntries/);
 });

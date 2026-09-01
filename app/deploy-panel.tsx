@@ -11,6 +11,7 @@ type AgentCheck = { id: string; label: string; ok: boolean };
 type ReleaseSchedule = {
   enabled: boolean;
   updateDependencies: boolean;
+  notifyLogChannel: boolean;
   dayOfMonth: number;
   time: string;
   branch: string;
@@ -70,6 +71,7 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
   const [verificationMessage, setVerificationMessage] = useState("");
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduleUpdatesDependencies, setScheduleUpdatesDependencies] = useState(false);
+  const [scheduleNotifiesLogChannel, setScheduleNotifiesLogChannel] = useState(false);
   const [scheduleDay, setScheduleDay] = useState(1);
   const [scheduleTime, setScheduleTime] = useState("03:00");
   const [savingSchedule, setSavingSchedule] = useState(false);
@@ -91,6 +93,7 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
       if (next.activeJob) setJob(next.activeJob);
       setScheduleEnabled(next.releaseSchedule?.enabled ?? false);
       setScheduleUpdatesDependencies(next.releaseSchedule?.updateDependencies ?? false);
+      setScheduleNotifiesLogChannel(next.releaseSchedule?.notifyLogChannel ?? false);
       const nextDay = next.releaseSchedule?.dayOfMonth ?? 1;
       const nextTime = next.releaseSchedule?.time ?? "03:00";
       setScheduleDay(nextDay);
@@ -178,6 +181,7 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
           schedule: {
             enabled: scheduleEnabled,
             updateDependencies: scheduleUpdatesDependencies,
+            notifyLogChannel: scheduleNotifiesLogChannel,
             dayOfMonth: scheduleDay,
             time: scheduleTime,
             branch: info?.releaseSchedule?.branch ?? "main",
@@ -303,6 +307,10 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
             <label className="deploy-schedule-toggle deploy-schedule-toggle--dependencies">
               <input checked={scheduleUpdatesDependencies} disabled={!scheduleEnabled} onChange={(event) => setScheduleUpdatesDependencies(event.target.checked)} type="checkbox" />
               <span><strong>Actualizar librerías antes del corte</strong><small>Si encuentra versiones estables nuevas, las valida, confirma y sube antes del deploy. Si no cambia nada, no crea ningún commit.</small></span>
+            </label>
+            <label className="deploy-schedule-toggle deploy-schedule-toggle--dependencies">
+              <input checked={scheduleNotifiesLogChannel} disabled={!scheduleEnabled} onChange={(event) => setScheduleNotifiesLogChannel(event.target.checked)} type="checkbox" />
+              <span><strong>Avisar inicio y resultado en Codex - Logs</strong><small>Publica mensajes fijos; nunca incluye credenciales ni la salida completa del deploy.</small></span>
             </label>
           </div>
           <div className="deploy-schedule-actions">

@@ -239,3 +239,10 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-08-24.
 - Decision: ejecutar primero las validaciones locales reproducibles y publicar los commits correspondientes. No esperar, consultar repetidamente ni monitorear GitHub Actions despues del push salvo que el usuario lo pida explicitamente en la solicitud vigente.
 - Motivo: conservar feedback local inmediato y evitar consumo innecesario de tiempo y cuota en una segunda capa asincronica.
+
+## D-035 - Release programado visible y notificaciones fijas
+
+- Estado: vigente; amplía D-026 y D-031.
+- Fecha: 2026-09-01.
+- Decision: la tarea mensual ejecuta un `winexe` nativo con el icono y AppUserModelID de Bot Control Center. La ventana transmite stdout/stderr incremental, conserva controles nativos, permite ocultarse con X/Escape sin cancelar el release y se cierra automaticamente despues del proceso. Cuando `notifyLogChannel` esta activo, el job usa el `botctl` fijo de Galerazo para avisar `started` y un unico resultado `succeeded`, `failed` o `skipped`; un fallo de Telegram se registra como warning y no cambia el corte.
+- Motivo: hacer visible el origen y progreso de una automatizacion independiente de la UI principal, sin exponer una consola, aceptar mensajes arbitrarios ni volver fragil el deploy por una notificacion secundaria.

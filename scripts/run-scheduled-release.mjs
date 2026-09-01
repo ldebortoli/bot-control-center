@@ -16,10 +16,22 @@ function parseArguments(args) {
   return parsed;
 }
 
-async function waitForJob(job) {
-  while (job.status === "queued" || job.status === "running") {
-    await new Promise((resolve) => setTimeout(resolve, 500));
+function printLogEntries(job, fromIndex) {
+  for (let index = fromIndex; index < job.logs.length; index += 1) {
+    const entry = job.logs[index];
+    const output = entry.level === "error" ? console.error : console.log;
+    output(`[${entry.at}] ${entry.level.toUpperCase()} ${entry.message}`);
   }
+  return job.logs.length;
+}
+
+async function waitForJob(job) {
+  let printedEntries = 0;
+  while (job.status === "queued" || job.status === "running") {
+    printedEntries = printLogEntries(job, printedEntries);
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  printLogEntries(job, printedEntries);
   return job;
 }
 
@@ -37,10 +49,6 @@ export async function runScheduledRelease(args = process.argv.slice(2), {
 
   const manager = createManager();
   const job = await waitForJob(manager.start(bot, "scheduled-release"));
-  for (const entry of job.logs) {
-    const output = entry.level === "error" ? console.error : console.log;
-    output(`[${entry.at}] ${entry.level.toUpperCase()} ${entry.message}`);
-  }
   return job;
 }
 

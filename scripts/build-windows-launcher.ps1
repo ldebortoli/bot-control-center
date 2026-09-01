@@ -2,12 +2,14 @@ $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $sourcePath = Join-Path $projectRoot "launcher\BotControlCenterLauncher.cs"
+$scheduledReleaseSourcePath = Join-Path $projectRoot "launcher\ScheduledReleaseProgress.cs"
 $assetsDirectory = Join-Path $projectRoot "assets"
 $iconPath = Join-Path $assetsDirectory "bot-control-center.ico"
 $publicDirectory = Join-Path $projectRoot "public"
 $webIconPath = Join-Path $publicDirectory "favicon.ico"
 $binDirectory = Join-Path $projectRoot "bin"
 $outputPath = Join-Path $binDirectory "BotControlCenter.exe"
+$scheduledReleaseOutputPath = Join-Path $binDirectory "BotControlCenterScheduledRelease.exe"
 
 New-Item -ItemType Directory -Path $assetsDirectory -Force | Out-Null
 New-Item -ItemType Directory -Path $publicDirectory -Force | Out-Null
@@ -97,6 +99,9 @@ if (-not (Test-Path -LiteralPath $compiler)) {
 if (Test-Path -LiteralPath $outputPath) {
   Remove-Item -LiteralPath $outputPath -Force
 }
+if (Test-Path -LiteralPath $scheduledReleaseOutputPath) {
+  Remove-Item -LiteralPath $scheduledReleaseOutputPath -Force
+}
 
 & $compiler `
   /nologo `
@@ -111,6 +116,21 @@ if (Test-Path -LiteralPath $outputPath) {
 
 if ($LASTEXITCODE -ne 0) {
   throw "La compilación del launcher falló con código $LASTEXITCODE."
+}
+
+& $compiler `
+  /nologo `
+  /target:winexe `
+  "/win32icon:$iconPath" `
+  /reference:System.dll `
+  /reference:System.Core.dll `
+  /reference:System.Drawing.dll `
+  /reference:System.Windows.Forms.dll `
+  "/out:$scheduledReleaseOutputPath" `
+  $scheduledReleaseSourcePath
+
+if ($LASTEXITCODE -ne 0) {
+  throw "La compilación de la ventana de release falló con código $LASTEXITCODE."
 }
 
 Write-Output $outputPath

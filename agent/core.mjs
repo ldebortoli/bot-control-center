@@ -6,6 +6,7 @@ const tagPattern = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
 const gitRefPattern = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$/;
 const opaqueIdPattern = /^[A-Za-z0-9_-]{1,2048}$/;
 const moderationActions = new Set(["delete-trigger", "block-user", "delete-and-block"]);
+const releaseNotificationEvents = new Set(["started", "succeeded", "failed", "skipped"]);
 
 export const credentialFieldNames = Object.freeze([
   "TELEGRAM_BOT_TOKEN",
@@ -66,6 +67,10 @@ export function validateReleaseSchedule(raw) {
   if (typeof updateDependencies !== "boolean") {
     throw new Error("releaseSchedule.updateDependencies debe ser booleano.");
   }
+  const notifyLogChannel = raw.notifyLogChannel ?? false;
+  if (typeof notifyLogChannel !== "boolean") {
+    throw new Error("releaseSchedule.notifyLogChannel debe ser booleano.");
+  }
   if (!Number.isInteger(raw.dayOfMonth) || raw.dayOfMonth < 1 || raw.dayOfMonth > 28) {
     throw new Error("releaseSchedule.dayOfMonth debe estar entre 1 y 28.");
   }
@@ -81,7 +86,15 @@ export function validateReleaseSchedule(raw) {
   if (!identifierPattern.test(remote)) {
     throw new Error("releaseSchedule.remote no es un remoto Git válido.");
   }
-  return { enabled: raw.enabled, updateDependencies, dayOfMonth: raw.dayOfMonth, time, branch, remote };
+  return {
+    enabled: raw.enabled,
+    updateDependencies,
+    notifyLogChannel,
+    dayOfMonth: raw.dayOfMonth,
+    time,
+    branch,
+    remote,
+  };
 }
 
 export function resolveInside(root, relativePath, label) {
@@ -363,6 +376,13 @@ export function createModerationStep(bot, triggerId, action) {
 
 export function createStopStep(bot) {
   return createBotctlStep(bot, "stop", [], ["AcknowledgeStop"]);
+}
+
+export function createScheduledNotificationStep(bot, event) {
+  if (!releaseNotificationEvents.has(event)) {
+    throw new Error("El evento de notificación del release no está permitido.");
+  }
+  return createBotctlStep(bot, "notify-release", [["ReleaseEvent", event]]);
 }
 
 export function botctlRuntimePath(bot) {

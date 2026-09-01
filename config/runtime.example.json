@@ -15,6 +15,7 @@
       "releaseSchedule": {
         "enabled": false,
         "updateDependencies": false,
+        "notifyLogChannel": false,
         "dayOfMonth": 1,
         "time": "03:00",
         "branch": "main",

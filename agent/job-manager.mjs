@@ -10,6 +10,7 @@ import {
   createDeployStep,
   createPublishStep,
   createRollbackStep,
+  createScheduledNotificationStep,
   createStopStep,
   isValidImageReference,
   redactOutput,
@@ -118,6 +119,9 @@ export class DeploymentJobManager {
     try {
       releaseOperationLock = await this.acquireOperationLock(bot.id);
       if (job.action === "scheduled-release") {
+        if (bot.releaseSchedule?.notifyLogChannel) {
+          await this.#notifyScheduledRelease(job, bot, "started");
+        }
         await this.#runScheduledRelease(job, bot);
       } else if (job.action === "release") {
         await this.#runStep(job, bot, createPublishStep(bot, tag));
@@ -150,6 +154,14 @@ export class DeploymentJobManager {
       job.error = redactOutput(error instanceof Error ? error.message : String(error));
       this.#log(job, "error", job.error);
     } finally {
+      if (job.action === "scheduled-release" && bot.releaseSchedule?.notifyLogChannel) {
+        const eventByStatus = {
+          succeeded: "succeeded",
+          skipped: "skipped",
+          failed: "failed",
+        };
+        await this.#notifyScheduledRelease(job, bot, eventByStatus[finalStatus]);
+      }
       job.currentStep = null;
       job.finishedAt = timestamp();
       if (releaseOperationLock) await releaseOperationLock();
@@ -165,6 +177,18 @@ export class DeploymentJobManager {
       await this.writeScheduleState(job.botId, { ...job, status });
     } catch (error) {
       this.#log(job, "warning", `No se pudo guardar el estado del release programado: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  async #notifyScheduledRelease(job, bot, event) {
+    try {
+      await this.#runStep(job, bot, createScheduledNotificationStep(bot, event));
+    } catch (error) {
+      this.#log(
+        job,
+        "warning",
+        `No se pudo avisar ${event} en Codex - Logs: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
