@@ -5,6 +5,8 @@
 
 # IN PROGRESS
 
+- [2026-09-01] [USER_REQUEST] Informar en `Codex - Logs` la causa real y saneada de todo release programado fallido, corregir el supuesto de runtime descubierto en el worktree temporal y acompañar el reintento hasta confirmar deploy y broadcast de Galerazo 0.58.
+
 # DONE
 
 - [2026-09-01] [USER_REQUEST] Corregido y pusheado en `ca3491a` el `Failed to fetch`: Vite ignora los temporales bloqueados de `csc.exe` bajo `bin` y el launcher cierra una ventana cacheada con diagnostico si muere `run-local`. Acceso reinstalado y abierto; puertos 3000/43121 y lectura real confirman Galerazo `running/healthy`, Telegram conectado y sin alertas. Se agrego `OneTimeUserRelease-20260901-115438` para 2026-09-01 11:54:38 sin quitar `MonthlyRelease` de 2026-10-01 03:00. Validacion: compilacion nativa, lint, build, 54 pruebas, cobertura 100%, audit sin vulnerabilidades y servidor vivo durante recompilacion.

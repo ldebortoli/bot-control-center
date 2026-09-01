@@ -253,3 +253,10 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-09-01.
 - Decision: Vite ignora todo `bin/**`, porque `csc.exe` crea temporales bloqueados que Windows no permite observar y un `EBUSY` derriba el watcher. Durante la sesion de la app, el launcher comprueba ademas que `run-local.mjs` siga vivo; si termina, cierra la ventana cacheada mediante su ciclo de vida y muestra la ruta de logs en vez de dejar una UI que inevitablemente responde `Failed to fetch`.
 - Motivo: la compilacion o actualizacion de launchers debe poder convivir con Bot Control Center abierto, y una interfaz sin UI/agente local no debe aparentar que el bot remoto perdio conexion.
+
+## D-037 - Causa saneada en fallos del release programado
+
+- Estado: vigente; amplía D-035.
+- Fecha: 2026-09-01.
+- Decision: ante un paso no exitoso, el job conserva la primera linea util de `stderr` junto al paso y codigo de salida. Para el resultado `failed`, reduce espacios, oculta tokens, credenciales y el perfil personal, limita el detalle a 800 caracteres y lo entrega como argumento fijo al adaptador. El puente PowerShell lo codifica en Base64 UTF-8 antes de construir la invocacion remota; `botctl` valida, vuelve a sanear y agrega la causa al mensaje fijo de `Codex - Logs`. Los otros resultados no admiten texto adicional.
+- Motivo: un aviso generico obliga a buscar estado local y hace parecer silenciosa la falla; el detalle acotado permite diagnosticarla desde el canal sin convertir el transporte en shell libre ni filtrar secretos.

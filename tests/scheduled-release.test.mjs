@@ -53,12 +53,15 @@ function runtimeConfig(repositoryPath, releaseSchedule = {
   };
 }
 
-function childProcess(code = 0) {
+function childProcess(code = 0, stderr = "") {
   const child = new EventEmitter();
   child.stdout = new EventEmitter();
   child.stderr = new EventEmitter();
   child.kill = () => {};
-  queueMicrotask(() => child.emit("close", code));
+  queueMicrotask(() => {
+    if (stderr) child.stderr.emit("data", stderr);
+    child.emit("close", code);
+  });
   return child;
 }
 
@@ -86,6 +89,7 @@ function scheduledHarness({
   stateFailure = false,
   failNotification = false,
   plainNotificationFailure = false,
+  processFailureDetail = "",
   releaseSchedule,
 } = {}) {
   const repositoryPath = path.resolve("C:/bots/galerazo");
@@ -126,7 +130,9 @@ function scheduledHarness({
       if (plainNotificationFailure && args.includes("notify-release")) {
         throw { toString: () => "aviso plano" };
       }
-      return childProcess(failNotification && args.includes("notify-release") ? 1 : 0);
+      const isNotification = args.includes("notify-release");
+      if (processFailureDetail && !isNotification) return childProcess(1, processFailureDetail);
+      return childProcess(failNotification && isNotification ? 1 : 0);
     },
     readTextFile: async (target) => target.startsWith(snapshotRoot) ? snapshotImage : liveImage,
     makeTempDirectory: async () => temporaryRoot,
@@ -185,6 +191,18 @@ test("valida la programación mensual y la incorpora a cada bot", () => {
   assert.throws(
     () => createScheduledNotificationStep(parseRuntimeConfig(runtimeConfig("C:/bot")).bots.galerazo, "otro"),
     /evento de notificación/,
+  );
+  assert.throws(
+    () => createScheduledNotificationStep(parseRuntimeConfig(runtimeConfig("C:/bot")).bots.galerazo, "failed"),
+    /failureDetail/,
+  );
+  assert.throws(
+    () => createScheduledNotificationStep(
+      parseRuntimeConfig(runtimeConfig("C:/bot")).bots.galerazo,
+      "succeeded",
+      "detalle inesperado",
+    ),
+    /solo se admite/,
   );
 });
 
@@ -409,7 +427,26 @@ test("avisa inicio y resultado en Codex - Logs sin comprometer el release", asyn
   });
   const failedJob = await waitForJob(failed.manager.start(failed.bot, "scheduled-release"));
   assert.equal(failedJob.status, "failed");
-  assert.ok(failed.processCalls.some((call) => call.args.includes("failed")));
+  const failedNotification = failed.processCalls.find((call) => call.args.includes("failed"));
+  assert.equal(
+    failedNotification.args[failedNotification.args.indexOf("-ReleaseDetail") + 1],
+    "git no disponible",
+  );
+
+  const failedStep = scheduledHarness({
+    processFailureDetail: "Falta el runtime en C:\\Users\\persona\\repo con token=secreto\nsegunda línea",
+    releaseSchedule: notifyingSchedule,
+  });
+  const failedStepJob = await waitForJob(failedStep.manager.start(failedStep.bot, "scheduled-release"));
+  assert.equal(failedStepJob.status, "failed");
+  assert.match(failedStepJob.error, /Falta el runtime en %USERPROFILE%\\repo/);
+  assert.doesNotMatch(failedStepJob.error, /secreto/);
+  assert.doesNotMatch(failedStepJob.error, /segunda línea/);
+  const failedStepNotification = failedStep.processCalls.find((call) => call.args.includes("failed"));
+  assert.match(
+    failedStepNotification.args[failedStepNotification.args.indexOf("-ReleaseDetail") + 1],
+    /Falta el runtime en %USERPROFILE%\\repo con token=\[CREDENCIAL_OCULTA\]/,
+  );
 
   const warningOnly = scheduledHarness({
     local: localCommit,

@@ -173,6 +173,7 @@ export function redactOutput(value) {
     .replace(/\b\d{6,14}:[A-Za-z0-9_-]{20,}\b/g, "[TELEGRAM_TOKEN_OCULTO]")
     .replace(/(authorization\s*[:=]\s*bearer\s+)[^\s"']+/gi, "$1[CREDENCIAL_OCULTA]")
     .replace(/((?:token|password|secret|private[_-]?key)\s*[:=]\s*)[^\s,;]+/gi, "$1[CREDENCIAL_OCULTA]")
+    .replace(/\b[A-Za-z]:\\Users\\[^\\\r\n]+/gi, "%USERPROFILE%")
     .slice(0, 2000);
 }
 
@@ -378,11 +379,21 @@ export function createStopStep(bot) {
   return createBotctlStep(bot, "stop", [], ["AcknowledgeStop"]);
 }
 
-export function createScheduledNotificationStep(bot, event) {
+export function createScheduledNotificationStep(bot, event, failureDetail) {
   if (!releaseNotificationEvents.has(event)) {
     throw new Error("El evento de notificación del release no está permitido.");
   }
-  return createBotctlStep(bot, "notify-release", [["ReleaseEvent", event]]);
+  const namedArguments = [["ReleaseEvent", event]];
+  if (event === "failed") {
+    const detail = redactOutput(assertString(failureDetail, "failureDetail"))
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 800);
+    namedArguments.push(["ReleaseDetail", detail]);
+  } else if (failureDetail !== undefined) {
+    throw new Error("El detalle de notificación solo se admite para un release fallido.");
+  }
+  return createBotctlStep(bot, "notify-release", namedArguments);
 }
 
 export function botctlRuntimePath(bot) {

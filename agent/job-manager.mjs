@@ -182,7 +182,10 @@ export class DeploymentJobManager {
 
   async #notifyScheduledRelease(job, bot, event) {
     try {
-      await this.#runStep(job, bot, createScheduledNotificationStep(bot, event));
+      const failureDetail = event === "failed"
+        ? job.error
+        : undefined;
+      await this.#runStep(job, bot, createScheduledNotificationStep(bot, event, failureDetail));
     } catch (error) {
       this.#log(
         job,
@@ -373,17 +376,25 @@ export class DeploymentJobManager {
       });
       this.children.add(child);
       const buffers = { stdout: "", stderr: "" };
+      let firstStderrLine = "";
+      const recordLine = (level, line) => {
+        const normalized = String(line).trim();
+        if (level === "stderr" && !firstStderrLine && normalized) {
+          firstStderrLine = redactOutput(normalized).trim().slice(0, 800);
+        }
+        this.#log(job, level, line);
+      };
       const consume = (level, chunk, flush = false) => {
         buffers[level] += chunk === null ? "" : String(chunk);
         const lines = buffers[level].split(/\r?\n/);
         buffers[level] = lines.pop();
-        for (const line of lines) this.#log(job, level, line);
+        for (const line of lines) recordLine(level, line);
         if (flush && buffers[level]) {
-          this.#log(job, level, buffers[level]);
+          recordLine(level, buffers[level]);
           buffers[level] = "";
         }
         if (buffers[level].length > 8000) {
-          this.#log(job, level, buffers[level]);
+          recordLine(level, buffers[level]);
           buffers[level] = "";
         }
       };
@@ -398,7 +409,10 @@ export class DeploymentJobManager {
         consume("stdout", null, true);
         consume("stderr", null, true);
         if (code === 0) resolve();
-        else reject(new Error(`${step.label} terminó con código ${code ?? "desconocido"}.`));
+        else {
+          const detail = firstStderrLine ? ` ${firstStderrLine}` : "";
+          reject(new Error(`${step.label} terminó con código ${code ?? "desconocido"}.${detail}`));
+        }
       });
     });
   }
