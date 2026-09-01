@@ -5,9 +5,9 @@
 
 # IN PROGRESS
 
-- [2026-09-01] [USER_REQUEST] Informar en `Codex - Logs` la causa real y saneada de todo release programado fallido, corregir el supuesto de runtime descubierto en el worktree temporal y acompañar el reintento hasta confirmar deploy y broadcast de Galerazo 0.58.
-
 # DONE
+
+- [2026-09-01] [USER_REQUEST] Cerrado en `960522f`, pusheado a `main`, el diagnostico de releases programados: el job conserva la primera linea util de `stderr`, oculta tokens, credenciales y perfil personal, limita a 800 caracteres y la pasa solo para `failed`; PowerShell la codifica como Base64 UTF-8 y `botctl` vuelve a validarla/sanearla antes de agregarla al aviso en `Codex - Logs`. Galerazo `f32e6c2` corrigio ademas el runtime del worktree. Lint, build, 54 pruebas, cobertura 100% y audit de produccion sin vulnerabilidades. Reintento `d0c50010` completado: imagen `f32e6c2f3ca9`, produccion healthy, broadcast 17/17 sin fallos y `release_state=0.58`; tarea `Ready` con unico trigger mensual 2026-10-01 03:00.
 
 - [2026-09-01] [USER_REQUEST] Corregido y pusheado en `ca3491a` el `Failed to fetch`: Vite ignora los temporales bloqueados de `csc.exe` bajo `bin` y el launcher cierra una ventana cacheada con diagnostico si muere `run-local`. Acceso reinstalado y abierto; puertos 3000/43121 y lectura real confirman Galerazo `running/healthy`, Telegram conectado y sin alertas. Se agrego `OneTimeUserRelease-20260901-115438` para 2026-09-01 11:54:38 sin quitar `MonthlyRelease` de 2026-10-01 03:00. Validacion: compilacion nativa, lint, build, 54 pruebas, cobertura 100%, audit sin vulnerabilidades y servidor vivo durante recompilacion.
 
