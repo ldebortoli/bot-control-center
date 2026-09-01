@@ -5,9 +5,9 @@
 
 # IN PROGRESS
 
-- [2026-09-01] [USER_REQUEST] Corregir el `Failed to fetch` visible con Bot Control Center abierto, verificar la conexion real y programar una ejecucion unica del release/deploy cinco minutos despues de terminar, conservando el calendario mensual. Causa confirmada: Vite intento vigilar un temporal bloqueado de `csc.exe` bajo `bin`, recibio `EBUSY`, finalizo UI/agente y Edge quedo mostrando la pagina cacheada.
-
 # DONE
+
+- [2026-09-01] [USER_REQUEST] Corregido y pusheado en `ca3491a` el `Failed to fetch`: Vite ignora los temporales bloqueados de `csc.exe` bajo `bin` y el launcher cierra una ventana cacheada con diagnostico si muere `run-local`. Acceso reinstalado y abierto; puertos 3000/43121 y lectura real confirman Galerazo `running/healthy`, Telegram conectado y sin alertas. Se agrego `OneTimeUserRelease-20260901-115438` para 2026-09-01 11:54:38 sin quitar `MonthlyRelease` de 2026-10-01 03:00. Validacion: compilacion nativa, lint, build, 54 pruebas, cobertura 100%, audit sin vulnerabilidades y servidor vivo durante recompilacion.
 
 - [2026-09-01] [USER_REQUEST] Corregido en `ae918ec`, pusheado a `main`, el release mensual de Galerazo y su experiencia visible. La tarea abre `BotControlCenterScheduledRelease.exe`, una ventana nativa oscura con el icono/AppUserModelID del producto, salida incremental, X/Escape que ocultan sin cortar el runner y autocierre; el agente envia avisos fijos de inicio y resultado a `Codex - Logs` cuando la opcion esta activa. La UI de Deploy permite configurar el aviso. La tarea fue deshabilitada durante la reparacion y reinstalada sin ejecutarla: estado `Ready`, proxima ejecucion 2026-10-01 03:00, `Interactive`, `StartWhenAvailable`, `IgnoreNew` y 12 reintentos horarios. Smoke nativo verifico ventana, progreso, ocultamiento seguro y autocierre. Validacion: lint, build, 53 pruebas y cobertura del agente 100% lineas/ramas/funciones.
 
