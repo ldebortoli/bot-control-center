@@ -9,6 +9,8 @@
 
 # DONE
 
+- [2026-09-01] [USER_REQUEST] Integrar todos los scrollbars con el sistema visual oscuro de Bot Control Center mediante tokens globales y soporte estándar/WebKit. Logs, listas, tablas, editores, diálogos y desplazamiento horizontal comparten track y thumb sobrios, estados hover/pressed/inactive/disabled, esquina integrada y colores del sistema en forced-colors. Validación: CSS presente en el build, lint, build y 52/52 pruebas OK; cobertura del agente 100% en líneas/ramas/funciones y audit de producción en 0 vulnerabilidades.
+
 - [2026-08-24] [USER_REQUEST] El release mensual de Galerazo ahora puede actualizar dependencias antes del corte. Trabaja en un worktree detached, ejecuta el actualizador fijo del bot, solo acepta un `requirements.txt` validado, crea un commit acotado y lo sube sin `force`; despues publica/despliega el hash final solo si no tiene imagen. Sin cambios de codigo o lock termina en no-op. La configuracion local real quedo habilitada y la tarea mensual reinstalada para 2026-09-01 03:00, sin ejecutar un deploy. Validacion: 51 pruebas unitarias, cobertura 100% de lineas/ramas/funciones, lint, build y audit de produccion sin vulnerabilidades.
 
 - [2026-08-24] [USER_QUEUE] Auditada la unica pantalla de inicio bloqueante. `StartupForm` conserva X nativa desde el primer frame, acepta Escape y ambas rutas usan la misma cancelacion; los Job Objects y `using` existentes eliminan UI/agente/navegador al salir. Launcher recompilado, acceso de CODEX APPS reinstalado y contrato cubierto por pruebas automatizadas.

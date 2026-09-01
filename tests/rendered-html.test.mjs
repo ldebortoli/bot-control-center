@@ -119,6 +119,17 @@ test("muestra estado remoto y feedback visible del pre-flight", async () => {
   assert.match(agent, /\/runtime|\/triggers/);
 });
 
+test("integra todos los scrollbars con el sistema visual y alto contraste", async () => {
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(styles, /scrollbar-color:\s*var\(--scrollbar-thumb\)\s+var\(--scrollbar-track\)/);
+  assert.match(styles, /\*::\-webkit-scrollbar\s*\{/);
+  assert.match(styles, /\*::\-webkit-scrollbar-thumb:hover/);
+  assert.match(styles, /\*::\-webkit-scrollbar-thumb:active/);
+  assert.match(styles, /\*::\-webkit-scrollbar-corner/);
+  assert.match(styles, /@media\s*\(forced-colors:\s*active\)/);
+  assert.match(styles, /scrollbar-color:\s*auto/);
+});
+
 test("conserva los guardrails de SQL y transporte fuera de la UI", async () => {
   const [policy, transport, exampleConfig, runtimeExample, packageJson] = await Promise.all([
     readFile(new URL("../lib/control-center/query-policy.ts", import.meta.url), "utf8"),

@@ -14,10 +14,65 @@
   --cyan: #55d7d0;
   --amber: #ffbc57;
   --red: #ff6b6b;
+  --scrollbar-track: #080d0c;
+  --scrollbar-thumb: #34413e;
+  --scrollbar-thumb-hover: #4a5b55;
+  --scrollbar-thumb-active: #6d863f;
+  --scrollbar-thumb-inactive: #252f2c;
 }
 
 * {
   box-sizing: border-box;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-width: auto;
+}
+
+*::-webkit-scrollbar {
+  height: 12px;
+  width: 12px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  background-clip: padding-box;
+  border: 3px solid var(--scrollbar-track);
+  border-radius: 999px;
+  min-height: 34px;
+  min-width: 34px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background-color: var(--scrollbar-thumb-active);
+}
+
+*::-webkit-scrollbar-thumb:window-inactive {
+  background-color: var(--scrollbar-thumb-inactive);
+}
+
+*::-webkit-scrollbar-button {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--scrollbar-track);
+}
+
+textarea:disabled,
+[aria-disabled="true"] {
+  --scrollbar-thumb: #242c2a;
+  --scrollbar-thumb-active: #303a37;
+  --scrollbar-thumb-hover: #2a3431;
 }
 
 html {
@@ -43,6 +98,26 @@ textarea {
 
 button {
   color: inherit;
+}
+
+@media (forced-colors: active) {
+  * {
+    forced-color-adjust: auto;
+    scrollbar-color: auto;
+  }
+
+  *::-webkit-scrollbar-track,
+  *::-webkit-scrollbar-corner {
+    background: Canvas;
+  }
+
+  *::-webkit-scrollbar-thumb,
+  *::-webkit-scrollbar-thumb:hover,
+  *::-webkit-scrollbar-thumb:active,
+  *::-webkit-scrollbar-thumb:window-inactive {
+    background: ButtonText;
+    border-color: Canvas;
+  }
 }
 
 .control-shell {
