@@ -150,10 +150,12 @@ namespace BotControlCenter.WindowsLauncher
                 {
                     TryAssignBrowserProcess(browserJob, browserProcess);
                     WaitForBrowserWindowToClose(
+                        serverProcess,
                         browserProcess,
                         Path.GetFileNameWithoutExtension(browserPath),
                         browserJob,
-                        startup);
+                        startup,
+                        logsDirectory);
                 }
 
                 WaitForActiveJobsToFinish(serverProcess, agentUrl, TimeSpan.FromMinutes(45), startup);
@@ -350,10 +352,12 @@ namespace BotControlCenter.WindowsLauncher
         }
 
         private static void WaitForBrowserWindowToClose(
+            Process serverProcess,
             Process browserProcess,
             string browserProcessName,
             KillOnCloseJob browserJob,
-            StartupForm startup)
+            StartupForm startup,
+            string logsDirectory)
         {
             DateTime startupDeadline = DateTime.UtcNow.AddSeconds(25);
             int missingWindowChecks = 0;
@@ -365,6 +369,11 @@ namespace BotControlCenter.WindowsLauncher
                 {
                     Application.DoEvents();
                     startup.ThrowIfCancellationRequested();
+                    if (serverProcess.HasExited)
+                    {
+                        throw new InvalidOperationException(
+                            "El servidor local se cerró inesperadamente. Revisá los registros en:\n" + logsDirectory);
+                    }
 
                     if (windowProcess == null)
                     {

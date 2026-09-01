@@ -246,3 +246,10 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-09-01.
 - Decision: la tarea mensual ejecuta un `winexe` nativo con el icono y AppUserModelID de Bot Control Center. La ventana transmite stdout/stderr incremental, conserva controles nativos, permite ocultarse con X/Escape sin cancelar el release y se cierra automaticamente despues del proceso. Cuando `notifyLogChannel` esta activo, el job usa el `botctl` fijo de Galerazo para avisar `started` y un unico resultado `succeeded`, `failed` o `skipped`; un fallo de Telegram se registra como warning y no cambia el corte.
 - Motivo: hacer visible el origen y progreso de una automatizacion independiente de la UI principal, sin exponer una consola, aceptar mensajes arbitrarios ni volver fragil el deploy por una notificacion secundaria.
+
+## D-036 - Binarios nativos fuera del watcher y cierre de UI obsoleta
+
+- Estado: vigente.
+- Fecha: 2026-09-01.
+- Decision: Vite ignora todo `bin/**`, porque `csc.exe` crea temporales bloqueados que Windows no permite observar y un `EBUSY` derriba el watcher. Durante la sesion de la app, el launcher comprueba ademas que `run-local.mjs` siga vivo; si termina, cierra la ventana cacheada mediante su ciclo de vida y muestra la ruta de logs en vez de dejar una UI que inevitablemente responde `Failed to fetch`.
+- Motivo: la compilacion o actualizacion de launchers debe poder convivir con Bot Control Center abierto, y una interfaz sin UI/agente local no debe aparentar que el bot remoto perdio conexion.

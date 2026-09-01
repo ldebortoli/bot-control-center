@@ -15,6 +15,8 @@ test("el launcher liga la ventana al ciclo de vida del servidor", async () => {
   assert.match(source, /JobObjectLimitKillOnJobClose/);
   assert.match(source, /127\.0\.0\.1/);
   assert.match(source, /WaitForBrowserWindowToClose/);
+  assert.match(source, /WaitForBrowserWindowToClose\(\s*serverProcess,/);
+  assert.match(source, /El servidor local se cerró inesperadamente/);
   assert.match(source, /FindBrowserWindowProcess/);
   assert.match(source, /Process\.GetProcessesByName/);
   assert.match(source, /MainWindowTitle\.IndexOf/);
@@ -48,12 +50,15 @@ test("el launcher liga la ventana al ciclo de vida del servidor", async () => {
 test("el instalador crea el acceso en CODEX APPS", async () => {
   const source = await readFile(installerSource, "utf8");
   const build = await readFile(buildSource, "utf8");
+  const ignore = await readFile(new URL("../.gitignore", import.meta.url), "utf8");
 
   assert.match(source, /CODEX APPS/);
   assert.match(source, /Bot Control Center\.lnk/);
   assert.match(build, /BotControlCenter\.exe/);
   assert.match(build, /public/);
   assert.match(build, /favicon\.ico/);
+  assert.match(ignore, /\/bin\/BotControlCenter\.exe/);
+  assert.match(ignore, /\/bin\/BotControlCenterScheduledRelease\.exe/);
 });
 
 test("el programador mensual persiste fuera de la UI y evita instancias superpuestas", async () => {
@@ -85,4 +90,11 @@ test("el programador mensual persiste fuera de la UI y evita instancias superpue
   assert.match(runner, /scheduled-release/);
   assert.match(runner, /schedule-disabled/);
   assert.match(runner, /printLogEntries/);
+});
+
+test("el servidor de desarrollo ignora los binarios nativos generados", async () => {
+  const config = await readFile(new URL("../vite.config.ts", import.meta.url), "utf8");
+  assert.match(config, /ignored:\s*\["\*\*\/bin\/\*\*"\]/);
+  assert.match(config, /useFsEvents: false/);
+  assert.match(config, /usePolling: true/);
 });

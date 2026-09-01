@@ -42,4 +42,5 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+/bin/BotControlCenter.exe
 /bin/BotControlCenterScheduledRelease.exe
