@@ -260,3 +260,9 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-09-01.
 - Decision: ante un paso no exitoso, el job conserva la primera linea util de `stderr` junto al paso y codigo de salida. Para el resultado `failed`, reduce espacios, oculta tokens, credenciales y el perfil personal, limita el detalle a 800 caracteres y lo entrega como argumento fijo al adaptador. El puente PowerShell lo codifica en Base64 UTF-8 antes de construir la invocacion remota; `botctl` valida, vuelve a sanear y agrega la causa al mensaje fijo de `Codex - Logs`. Los otros resultados no admiten texto adicional.
 - Motivo: un aviso generico obliga a buscar estado local y hace parecer silenciosa la falla; el detalle acotado permite diagnosticarla desde el canal sin convertir el transporte en shell libre ni filtrar secretos.
+
+## D-038 - Actualización compatible del CI y árbol de producción
+
+- Fecha: 2026-09-30.
+- Decisión: fijar Next y ESLint Config Next en 16.3.7, Sharp en 0.35.4 y actualizar transitivos parcheados en el lockfile sin migrar vinext a su versión mayor. Elevar la fuente a 0.1.1; no iniciar el agente, tocar el release mensual ni desplegar el dashboard como parte de esta corrección.
+- Motivo: el audit de producción del CI debe volver a cero y los advisories de `brace-expansion`/`fast-uri` deben desaparecer sin abrir un cambio de arquitectura del runtime.

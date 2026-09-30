@@ -1,5 +1,10 @@
 # Session handoff
 
+## Actualización de seguridad — 2026-09-30
+
+- Fuente 0.1.1, Next/ESLint 16.3.7, Sharp 0.35.4 y transitivos compatibles `brace-expansion`, `fast-uri` y `baseline-browser-mapping`. `npm ci --ignore-scripts`, lint, build, 42 tests, cobertura de agente 100% líneas/ramas/funciones y `npm audit --omit=dev` con cero vulnerabilidades pasan localmente. No se inició UI/agente, no se tocó Galerazo ni se desplegó; launcher y acceso instalados siguen en su estado previo.
+- No hay pedidos nuevos de USER_QUEUE; validar el estado remoto antes de una siguiente intervención.
+
 ## Objetivo general
 
 Mantener un dashboard local multi-bot y conectar cada servicio remoto mediante capacidades y transportes de privilegio mínimo.

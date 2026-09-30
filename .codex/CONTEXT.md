@@ -7,7 +7,7 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 ## Estado estable
 
 - Ruta: `%USERPROFILE%\Documents\Codex\BotControlCenter\dashboard`
-- Stack: Node.js 22+, TypeScript, React 19.2.8, Next 16.2.12 y vinext/Vite 8.1.5 para Cloudflare Sites. Los overrides de Nanoid 3.3.18, PostCSS 8.5.23 y Sharp 0.35.3 sustituyen dependencias transitivas vulnerables que el árbol todavía declara con versiones anteriores.
+- Stack: Node.js 22+, TypeScript, React 19.2.8, Next 16.3.7 y vinext/Vite 8.1.5 para Cloudflare Sites. La fuente es 0.1.1; los overrides de Nanoid 3.3.18, PostCSS 8.5.23 y Sharp 0.35.4 mantienen transitivos parcheados. El launcher/acceso local no se recompiló por este cambio de dependencias.
 - Git: repositorio publico en `https://github.com/ldebortoli/bot-control-center`, con `origin` configurado y rama principal `main`.
 - Idioma de la interfaz y documentación: español.
 - Hosting: no desplegado; `.openai/hosting.json` mantiene D1 y R2 desactivados.
