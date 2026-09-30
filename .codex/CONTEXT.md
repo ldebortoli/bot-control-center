@@ -7,7 +7,7 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 ## Estado estable
 
 - Ruta: `%USERPROFILE%\Documents\Codex\BotControlCenter\dashboard`
-- Stack: Node.js 22+, TypeScript, React 19.2.8, Next 16.3.7, vinext 0.0.50/Vite 8.1.5, Cloudflare Vite Plugin 1.62.2 y Wrangler 4.144.0. La fuente es 0.1.1; los overrides de Nanoid 3.3.18, PostCSS 8.5.23 y Sharp 0.35.4 mantienen transitivos parcheados. El launcher/acceso local no se recompiló por este cambio de dependencias.
+- Stack: Node.js 22+, TypeScript, React 19.2.8, Next 16.3.7, vinext 1.0.0/Vite 8.1.5, peer RSC 0.5.34, Cloudflare Vite Plugin 1.62.2 y Wrangler 4.144.0. La fuente es 0.1.2; los overrides de Nanoid 3.3.18, PostCSS 8.5.23, Sharp 0.35.4 y satori/fflate 0.7.5 mantienen transitivos parcheados. El launcher/acceso local no se recompiló por este cambio de dependencias.
 - Git: repositorio publico en `https://github.com/ldebortoli/bot-control-center`, con `origin` configurado y rama principal `main`.
 - Idioma de la interfaz y documentación: español.
 - Hosting: no desplegado; `.openai/hosting.json` mantiene D1 y R2 desactivados.
@@ -72,4 +72,4 @@ Computer Use/Windows Graphics Capture no pudo validar visualmente la ventana Edg
 - El repositorio publico mantiene Secret Scanning y Push Protection habilitados. Los commits usan el correo `noreply` de GitHub y los artefactos versionados no contienen rutas personales cuando `%USERPROFILE%` o una ruta relativa es suficiente.
 - Las validaciones locales son obligatorias antes de publicar cambios; GitHub Actions es una segunda capa. No esperar, sondear ni monitorear CI remota despues del push salvo pedido explicito del usuario en la solicitud actual.
 - La edición de credenciales está separada del deploy, exige confirmación y no reinicia el bot. Como Compose inyecta `/etc/galerazo/bot.env` al crear el contenedor, un simple `restart` no aplica el nuevo entorno; hace falta deploy o recreación explícita.
-- La superficie instalada en producción audita en 0 vulnerabilidades. El audit que incluye herramientas de desarrollo conserva avisos en la cadena de lint de `eslint-config-next`/`minimatch`; no debe forzarse ESLint 10 mientras los plugins del preset declaren compatibilidad sólo hasta ESLint 9.
+- El audit completo de la fuente 0.1.2 y el de producción informan cero vulnerabilidades. SSR se valida en el preview local de Vite/workerd con cierre completo, no mediante importación del worker Cloudflare en Node. No desplegar ni iniciar el agente para validar esta migración.

@@ -1,13 +1,15 @@
 # TODO
 
-- [P2] Migrar vinext para resolver los dos avisos altos residuales del árbol de desarrollo. [BLOCKED: `image-size` llega por vinext 0.0.50 y npm propone vinext 1.0.0 (salto mayor); requiere una migración y regresión separadas. Los demás avisos altos y moderados se corrigieron dentro de rangos compatibles; la auditoría de producción del CI queda en cero.]
 
 - [P1] [BLOCKED: requiere diseñar un contrato de consultas de solo lectura con allowlist, límites y auditoría; no es necesario para el estado ni los triggers ya conectados] Integrar SQL real de Galerazo.
 - [P2] [BLOCKED: pendiente de que el usuario elija el alcance; se recomienda habilitar `start` y `restart` del contenedor `bot`, y evaluar por separado `recreate` para aplicar secretos, siempre con confirmación, exclusión mutua, auditoría y healthcheck posterior; mantener fuera reinicio de Docker/VM, shell y borrados] Evaluar reinicio y otras capacidades privilegiadas.
 
 # IN PROGRESS
 
+
 # DONE
+
+- [2026-09-30] Completar pendiente técnico del CI: fuente 0.1.2 con vinext 1.0.0, peer RSC 0.5.34 y fflate 0.7.5 acotado a satori. Instalación limpia, lint, build, 55 tests, cobertura del agente 100% y auditoría completa/producción cero vulnerabilidades. Prueba SSR en preview local workerd con cierre completo; LF determinista y contrato de versión paquete/lock. No despliegue, agente operativo, cambio de bot ni sustitución del launcher.
 
 - [2026-09-30] Seguridad del CI en fuente 0.1.1: Next/ESLint 16.3.7, Sharp 0.35.4, Cloudflare Vite Plugin 1.62.2, Wrangler 4.144.0 y transitivos `brace-expansion`, `fast-uri`, browser mapping, `js-yaml`, `browserslist` y `fflate` parcheados. Instalación limpia, lint, build, 42 tests, cobertura 100% del agente y audit de producción con cero avisos pasan localmente. El audit completo sólo conserva los dos avisos altos de vinext/image-size bloqueados arriba. No se inició UI/agente ni se desplegó; launcher/acceso existentes no se sustituyeron.
 

@@ -272,3 +272,9 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-09-30.
 - Decisión: dentro de la misma entrega 0.1.1, fijar Cloudflare Vite Plugin 1.62.2 y Wrangler 4.144.0 y refrescar `browserslist`, `js-yaml` y `fflate` sin cambiar vinext 0.0.50. No desplegar ni iniciar el agente.
 - Motivo: eliminar los avisos altos/moderados compatibles del audit completo; vinext/image-size requieren vinext 1.0.0 (salto mayor) y se conservan como tarea separada. La auditoría de producción permanece en cero.
+
+## D-040 - Migración solicitada a vinext 1 y prueba en runtime real
+
+- Fecha: 2026-09-30. Reemplaza el aplazamiento de vinext en D-038/D-039 tras pedido explícito de completar los pendientes.
+- Decisión: fuente 0.1.2 con vinext 1.0.0 y plugin-rsc 0.5.34; override exclusivo satori/fflate 0.7.5 compatible. Usar Vite preview en 127.0.0.1 con workerd para SSR, cerrando `server.close()` en finally para liberar también Miniflare. Conservar agente, lanzamiento nativo, bot remoto y programación mensual sin cambios.
+- Motivo: desaparecen image-size y todos los avisos del audit; el nuevo bundle usa imports `cloudflare:` y no puede ejecutarse directamente con Node. Build, render, 55 tests y cobertura privilegiada 100% validados; lint pasa también sobre un checkout del índice con core.autocrlf=true y LF determinista. Sin despliegue ni polling remoto.

@@ -37,7 +37,7 @@ npm run lint
 Los comandos de calidad generan y evalúan el resultado automáticamente:
 
 ```bash
-npm run test:unit      # suite rápida, sin build
+npm run test:unit      # suite rápida, con un build previo disponible
 npm run test:coverage  # tests del agente y tabla de cobertura V8
 npm test               # build y suite completa
 npm audit --omit=dev   # dependencias que llegan a producción
@@ -47,7 +47,7 @@ npm audit --omit=dev   # dependencias que llegan a producción
 
 GitHub Actions ejecuta en cada push y pull request contra `main` una única verificación rápida con caché de npm, cancelación de ejecuciones reemplazadas y un timeout de 15 minutos: lint, build, suite unitaria, cobertura y auditoría de dependencias de producción.
 
-Next está fijado en 16.2.12 y el proyecto sustituye sus versiones transitivas vulnerables de Nanoid, PostCSS y Sharp mediante overrides explícitos. La auditoría de producción debe permanecer en cero. El audit completo puede seguir mostrando avisos dentro de las herramientas de lint de `eslint-config-next`; no se usa `npm audit fix --force` mientras ese preset mantenga plugins incompatibles con ESLint 10.
+La fuente 0.1.2 usa Next 16.3.7, vinext 1.0.0 y su peer RSC 0.5.34. Los overrides de Nanoid, PostCSS y Sharp conservan los parches; el override acotado `satori > fflate 0.7.5` elimina un aviso moderado sin saltar a 0.8. La auditoría completa y la de producción quedan en cero, sin `npm audit fix --force`. La prueba SSR inicia únicamente un preview en loopback, renderiza el worker compilado mediante workerd y cierra el runtime en `finally`; no despliega ni conecta el agente operativo. `.gitattributes` fija LF entre plataformas y marca binarios explícitamente.
 
 ## Abrir como aplicación de Windows
 

@@ -1,26 +1,30 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { preview } from "vite";
+
+test("sincroniza la versión del dashboard y su lockfile", async () => {
+  const manifest = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+  const lock = JSON.parse(await readFile(new URL("../package-lock.json", import.meta.url), "utf8"));
+  assert.equal(lock.version, manifest.version);
+  assert.equal(lock.packages[""].version, manifest.version);
+});
 
 async function render() {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
-  const { default: worker } = await import(workerUrl.href);
-
-  return worker.fetch(
-    new Request("http://localhost/", {
+  // vinext 1 uses cloudflare: bindings. Exercise the compiled worker in workerd,
+  // not Node with a fake env: preview is loopback-only and never deploys.
+  const server = await preview({ preview: { host: "127.0.0.1", port: 0 } });
+  try {
+    const response = await fetch(server.resolvedUrls.local[0], {
       headers: { accept: "text/html" },
-    }),
-    {
-      ASSETS: {
-        fetch: async () => new Response("Not found", { status: 404 }),
-      },
-    },
-    {
-      waitUntil() {},
-      passThroughOnException() {},
-    },
-  );
+    });
+    return new Response(await response.text(), {
+      status: response.status,
+      headers: response.headers,
+    });
+  } finally {
+    await server.close();
+  }
 }
 
 test("renderiza el dashboard local sin datos operativos inventados", async () => {
