@@ -2,7 +2,7 @@
 
 ## Actualización de seguridad — 2026-09-30
 
-- Fuente 0.1.1, Next/ESLint 16.3.7, Sharp 0.35.4 y transitivos compatibles `brace-expansion`, `fast-uri` y `baseline-browser-mapping`. `npm ci --ignore-scripts`, lint, build, 42 tests, cobertura de agente 100% líneas/ramas/funciones y `npm audit --omit=dev` con cero vulnerabilidades pasan localmente. No se inició UI/agente, no se tocó Galerazo ni se desplegó; launcher y acceso instalados siguen en su estado previo.
+- Fuente 0.1.1, Next/ESLint 16.3.7, Sharp 0.35.4, Cloudflare Vite Plugin 1.62.2, Wrangler 4.144.0 y transitivos compatibles `brace-expansion`, `fast-uri`, `baseline-browser-mapping`, `js-yaml`, `browserslist` y `fflate`. `npm ci` real, lint, build, 42 tests, cobertura de agente 100% líneas/ramas/funciones y `npm audit --omit=dev` con cero vulnerabilidades pasan localmente. Audit completo: sólo dos avisos altos de vinext/image-size; npm propone vinext 1.0.0, salto mayor reservado para migración separada. No se inició UI/agente, no se tocó Galerazo ni se desplegó; launcher y acceso instalados siguen en su estado previo.
 - No hay pedidos nuevos de USER_QUEUE; validar el estado remoto antes de una siguiente intervención.
 
 ## Objetivo general

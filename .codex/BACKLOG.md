@@ -1,6 +1,6 @@
 # TODO
 
-- [P2] Revisar avisos altos del árbol de desarrollo de vinext/Cloudflare fuera del audit de producción. [BLOCKED: `image-size` llega por vinext 0.0.50 y npm propone vinext 1.0.0 (salto mayor); requiere una migración y regresión separadas. El CI actual audita producción y queda en cero.]
+- [P2] Migrar vinext para resolver los dos avisos altos residuales del árbol de desarrollo. [BLOCKED: `image-size` llega por vinext 0.0.50 y npm propone vinext 1.0.0 (salto mayor); requiere una migración y regresión separadas. Los demás avisos altos y moderados se corrigieron dentro de rangos compatibles; la auditoría de producción del CI queda en cero.]
 
 - [P1] [BLOCKED: requiere diseñar un contrato de consultas de solo lectura con allowlist, límites y auditoría; no es necesario para el estado ni los triggers ya conectados] Integrar SQL real de Galerazo.
 - [P2] [BLOCKED: pendiente de que el usuario elija el alcance; se recomienda habilitar `start` y `restart` del contenedor `bot`, y evaluar por separado `recreate` para aplicar secretos, siempre con confirmación, exclusión mutua, auditoría y healthcheck posterior; mantener fuera reinicio de Docker/VM, shell y borrados] Evaluar reinicio y otras capacidades privilegiadas.
@@ -9,7 +9,7 @@
 
 # DONE
 
-- [2026-09-30] Seguridad del CI en fuente 0.1.1: Next/ESLint 16.3.7, Sharp 0.35.4 y lockfile de `brace-expansion`, `fast-uri` y browser mapping. Instalación limpia, lint, build, 42 tests, cobertura 100% del agente y audit de producción con cero avisos pasan localmente. No se inició UI/agente ni se desplegó; launcher/acceso existentes no se sustituyeron.
+- [2026-09-30] Seguridad del CI en fuente 0.1.1: Next/ESLint 16.3.7, Sharp 0.35.4, Cloudflare Vite Plugin 1.62.2, Wrangler 4.144.0 y transitivos `brace-expansion`, `fast-uri`, browser mapping, `js-yaml`, `browserslist` y `fflate` parcheados. Instalación limpia, lint, build, 42 tests, cobertura 100% del agente y audit de producción con cero avisos pasan localmente. El audit completo sólo conserva los dos avisos altos de vinext/image-size bloqueados arriba. No se inició UI/agente ni se desplegó; launcher/acceso existentes no se sustituyeron.
 
 - [2026-09-01] [USER_REQUEST] Cerrado en `960522f`, pusheado a `main`, el diagnostico de releases programados: el job conserva la primera linea util de `stderr`, oculta tokens, credenciales y perfil personal, limita a 800 caracteres y la pasa solo para `failed`; PowerShell la codifica como Base64 UTF-8 y `botctl` vuelve a validarla/sanearla antes de agregarla al aviso en `Codex - Logs`. Galerazo `f32e6c2` corrigio ademas el runtime del worktree. Lint, build, 54 pruebas, cobertura 100% y audit de produccion sin vulnerabilidades. Reintento `d0c50010` completado: imagen `f32e6c2f3ca9`, produccion healthy, broadcast 17/17 sin fallos y `release_state=0.58`; tarea `Ready` con unico trigger mensual 2026-10-01 03:00.
 

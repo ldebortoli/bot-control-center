@@ -266,3 +266,9 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-09-30.
 - Decisión: fijar Next y ESLint Config Next en 16.3.7, Sharp en 0.35.4 y actualizar transitivos parcheados en el lockfile sin migrar vinext a su versión mayor. Elevar la fuente a 0.1.1; no iniciar el agente, tocar el release mensual ni desplegar el dashboard como parte de esta corrección.
 - Motivo: el audit de producción del CI debe volver a cero y los advisories de `brace-expansion`/`fast-uri` deben desaparecer sin abrir un cambio de arquitectura del runtime.
+
+## D-039 - Parches adicionales del toolchain de desarrollo
+
+- Fecha: 2026-09-30.
+- Decisión: dentro de la misma entrega 0.1.1, fijar Cloudflare Vite Plugin 1.62.2 y Wrangler 4.144.0 y refrescar `browserslist`, `js-yaml` y `fflate` sin cambiar vinext 0.0.50. No desplegar ni iniciar el agente.
+- Motivo: eliminar los avisos altos/moderados compatibles del audit completo; vinext/image-size requieren vinext 1.0.0 (salto mayor) y se conservan como tarea separada. La auditoría de producción permanece en cero.
