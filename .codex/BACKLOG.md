@@ -6,6 +6,8 @@
 
 # IN PROGRESS
 
+- [2026-10-01] Reparar y completar release mensual Galerazo: Docker Linux ausente; coverage informativa oculto causa. Deploy autorizado; confirmacion directa anuncio0.68 recibida y parrafo de triggers retirado.
+
 
 # DONE
 

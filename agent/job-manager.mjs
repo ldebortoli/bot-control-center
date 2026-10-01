@@ -379,7 +379,7 @@ export class DeploymentJobManager {
       let firstStderrLine = "";
       const recordLine = (level, line) => {
         const normalized = String(line).trim();
-        if (level === "stderr" && !firstStderrLine && normalized) {
+        if (level === "stderr" && !firstStderrLine && normalized && !/^Wrote (?:JSON|XML|HTML) report\b/.test(normalized)) {
           firstStderrLine = redactOutput(normalized).trim().slice(0, 800);
         }
         this.#log(job, level, line);

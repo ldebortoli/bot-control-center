@@ -810,3 +810,18 @@ test("el runner respeta la configuración y devuelve el resultado del manager", 
     loadConfig: async () => ({ config: { bots: {} }, error: "sin config" }),
   }), /sin config/);
 });
+
+test("el aviso de fallo identifica Docker aunque coverage escriba primero en stderr", async () => {
+  const schedule = { enabled: true, updateDependencies: true, notifyLogChannel: true, dayOfMonth: 1, time: "03:00", branch: "main", remote: "origin" };
+  const harness = scheduledHarness({
+    releaseSchedule: schedule,
+    processFailureDetail: "Wrote JSON report to coverage-report.json\nERROR: failed to connect to the docker API with token=secreto\nstacktrace",
+  });
+  const job = await waitForJob(harness.manager.start(harness.bot, "scheduled-release"));
+  assert.equal(job.status, "failed");
+  assert.match(job.error, /ERROR: failed to connect to the docker API/);
+  assert.doesNotMatch(job.error, /Wrote JSON|secreto|stacktrace/);
+  const notification = harness.processCalls.find((call) => call.args.includes("failed"));
+  assert.match(notification.args[notification.args.indexOf("-ReleaseDetail") + 1], /docker API/);
+  assert.ok(!harness.processCalls.some((call) => call.args[4]?.endsWith("Publish-DockerImage.ps1")));
+});

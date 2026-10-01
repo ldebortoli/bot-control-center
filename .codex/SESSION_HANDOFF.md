@@ -1,5 +1,12 @@
 # Session handoff
 
+## Release mensual en reparacion - 2026-10-01
+
+- Fallo real: daemon Docker Desktop Linux ausente; 442 tests y cobertura100% pasaron. Tarea mensual dia1/03:00 y reintentos horarios conservados. Arranque automatico y espera acotada en scripts; fallo informa causa real.
+- Usuario autoriza usar mismo proceso recurrente hasta deploy verificado. Confirmacion directa adicional del usuario recibida: retirar frase sobre analisis de triggers y conservar aprobacion de envio0.68; aplicado en broadcast. No otra ruta ni credenciales/permisos nuevos.
+- Checkout bot limpio inicialmente81c5b33; BCC limpio. Cambios en validacion, aun no commit/push/deploy. Conversacion no se pudo mover: sin operacion disponible; no editar bases Codex.
+
+
 ## Entrega técnica del CI — 2026-09-30
 
 - Fuente 0.1.2: vinext 1.0.0 y plugin-rsc 0.5.34, fflate 0.7.5 acotado a satori, Next/ESLint 16.3.7, Vite 8.1.5, Cloudflare Vite Plugin 1.62.2 y Wrangler 4.144.0. Instalación limpia, lint, build, 55 tests y cobertura de agente 100% líneas/ramas/funciones pasan. Audit completo y producción: cero vulnerabilidades.

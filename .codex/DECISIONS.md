@@ -278,3 +278,9 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Fecha: 2026-09-30. Reemplaza el aplazamiento de vinext en D-038/D-039 tras pedido explícito de completar los pendientes.
 - Decisión: fuente 0.1.2 con vinext 1.0.0 y plugin-rsc 0.5.34; override exclusivo satori/fflate 0.7.5 compatible. Usar Vite preview en 127.0.0.1 con workerd para SSR, cerrando `server.close()` en finally para liberar también Miniflare. Conservar agente, lanzamiento nativo, bot remoto y programación mensual sin cambios.
 - Motivo: desaparecen image-size y todos los avisos del audit; el nuevo bundle usa imports `cloudflare:` y no puede ejecutarse directamente con Node. Build, render, 55 tests y cobertura privilegiada 100% validados; lint pasa también sobre un checkout del índice con core.autocrlf=true y LF determinista. Sin despliegue ni polling remoto.
+
+## Release recurrente - 2026-10-01
+
+- Mantener tarea mensual1/03:00, guardrails, pruebas nativas/Docker y rollback; arrancar Docker Desktop y esperar Linux180s antes de validar un lock cambiado/build; la resolucion sin cambios no requiere Docker. Sin cambiar motor, crear credenciales o permisos.
+- BCC ignora salida informativa de cobertura al elegir causa stderr; conserva saneamiento y limite800.
+- Usuario aprobo enviar anuncio0.68 y confirmo directamente retirar frase sobre analisis de triggers; eliminado ese parrafo, resto exacto aprobado. Esto satisface confirmacion adicional recibida por delegacion.
