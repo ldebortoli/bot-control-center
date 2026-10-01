@@ -1,15 +1,18 @@
 # TODO
 
+- [P1] [BLOCKED: pendiente respuesta explicita a consulta de alcance; bot ya desplegado, web no modificada] Integrar frontend Galerazo web0.1.13 al proceso mensual para habilitar visitas compartidas/view=mine; produccion web0.1.10 no las soporta.
+
 
 - [P1] [BLOCKED: requiere diseñar un contrato de consultas de solo lectura con allowlist, límites y auditoría; no es necesario para el estado ni los triggers ya conectados] Integrar SQL real de Galerazo.
 - [P2] [BLOCKED: pendiente de que el usuario elija el alcance; se recomienda habilitar `start` y `restart` del contenedor `bot`, y evaluar por separado `recreate` para aplicar secretos, siempre con confirmación, exclusión mutua, auditoría y healthcheck posterior; mantener fuera reinicio de Docker/VM, shell y borrados] Evaluar reinicio y otras capacidades privilegiadas.
 
 # IN PROGRESS
 
-- [2026-10-01] Reparar y completar release mensual Galerazo: Docker Linux ausente; coverage informativa oculto causa. Deploy autorizado; confirmacion directa anuncio0.68 recibida y parrafo de triggers retirado.
 
 
 # DONE
+
+- [2026-10-01] Reparado y completado release mensual Galerazo0.68 por tarea existente: job288b497c succeeded, imagen0fe92884eda7/HEAD=remoto, backup/healthy/Telegram/0errores, anuncio corregido enviado una vez, pruebas nativas/Docker y100%coverage; BCC750856b.
 
 - [2026-09-30] Completar pendiente técnico del CI: fuente 0.1.2 con vinext 1.0.0, peer RSC 0.5.34 y fflate 0.7.5 acotado a satori. Instalación limpia, lint, build, 55 tests, cobertura del agente 100% y auditoría completa/producción cero vulnerabilidades. Prueba SSR en preview local workerd con cierre completo; LF determinista y contrato de versión paquete/lock. No despliegue, agente operativo, cambio de bot ni sustitución del launcher.
 

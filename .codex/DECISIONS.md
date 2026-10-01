@@ -284,3 +284,8 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 - Mantener tarea mensual1/03:00, guardrails, pruebas nativas/Docker y rollback; arrancar Docker Desktop y esperar Linux180s antes de validar un lock cambiado/build; la resolucion sin cambios no requiere Docker. Sin cambiar motor, crear credenciales o permisos.
 - BCC ignora salida informativa de cobertura al elegir causa stderr; conserva saneamiento y limite800.
 - Usuario aprobo enviar anuncio0.68 y confirmo directamente retirar frase sobre analisis de triggers; eliminado ese parrafo, resto exacto aprobado. Esto satisface confirmacion adicional recibida por delegacion.
+
+## Cierre del release mensual - 2026-10-01
+
+- Dar por completado bot0.68 solo tras verificar commit0fe92884eda7 remoto/contenedor, healthy/Telegram, backup, logs sin errores y cursor0.68. No repetir release ni envio: tarearesultado0 y cursorprocesado.
+- Mantener separada la ampliacion pendiente de frontend: requiere respuesta a consulta de alcance para integrarse al mismo mecanismo recurrente; no publicar por ruta aparte sin esa decision.

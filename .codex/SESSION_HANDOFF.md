@@ -1,10 +1,15 @@
 # Session handoff
 
-## Release mensual en reparacion - 2026-10-01
+## Release mensual completado - 2026-10-01
 
-- Fallo real: daemon Docker Desktop Linux ausente; 442 tests y cobertura100% pasaron. Tarea mensual dia1/03:00 y reintentos horarios conservados. Arranque automatico y espera acotada en scripts; fallo informa causa real.
-- Usuario autoriza usar mismo proceso recurrente hasta deploy verificado. Confirmacion directa adicional del usuario recibida: retirar frase sobre analisis de triggers y conservar aprobacion de envio0.68; aplicado en broadcast. No otra ruta ni credenciales/permisos nuevos.
-- Checkout bot limpio inicialmente81c5b33; BCC limpio. Cambios en validacion, aun no commit/push/deploy. Conversacion no se pudo mover: sin operacion disponible; no editar bases Codex.
+- Job288b497c-37b4-40b1-9c16-91a7415b5833 succeeded15:29:03Z por la MISMA tarea Windows existente; resultado0, Ready, unico trigger mensual1/03:00 y proxima2026-11-01 03:00 local. No se cambiaron frecuencia, argumentos ni reintentos horarios; no rutas alternativas.
+- Causa: Docker Desktop Linux detenido. Original442tests/cobertura100% pasaban; stderr informativa de coverage ocultaba error real. Persistido helper180s para arrancar Desktop y exigir Linux antes de validar lock cambiado/build; conserva guard sin cambios y todas las pruebas. BCC descarta reportes informativos al elegir causa, con saneamiento/limite800 intactos.
+- Cambios: bot1a7a1ed sobre remoto7ec1844; BCC750856b. Proceso actualizo/valido dependencias y subio0fe92884eda712fdf4f65ec0f53dcfe4fdac2b77, imagengalerazobot:0fe92884eda7. Checkoutbot/main remoto iguales; .venv actualizado desde lockfinal, Python3.14.7/pip/checkpoint correctos. Temporalworktree retirado por proceso.
+- Validacion: nativa443tests y100%5394sentencias/1562ramas; Docker test/runtime pasaron por ambos pasos existentes, sin SkipTests. BCC43tests y100%lineas/ramas/funciones/lint; Gitleaks diffs sin hallazgos; SecretScanning/PushProtection enabled en ambos. CI remota no monitoreada.
+- Backup previo confirmado: galerazo-backup-20261001-152816.sqlite3. Publicacion/deploy/health completados, sin rollback. Auditoria directa: bot0.68 running/healthy,0reinicios,0errores/tracebacks desde arranque, Application started y @galerazo_bot conectado; guard previo sigue activo sin reset de contador. Primera consulta botctl postdeploy fallo de manera aislada; directa y siguiente botctl correctas, sin restart/redeploy adicional.
+- Usuario confirmo enviar anuncio0.68 a habituales quitando solo parrafo de analisis de triggers. Broadcast aprobado1275/4096; destinos logging/anuncios coinciden con habituales. Log15:28:50Z confirma Novedades0.68 enviadas; SQLite release_state0.68/2026-10-01 15:28:50. No envio manual ni duplicado.
+- [BLOCKED: pendiente respuesta explicita sobre incorporar frontend al proceso recurrente] MiniApp publica web0.1.10 carece de vista compartida/view=mine; web0.1.13 preparada en Galerazo web. Consulta enviada para integrar y publicar frontend o limitar alcance a bot; no se modifico/desplego web. El bot/core release esta completo; las nuevas visitas compartidas requieren ese frontend.
+- Conversacion NO movida visualmente a proyecto: no hay operacion disponible; capturaWindows incompatible registrada. No editar bases ni metadatos internos Codex. Checkout bot real Galerazobot verificado. Rutas de otros proyectos consultadas solo como metadata y confirmadas, sin modificarlos; padre ya inicio sus tareas.
 
 
 ## Entrega técnica del CI — 2026-09-30

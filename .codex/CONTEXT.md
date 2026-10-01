@@ -1,5 +1,12 @@
 # Bot Control Center - Contexto del proyecto
 
+## Estado vigente del release - 2026-10-01
+
+- Bot produccion0.68, imagen0fe92884eda7, running/healthy y Telegram conectado; release_state0.68 y anuncio aprobado corregido procesado. La misma tarea mensual1/03:00 termino con resultado0 y conserva reintentos. Registros historicos0.63 mas abajo quedan superados para estado productivo del bot.
+- Scripts versionados arrancan Docker Desktop y esperan motor Linux180s antes de validar un lock cambiado/build; no cambian motor ni omiten pruebas. BCC ignora stderr informativa de coverage al elegir causa del fallo. Runtime canonico siguePython3.14.7.
+- Frontend publico sigueweb0.1.10; web0.1.13 preparada requiere respuesta de alcance antes de incorporarse/publicarse. No se modifico web ni su mecanismo de deploy. Nuevas visitas compartidas del bot requieren ese frontend.
+
+
 ## Descripción general
 
 Dashboard local y extensible para observar una flota de bots remotos desde una interfaz común. Galerazo usa datos reales para estado operativo, logs y triggers, y dispone además de deploy, moderación y administración segura de credenciales en Google Cloud mediante IAP/SSH, sin publicar bases ni puertos administrativos. Los bots sin adaptador se muestran desconectados y nunca reciben datos operativos de ejemplo.
