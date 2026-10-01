@@ -289,3 +289,7 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 
 - Dar por completado bot0.68 solo tras verificar commit0fe92884eda7 remoto/contenedor, healthy/Telegram, backup, logs sin errores y cursor0.68. No repetir release ni envio: tarearesultado0 y cursorprocesado.
 - Mantener separada la ampliacion pendiente de frontend: requiere respuesta a consulta de alcance para integrarse al mismo mecanismo recurrente; no publicar por ruta aparte sin esa decision.
+
+## Release conjunto autorizado - 2026-10-01
+
+Usuario pide inclusion persistente condicional de Mini App/frontend en cada deploy Galerazo, dentro de la tarea mensual existente. Sustituye bloqueo de alcance/reserva frontend. BCC comparte lock, prepara web desde origin/main limpio/detached, fingerprint de rutas de runtime leido en ambos dominios y deploy Wrangler existente solo si difiere; metadata publica no contiene sesiones/datos. Verifica contrato/activos/gateway401/health/imagen exacta antes de exito. Cambios solo web no reinician backend. Fallo parcial no marca exito, consulta estado activo en reintento; no transaccion atomica interproveedor ni rollbackweb automatico. Sin credenciales/permisos/planes/gastos nuevos, calendario/reintentos intactos. Corte actual SOLOweb: bot0.68 ya desplegado y anuncio procesado, no repetir. Organizacion visual flexible para ESTA tarea; asociacionUI no demostrada y bases internas no modificadas. QA navegador usa identidades/grupos ficticios existentes de tests, nunca login simulado productivo.

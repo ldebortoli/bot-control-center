@@ -6,6 +6,7 @@ import path from "node:path";
 import test from "node:test";
 import {
   createScheduledNotificationStep,
+  createFrontendReleaseStep,
   parseRuntimeConfig,
   validateReleaseSchedule,
 } from "../agent/core.mjs";
@@ -91,9 +92,15 @@ function scheduledHarness({
   plainNotificationFailure = false,
   processFailureDetail = "",
   releaseSchedule,
+  frontend = false,
+  frontendResult = { changed: false, bot_image: publishedImage },
+  failFrontend = false,
+  failFrontendVerify = false,
+  failFrontendCleanup = false,
 } = {}) {
   const repositoryPath = path.resolve("C:/bots/galerazo");
   const bot = parseRuntimeConfig(runtimeConfig(repositoryPath, releaseSchedule)).bots.galerazo;
+  if (frontend) bot.frontendRepositoryPath = path.resolve("C:/bots/web");
   const temporaryRoot = path.resolve("C:/temporary/scheduled-release");
   const snapshotRoot = path.join(temporaryRoot, "source");
   const gitCalls = [];
@@ -130,15 +137,17 @@ function scheduledHarness({
       if (plainNotificationFailure && args.includes("notify-release")) {
         throw { toString: () => "aviso plano" };
       }
+      if (failFrontendVerify && args.includes("verify")) return childProcess(1, "frontend verify failed");
+      if (failFrontend && args.some((item) => item.endsWith("Invoke-FrontendRelease.ps1"))) return childProcess(1, "frontend failed");
       const isNotification = args.includes("notify-release");
       if (processFailureDetail && !isNotification) return childProcess(1, processFailureDetail);
       return childProcess(failNotification && isNotification ? 1 : 0);
     },
-    readTextFile: async (target) => target.startsWith(snapshotRoot) ? snapshotImage : liveImage,
+    readTextFile: async (target) => target.endsWith("frontend-result.json") ? JSON.stringify(frontendResult) : target.startsWith(snapshotRoot) ? snapshotImage : liveImage,
     makeTempDirectory: async () => temporaryRoot,
     makeDirectory: async () => {},
     writeTextFile: async (...args) => { fileWrites.push(args); },
-    removePath: async () => { removed = true; },
+    removePath: async () => { if (failFrontendCleanup) throw new Error("cleanup failed"); removed = true; },
     acquireOperationLock: async () => async () => { lockReleased = true; },
     writeScheduleState: async (_botId, job) => {
       if (stateFailure) throw stateFailure === true ? new Error("state falló") : stateFailure;
@@ -824,4 +833,86 @@ test("el aviso de fallo identifica Docker aunque coverage escriba primero en std
   const notification = harness.processCalls.find((call) => call.args.includes("failed"));
   assert.match(notification.args[notification.args.indexOf("-ReleaseDetail") + 1], /docker API/);
   assert.ok(!harness.processCalls.some((call) => call.args[4]?.endsWith("Publish-DockerImage.ps1")));
+});
+
+
+test("linked frontend is configured explicitly and uses the fixed bridge", () => {
+  const raw = runtimeConfig(path.resolve("C:/bot"));
+  raw.bots.galerazo.frontendRepositoryPath = "C:/web";
+  const bot = parseRuntimeConfig(raw).bots.galerazo;
+  assert.equal(bot.frontendRepositoryPath, path.resolve("C:/web"));
+  raw.bots.galerazo.frontendRepositoryPath = "";
+  assert.throws(() => parseRuntimeConfig(raw), /frontendRepositoryPath/);
+  const sync = createFrontendReleaseStep(bot, "sync", "result.json");
+  assert.ok(sync.args.includes("-BotSourceRoot"));
+  const verify = createFrontendReleaseStep(bot, "verify", "result.json", "C:/snapshot", publishedImage);
+  assert.ok(verify.args.includes("-ExpectedImage"));
+});
+
+test("frontend-only changes succeed without republishing or redeploying the bot", async () => {
+  const h = scheduledHarness({ frontend: true, liveImage: publishedImage, frontendResult: { changed: true, bot_image: publishedImage } });
+  const job = await waitForJob(h.manager.start(h.bot, "scheduled-release"));
+  assert.equal(job.status, "succeeded");
+  assert.equal(h.processCalls.length, 1);
+  assert.ok(h.processCalls[0].args.includes("sync"));
+  assert.equal(h.fileWrites.length, 0);
+});
+
+test("unchanged frontend is checked and skipped without another deployment", async () => {
+  const h = scheduledHarness({ frontend: true, liveImage: publishedImage });
+  const job = await waitForJob(h.manager.start(h.bot, "scheduled-release"));
+  assert.equal(job.skipReason, "no-changes");
+  assert.equal(h.processCalls.length, 1);
+});
+
+test("combined release verifies both sides and exact bot image before success", async () => {
+  const h = scheduledHarness({ frontend: true, frontendResult: { changed: true, bot_image: "registry.example/bot:old" } });
+  const job = await waitForJob(h.manager.start(h.bot, "scheduled-release"));
+  assert.equal(job.status, "succeeded");
+  assert.ok(h.processCalls[0].args.includes("sync"));
+  assert.ok(h.processCalls[1].args[4].endsWith("Publish-DockerImage.ps1"));
+  assert.ok(h.processCalls[2].args[4].endsWith("Deploy-Gce.ps1"));
+  assert.ok(h.processCalls[3].args.includes("verify"));
+  assert.ok(h.processCalls[3].args.includes(publishedImage));
+});
+
+test("frontend errors or invalid results prevent any backend deployment", async () => {
+  for (const flags of [{ failFrontend: true }, { frontendResult: {} }]) {
+    const h = scheduledHarness({ frontend: true, ...flags });
+    const job = await waitForJob(h.manager.start(h.bot, "scheduled-release"));
+    assert.equal(job.status, "failed");
+    assert.equal(h.processCalls.length, 1);
+    assert.equal(h.wasLockReleased(), true);
+  }
+});
+
+test("manual bot operations and current frontend-only job share the same lock and verify", async () => {
+  for (const action of ["release", "deploy", "frontend-release"]) {
+    const h = scheduledHarness({ frontend: true });
+    const job = await waitForJob(h.manager.start(h.bot, action));
+    assert.equal(job.status, "succeeded");
+    assert.ok(h.processCalls[0].args.includes("sync"));
+    assert.ok(h.processCalls.at(-1).args.includes("verify"));
+    assert.equal(h.wasLockReleased(), true);
+    assert.equal(h.wasRemoved(), true);
+  }
+  const h = scheduledHarness();
+  assert.equal((await waitForJob(h.manager.start(h.bot, "frontend-release"))).status, "failed");
+});
+
+
+test("postdeploy frontend verification failure cannot report success", async () => {
+  const h = scheduledHarness({ frontend: true, failFrontendVerify: true, frontendResult: { changed: true, bot_image: "registry.example/bot:old" } });
+  const job = await waitForJob(h.manager.start(h.bot, "scheduled-release"));
+  assert.equal(job.status, "failed");
+  assert.equal(h.fileWrites.length, 0);
+  assert.equal(h.wasLockReleased(), true);
+});
+
+test("frontend cleanup failure still releases the shared operation lock", async () => {
+  const h = scheduledHarness({ frontend: true, failFrontendCleanup: true });
+  const job = await waitForJob(h.manager.start(h.bot, "frontend-release"));
+  assert.equal(job.status, "succeeded");
+  assert.equal(h.wasLockReleased(), true);
+  assert.match(job.logs.map(entry=>entry.message).join("\n"), /temporal del frontend/);
 });

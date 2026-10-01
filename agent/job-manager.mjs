@@ -8,6 +8,7 @@ import {
   createCredentialUpdateStep,
   createDependencyUpdateStep,
   createDeployStep,
+  createFrontendReleaseStep,
   createPublishStep,
   createRollbackStep,
   createScheduledNotificationStep,
@@ -112,12 +113,19 @@ export class DeploymentJobManager {
   async #run(job, bot, { tag, credentialPatch }) {
     let releaseOperationLock = null;
     let finalStatus = "failed";
+    let frontendTemporaryRoot = null;
+    let frontendResultFile = null;
     job.status = "running";
     job.startedAt = timestamp();
     this.#log(job, "info", `Operación ${job.action} iniciada para ${bot.id}.`);
     await this.#recordScheduleState(job);
     try {
       releaseOperationLock = await this.acquireOperationLock(bot.id);
+      if (bot.frontendRepositoryPath && ["release", "deploy", "frontend-release"].includes(job.action)) {
+        frontendTemporaryRoot = await this.makeTempDirectory(path.join(tmpdir(), "bot-control-frontend-"));
+        frontendResultFile = path.join(frontendTemporaryRoot, "result.json");
+        await this.#runStep(job, bot, createFrontendReleaseStep(bot, "sync", frontendResultFile));
+      }
       if (job.action === "scheduled-release") {
         if (bot.releaseSchedule?.notifyLogChannel) {
           await this.#notifyScheduledRelease(job, bot, "started");
@@ -134,6 +142,8 @@ export class DeploymentJobManager {
       } else if (job.action === "deploy") {
         job.image = (await this.readTextFile(bot.imageFile, "utf8")).trim();
         await this.#runStep(job, bot, createDeployStep(bot, job.image));
+      } else if (job.action === "frontend-release") {
+        if (!frontendResultFile) throw new Error("No hay frontend configurado para este bot.");
       } else if (job.action === "rollback") {
         await this.#runStep(job, bot, createRollbackStep(bot));
       } else if (job.action === "credentials") {
@@ -142,6 +152,9 @@ export class DeploymentJobManager {
         await this.#runStep(job, bot, createStopStep(bot));
       } else {
         throw new Error("Acción no permitida.");
+      }
+      if (frontendResultFile) {
+        await this.#runStep(job, bot, createFrontendReleaseStep(bot, "verify", frontendResultFile, bot.repositoryPath, job.image));
       }
       if (job.skipReason) {
         finalStatus = "skipped";
@@ -154,6 +167,10 @@ export class DeploymentJobManager {
       job.error = redactOutput(error instanceof Error ? error.message : String(error));
       this.#log(job, "error", job.error);
     } finally {
+      if (frontendTemporaryRoot) {
+        try { await this.removePath(frontendTemporaryRoot, { recursive: true, force: true }); }
+        catch { this.#log(job, "warning", "No se pudo limpiar el temporal del frontend."); }
+      }
       if (job.action === "scheduled-release" && bot.releaseSchedule?.notifyLogChannel) {
         const eventByStatus = {
           succeeded: "succeeded",
@@ -309,6 +326,13 @@ export class DeploymentJobManager {
         }
       }
 
+      const frontendResultFile = path.join(temporaryRoot, "frontend-result.json");
+      let frontendResult = null;
+      if (bot.frontendRepositoryPath) {
+        await this.#runStep(job, bot, createFrontendReleaseStep(bot, "sync", frontendResultFile, snapshotRoot));
+        frontendResult = JSON.parse(await this.readTextFile(frontendResultFile, "utf8"));
+        if (typeof frontendResult.changed !== "boolean") throw new Error("Resultado de frontend invalido.");
+      }
       job.targetCommit = targetCommit;
       const targetTag = targetCommit.slice(0, 12);
       let latestImage = "";
@@ -317,8 +341,10 @@ export class DeploymentJobManager {
       } catch {
         // La ausencia de una imagen previa significa que existe algo para publicar.
       }
+      // A linked release checks the active healthy image, including retries after partial failure.
+      if (frontendResult) latestImage = frontendResult.bot_image;
       if (latestImage.slice(latestImage.lastIndexOf(":") + 1) === targetTag) {
-        this.#skip(job, "no-changes", `Sin cambios nuevos: ${targetTag} ya es la última imagen publicada.`);
+        if (!frontendResult?.changed) this.#skip(job, "no-changes", `Sin cambios nuevos: ${targetTag} ya esta publicado.`);
         return;
       }
 
@@ -329,6 +355,9 @@ export class DeploymentJobManager {
       }
       this.#log(job, "info", `Imagen del corte lista: ${job.image}`);
       await this.#runStep(job, snapshotBot, createDeployStep(snapshotBot, job.image));
+      if (frontendResult) {
+        await this.#runStep(job, bot, createFrontendReleaseStep(bot, "verify", frontendResultFile, snapshotRoot, job.image));
+      }
       await this.makeDirectory(path.dirname(bot.imageFile), { recursive: true });
       await this.writeTextFile(bot.imageFile, `${job.image}\n`, "utf8");
     } finally {

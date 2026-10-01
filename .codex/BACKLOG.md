@@ -1,6 +1,6 @@
 # TODO
 
-- [P1] [BLOCKED: pendiente respuesta explicita a consulta de alcance; bot ya desplegado, web no modificada] Integrar frontend Galerazo web0.1.13 al proceso mensual para habilitar visitas compartidas/view=mine; produccion web0.1.10 no las soporta.
+- [P1] [IN PROGRESS: autorizado2026-10-01; deploy web e integracion condicional en BCC existente] Integrar frontend Galerazo web0.1.13 al proceso mensual para habilitar visitas compartidas/view=mine; produccion web0.1.10 no las soporta.
 
 
 - [P1] [BLOCKED: requiere diseñar un contrato de consultas de solo lectura con allowlist, límites y auditoría; no es necesario para el estado ni los triggers ya conectados] Integrar SQL real de Galerazo.

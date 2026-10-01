@@ -133,6 +133,7 @@ export function parseRuntimeConfig(raw) {
     bots[id] = {
       id,
       repositoryPath,
+      frontendRepositoryPath: entry.frontendRepositoryPath === undefined ? null : path.resolve(assertString(entry.frontendRepositoryPath, `${id}.frontendRepositoryPath`)),
       projectId: assertIdentifier(entry.projectId, `${id}.projectId`),
       location: assertIdentifier(entry.location ?? "us-central1", `${id}.location`),
       repository: assertIdentifier(entry.repository ?? "bots", `${id}.repository`),
@@ -398,4 +399,18 @@ export function createScheduledNotificationStep(bot, event, failureDetail) {
 
 export function botctlRuntimePath(bot) {
   return resolveInside(bot.repositoryPath, path.join("deploy", "gce", "botctl.py"), "botctlRuntime");
+}
+
+
+export function createFrontendReleaseStep(bot, stage, resultFile, sourceRoot = bot.repositoryPath, image) {
+  const args = [
+    ["Stage", stage], ["FrontendRepositoryPath", bot.frontendRepositoryPath],
+    ["RuntimeRepositoryPath", bot.repositoryPath], ["BotSourceRoot", sourceRoot],
+    ["ResultFile", resultFile], ["ProjectId", bot.projectId], ["Zone", bot.zone], ["Instance", bot.instance],
+  ];
+  if (image) args.push(["ExpectedImage", image]);
+  return powershellStep(
+    stage === "sync" ? "Validar y sincronizar Mini App si hay cambios" : "Verificar compatibilidad bot y Mini App en produccion",
+    resolveInside(bot.repositoryPath, path.join("scripts", "deploy", "Invoke-FrontendRelease.ps1"), "frontendReleaseScript"), args,
+  );
 }

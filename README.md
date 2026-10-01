@@ -145,3 +145,5 @@ tests/                       validación del render y guardrails
 ## Despliegue
 
 El Control Center no está publicado y el agente de deploy no debe exponerse. La UI puede evaluarse por separado en un hosting, pero las acciones operativas seguirán requiriendo el agente local y un modelo de autenticación explícito.
+
+El release de Galerazo integra la Mini App cuando `frontendRepositoryPath` esta configurado. Ver [release conjunto](docs/FRONTEND_RELEASE.md). Conserva la tarea mensual existente.

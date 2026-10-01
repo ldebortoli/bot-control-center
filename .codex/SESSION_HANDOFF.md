@@ -1,5 +1,10 @@
 # Session handoff
 
+## Integracion web autorizada - 2026-10-01
+
+- Usuario autoriza frontend e inclusion condicional persistente en cada release/deploy del bot, dentro de la misma tarea mensual y lock. Ubicacion visual flexibilizada para esta tarea, no bases Codex modificadas. Bot0.68 healthy: NO repetir backend/anuncio. Helper versionado en backend, metadata publica web y BCC en desarrollo; publicar solo tras tests.
+
+
 ## Release mensual completado - 2026-10-01
 
 - Job288b497c-37b4-40b1-9c16-91a7415b5833 succeeded15:29:03Z por la MISMA tarea Windows existente; resultado0, Ready, unico trigger mensual1/03:00 y proxima2026-11-01 03:00 local. No se cambiaron frecuencia, argumentos ni reintentos horarios; no rutas alternativas.
