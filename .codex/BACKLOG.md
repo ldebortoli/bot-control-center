@@ -1,16 +1,18 @@
 # TODO
 
-- [P1] [IN PROGRESS: autorizado2026-10-01; deploy web e integracion condicional en BCC existente] Integrar frontend Galerazo web0.1.13 al proceso mensual para habilitar visitas compartidas/view=mine; produccion web0.1.10 no las soporta.
-
 
 - [P1] [BLOCKED: requiere diseñar un contrato de consultas de solo lectura con allowlist, límites y auditoría; no es necesario para el estado ni los triggers ya conectados] Integrar SQL real de Galerazo.
 - [P2] [BLOCKED: pendiente de que el usuario elija el alcance; se recomienda habilitar `start` y `restart` del contenedor `bot`, y evaluar por separado `recreate` para aplicar secretos, siempre con confirmación, exclusión mutua, auditoría y healthcheck posterior; mantener fuera reinicio de Docker/VM, shell y borrados] Evaluar reinicio y otras capacidades privilegiadas.
 
+- [P2] [BLOCKED: no hay initData vigente ni sesion Telegram de visitante disponible para QA real; no crear credenciales ni simular login productivo] Confirmar un enlace compartido nuevo y el retorno propio en Telegram movil/Desktop. Browser local y contrato API ya pasan.
+
 # IN PROGRESS
 
 
-
 # DONE
+
+- [2026-10-01] [DONE] Frontend 0.1.14 (`375ca92`) desplegado una vez y verificado en ambos dominios. BCC 0.1.3 integra la publicacion condicional en la misma tarea y lock; segundo job sin cambios ni nueva publicacion. Navegacion y limites 403 validados con Edge/API y fixtures. Bot 0.68 (`0fe92884eda7`) healthy, sin redespliegue ni anuncio.
+
 
 - [2026-10-01] Reparado y completado release mensual Galerazo0.68 por tarea existente: job288b497c succeeded, imagen0fe92884eda7/HEAD=remoto, backup/healthy/Telegram/0errores, anuncio corregido enviado una vez, pruebas nativas/Docker y100%coverage; BCC750856b.
 
