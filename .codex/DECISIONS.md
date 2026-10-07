@@ -298,3 +298,11 @@ Usuario pide inclusion persistente condicional de Mini App/frontend en cada depl
 
 - El wrapper PowerShell del frontend se resuelve desde `BotSourceRoot`, igual que su helper Python, para que el release programado ejecute el codigo del snapshot seleccionado incluso cuando el remoto esta adelantado o aparecen ediciones locales despues de fijar el corte. `RuntimeRepositoryPath` conserva unicamente el runtime `.venv` existente.
 - Se conserva una sola tarea y el mismo manager/lock; no reinstalar, iniciar la tarea ni desplegar como parte de esta auditoria. El usuario requiere autorizacion nueva antes de un deploy productivo. Tests del runner usan procesos Git/PowerShell simulados y no publican.
+
+
+## Parches Sharp y source-map-js sin cambiar el gate - 2026-10-07
+
+- Continuacion autorizada del fallo CI37647540746: fuente0.1.5 mantiene Next16.3.7/Vinext1 y fija overrides compatibles sharp0.35.5/source-map-js1.2.2; lock actualiza Sharp nativo y libvips1.3.4 de todas las plataformas. Sin npm audit fix --force, supresiones de advisories ni cambios en npm audit --omit=dev de CI.
+- Nuevas regresiones ejercitan rechazo de offsets invalidos/excesivos/nested en proceso acotado5s, preservacion de source map valido y SVG local->PNG con tamanos/pixeles correctos. No explotar RCE/DoS ni confundir smoke addon con bindingCloudflareIMAGES.
+- Audit produccion0; full audit conserva8altas de desarrollo derivadas de una vulnerabilidad braces<=3.0.3 sin parche publicado. Ultimos padres estables mantienen la cadena (inclusoNextESLint16.4.0/Vinext1.0.1), por lo que queda bloqueo separado. Mantener versiones compatibles actuales y no esconderlo. Fuentes oficiales: https://github.com/lovell/sharp/security/advisories/GHSA-wq5f-xc86-pv6w ; https://github.com/7rulnik/source-map-js/pull/79 ; https://github.com/advisories/GHSA-vfj7-8cjw-p6xm ; https://registry.npmjs.org/braces .
+- Esta entrega solo actualiza fuente/lock y pruebas; no inicia agente privilegiado, tarea mensual, deploy ni mensajes externos. CI posterior al push no se monitorea.

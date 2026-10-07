@@ -1,5 +1,11 @@
 # Bot Control Center - Contexto del proyecto
 
+## Fuente0.1.5 con parches de auditoria - 2026-10-07
+
+- Sharp0.35.5/libvips1.3.4 y source-map-js1.2.2 fijados en overrides/lock. Next16.3.7/Vinext1.0.0 conservados. Audit de produccion0; fullaudit8altas de desarrollo por braces<=3.0.3 sin parche upstream, bloqueado inline enBACKLOG. Este resultado actual reemplaza afirmaciones historicas de audit completo0.
+- Suite ahora incluye pruebas del addon nativo y guardrails source-map; gate de CI npm audit --omit=dev y coverage100%agent intactos. Sin cambios de UI, launcher, calendario, permisos, secretos ni deploy.
+
+
 ## Fuente 0.1.4 y recurrente auditado - 2026-10-07
 
 - El puente frontend, wrapper PowerShell y helper Python, pertenece al snapshot inmutable del bot en el release mensual. El checkout vivo solo aporta su runtime `.venv`. El runner sigue compartido con el manager/lock existentes, sin otra tarea ni deploy manual paralelo.

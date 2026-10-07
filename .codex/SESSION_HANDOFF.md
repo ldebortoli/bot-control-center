@@ -1,5 +1,13 @@
 # Session handoff
 
+## Auditoria de produccion corregida en0.1.5 - 2026-10-07
+
+- Inicio limpio b7f82ff; continuacion en la misma tarea Galerazo del fallo CI37647540746. Cambios scoped: overridesSharp0.35.5/source-map-js1.2.2,lock conSharpnativo/libvips1.3.4,version0.1.5/CHANGELOG/README y testsdependencies. Next16.3.7/Vinext1.0.0 conservados. No modifica gateCI npm audit --omit=dev ni cobertura100%.
+- Validacion local completada: npmci reproducible,produccionaudit0,lint/build/67tests/52coverage100%lineas-ramas-funciones,versionmanifest-lock-changelog,checkoutindice con core.autocrlf=true y mismo lint. Pruebas nuevas: rechazo de offsets source-map invalidos/excesivos en hijo5s + mapeo valido; SVGlocal->PNGSharp y pixeles. DockerlocalNode22.13.0 Linux igual aCI: npmci--omitdev,2tests nativos y produccionaudit0. Imagen local deQA solamente; ningun servicio/app publicada.
+- Auditoria completa devuelve8avisos altos exclusivamente de desarrollo, todos derivados GHSA-vfj7-8cjw-p6xm braces<=3.0.3. Sin parche publicado; padres estables actuales conservan dependencia. Bloqueo exacto enBACKLOG; no downgradeNextESLint14/Vinext0.0.15 sugeridos porforce. No afirmar auditcompleto0.
+- Memoria/README actualizados; fuente lista para commit/push scoped con autornoreply,Gitleaks y proteccionesGitHub habilitadas. No cambios ajenos iniciales,USER_QUEUE sin nuevas entradas; procesadasDONE. Despues push no monitorear CI.
+- No modificar secretos, UI/launcher, agente operativo, calendario mensual, frontendGalerazo ni bot; sin Telegram/deploy. Artefactos ignorados enwork/dependency-audit yout/dependency-audit; junction de dependencias del checkoutLF retirado/verificado.
+
 ## Auditoria del recurrente completada - 2026-10-07
 
 - BCC empezo limpio en `80d7263`, main=origin/main. Fuente 0.1.4: wrapper frontend usa el snapshot seleccionado, con regresion del runner mensual remoto adelantado; helper Python correspondiente entregado primero en Galerazobot `fa7fe8a`. Sin cambios de UI/launcher ni despliegue.

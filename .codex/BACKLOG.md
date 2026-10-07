@@ -1,5 +1,7 @@
 # TODO
 
+- [P2] [BLOCKED: GHSA-vfj7-8cjw-p6xm afecta braces<=3.0.3; npm no publica version corregida y los ultimos padres estables conservan esa dependencia. Resolver exige parche upstream o sustitucion del toolchain validada por separado.] Resolver ocho avisos altos de desarrollo propagados por braces (ESLintConfigNext/fast-glob y Vinext/commonjs/dynamic-import). Audit produccion de0.1.5 queda en cero; no aplicar downgrades incompatibles ni debilitar gate.
+
 
 - [P1] [BLOCKED: requiere diseñar un contrato de consultas de solo lectura con allowlist, límites y auditoría; no es necesario para el estado ni los triggers ya conectados] Integrar SQL real de Galerazo.
 - [P2] [BLOCKED: pendiente de que el usuario elija el alcance; se recomienda habilitar `start` y `restart` del contenedor `bot`, y evaluar por separado `recreate` para aplicar secretos, siempre con confirmación, exclusión mutua, auditoría y healthcheck posterior; mantener fuera reinicio de Docker/VM, shell y borrados] Evaluar reinicio y otras capacidades privilegiadas.
@@ -9,7 +11,10 @@
 # IN PROGRESS
 
 
+
 # DONE
+
+- [2026-10-07] [DONE] Correccion de auditoria de produccion0.1.5: Sharp0.35.5/libvips1.3.4 y source-map-js1.2.2 con overrides/lock compatibles, Next/Vinext conservados y gateCI intacto. npmci/lint/build/67tests,52tests coverage100%lineas/ramas/funciones,checkoutindiceLF/core.autocrlf=true correctos. SmokeLinuxNode22.13.0/2tests y auditproduccion0 tanto Windows comoLinux. Auditfull8avisos de desarrollo derivados de braces sin parche quedan bloqueados inline; no forcefix/deploy ni CIpolling.
 
 - [2026-10-07] BCC 0.1.4: auditoria del recurrente y puente frontend fijado al snapshot del bot, coordinado con Galerazobot `fa7fe8a`. Runner mensual probado con remoto adelantado, orden conjunto y lock; lint/build/65 tests completos/52 tests de cobertura100% pasan, incluido lint con core.autocrlf=true. Secret Scanning/Push Protection enabled y Gitleaks staged sin hallazgos. Tarea mensual/config intactas; ningun despliegue ni CI remota monitoreada. Residuo temporal auxiliar sin enlaces documentado en SESSION_HANDOFF tras rechazo de limpieza automatica.
 - [2026-10-01] [DONE] Frontend 0.1.14 (`375ca92`) desplegado una vez y verificado en ambos dominios. BCC 0.1.3 integra la publicacion condicional en la misma tarea y lock; segundo job sin cambios ni nueva publicacion. Navegacion y limites 403 validados con Edge/API y fixtures. Bot 0.68 (`0fe92884eda7`) healthy, sin redespliegue ni anuncio.

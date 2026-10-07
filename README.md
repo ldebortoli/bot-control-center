@@ -47,7 +47,7 @@ npm audit --omit=dev   # dependencias que llegan a producción
 
 GitHub Actions ejecuta en cada push y pull request contra `main` una única verificación rápida con caché de npm, cancelación de ejecuciones reemplazadas y un timeout de 15 minutos: lint, build, suite unitaria, cobertura y auditoría de dependencias de producción.
 
-La fuente 0.1.2 usa Next 16.3.7, vinext 1.0.0 y su peer RSC 0.5.34. Los overrides de Nanoid, PostCSS y Sharp conservan los parches; el override acotado `satori > fflate 0.7.5` elimina un aviso moderado sin saltar a 0.8. La auditoría completa y la de producción quedan en cero, sin `npm audit fix --force`. La prueba SSR inicia únicamente un preview en loopback, renderiza el worker compilado mediante workerd y cierra el runtime en `finally`; no despliega ni conecta el agente operativo. `.gitattributes` fija LF entre plataformas y marca binarios explícitamente.
+La fuente 0.1.5 conserva Next 16.3.7, vinext 1.0.0 y su peer RSC 0.5.34. Los overrides de Sharp 0.35.5 y source-map-js 1.2.2 corrigen los avisos GHSA-wq5f-xc86-pv6w y GHSA-68fv-2mgg-jv7q, incluidos los paquetes nativos de Sharp/libvips en el lockfile. Se mantienen los parches de Nanoid, PostCSS y `satori > fflate 0.7.5`, sin `npm audit fix --force` ni excepciones al gate `npm audit --omit=dev`. La suite comprueba la conversión de un SVG local a PNG y el rechazo de offsets inválidos de mapas de código en un proceso con timeout; no ejecuta cargas de explotación. La prueba SSR inicia únicamente un preview en loopback, renderiza el worker compilado mediante workerd y cierra el runtime en `finally`; no despliega ni conecta el agente operativo. `.gitattributes` fija LF entre plataformas y marca binarios explícitamente.
 
 ## Abrir como aplicación de Windows
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.5 - 2026-10-07
+
+- Actualizados Sharp a 0.35.5 y source-map-js a 1.2.2 para resolver las alertas de seguridad del arbol de dependencias, conservando el control de auditoria de produccion.
+- Pruebas locales de procesamiento de imagenes y rechazo de mapas de codigo invalidos verifican la compatibilidad de los parches.
+
 ## 0.1.4 - 2026-10-07
 
 - El release recurrente ejecuta el puente frontend del mismo snapshot inmutable que el bot; una edicion posterior o un checkout local atrasado ya no cambia el codigo de publicacion seleccionado.
