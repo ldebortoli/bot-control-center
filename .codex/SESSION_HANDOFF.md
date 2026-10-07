@@ -1,5 +1,13 @@
 # Session handoff
 
+## Auditoria del recurrente completada - 2026-10-07
+
+- BCC empezo limpio en `80d7263`, main=origin/main. Fuente 0.1.4: wrapper frontend usa el snapshot seleccionado, con regresion del runner mensual remoto adelantado; helper Python correspondiente entregado primero en Galerazobot `fa7fe8a`. Sin cambios de UI/launcher ni despliegue.
+- Consulta real de solo lectura: tarea `Bot Control Center - Release - galerazo` Ready, ultimo resultado 0, un unico trigger dia 1/03:00 ART, proxima 2026-11-01 03:00, 12 reintentos PT1H, StartWhenAvailable/IgnoreNew y limite PT3H. Ejecutable nativo y runner/config habituales intactos. Config local: frontendRepositoryPath presente y existente; schedule enabled/updateDependencies/notifyLogChannel=true. Ningun launcher o runner operativo activo al consultar.
+- Secret Scanning y Push Protection verificados enabled. USER_QUEUE autoritativa sin pendientes; tres pedidos procesados tienen DONE. Entradas antiguas repetidas en carpeta contenedora ya constan DONE en este repositorio.
+- Validacion: lint, build, 65 tests completos y 52 tests de cobertura con 100% lineas/ramas/funciones pasan. Mismo lint pasa en checkout del indice con core.autocrlf=true y LF. Prueba de reproduccion sobre HEAD anterior confirma wrapper vivo en vez de snapshot; regresion corregida valida ambos pasos. Gitleaks staged sin hallazgos, autor noreply; revision conjunta aprobada y entrega coordinada despues del push Galerazobot. No ejecutar tarea real, deploy, Telegram ni sondear CI remota; requiere nueva autorizacion del usuario para produccion.
+- Limpieza auxiliar: el junction temporal a dependencias se retiro sin recursion y el origen permanece intacto. La revision automatica rechazo eliminar el checkout de pruebas (mensaje `blocked by policy`, sin detalle adicional); queda una copia de fuente sin secretos ni dependencias en `%TEMP%/bcc-lf-check-589f68af34cb4cb1b6f099a16c1cd061`, fuera del repositorio. No bloquear trabajo por este residuo ni repetir la eliminacion rechazada.
+
 ## Release web e integracion mensual completados - 2026-10-01
 
 - Web 0.1.14 publicada una vez por el job BCC `frontend-release` `be241afa-51bc-4e53-9b94-68dbd8b02045`, succeeded. Fuente desplegada: `375ca92667c234b237bb557ef97fabcbeaf3c9ef`. Worker: `527fbb25-f3da-4606-9771-97b1a7564940`; deployment: `2c2cfc04-0d21-49d6-9a86-da0f787667d0`, 2026-10-01 18:32:51Z, 100%. Cloudflare confirma el mensaje del commit. Ambos dominios sirven su metadata, documento versionado y hashes SHA256 exactos de app/core/styles; gateway anonimo 401/no-store.

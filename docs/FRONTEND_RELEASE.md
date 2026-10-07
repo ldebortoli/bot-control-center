@@ -4,7 +4,10 @@ Bot Control Center integra el frontend configurado mediante `frontendRepositoryP
 en la misma operacion manual (`release` o `deploy`) y la misma tarea mensual existente.
 No crea otra tarea ni cambia calendario, reintentos, permisos, recursos o credenciales.
 El puente fijo es `scripts/deploy/Invoke-FrontendRelease.ps1`, usando `.venv` del
-checkout real y `scripts/frontend_release.py`. `frontend-release` es una accion
+checkout real para el runtime. Tanto el wrapper PowerShell como
+`scripts/frontend_release.py` se ejecutan desde el snapshot inmutable del bot
+seleccionado por el release mensual; una edicion posterior en el checkout vivo
+no altera el codigo del puente. `frontend-release` es una accion
 interna del manager para publicar solo web, por ejemplo tras un bot ya desplegado.
 
 ## Seleccion y deteccion

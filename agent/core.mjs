@@ -411,6 +411,6 @@ export function createFrontendReleaseStep(bot, stage, resultFile, sourceRoot = b
   if (image) args.push(["ExpectedImage", image]);
   return powershellStep(
     stage === "sync" ? "Validar y sincronizar Mini App si hay cambios" : "Verificar compatibilidad bot y Mini App en produccion",
-    resolveInside(bot.repositoryPath, path.join("scripts", "deploy", "Invoke-FrontendRelease.ps1"), "frontendReleaseScript"), args,
+    resolveInside(sourceRoot, path.join("scripts", "deploy", "Invoke-FrontendRelease.ps1"), "frontendReleaseScript"), args,
   );
 }

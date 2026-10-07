@@ -1,5 +1,12 @@
 # Bot Control Center - Contexto del proyecto
 
+## Fuente 0.1.4 y recurrente auditado - 2026-10-07
+
+- El puente frontend, wrapper PowerShell y helper Python, pertenece al snapshot inmutable del bot en el release mensual. El checkout vivo solo aporta su runtime `.venv`. El runner sigue compartido con el manager/lock existentes, sin otra tarea ni deploy manual paralelo.
+- Tarea real verificada Ready con resultado 0, unico trigger mensual dia 1 a las 03:00 ART, proxima 2026-11-01 03:00 y 12 reintentos PT1H. No se ejecuto ni modifico la tarea durante esta auditoria; nuevos despliegues requieren autorizacion expresa.
+- Validacion fuente: lint, build, 65 tests completos; cobertura 100% lineas/ramas/funciones del agente (52 tests) y lint sobre checkout limpio del indice con core.autocrlf=true.
+- Auditoria coordinada de solo lectura desde Galerazobot: produccion sirve web 0.1.16 en ambos dominios, gateway anonimo 401/no-store y bot 0.68 (imagen `0fe92884eda7`) healthy. Esto actualiza las referencias historicas de frontend 0.1.14 mas abajo, sin una nueva publicacion en esta tarea.
+
 ## Estado vigente del release - 2026-10-01
 
 - Bot produccion0.68, imagen0fe92884eda7, running/healthy y Telegram conectado; release_state0.68 y anuncio aprobado corregido procesado. La misma tarea mensual1/03:00 termino con resultado0 y conserva reintentos. Registros historicos0.63 mas abajo quedan superados para estado productivo del bot.

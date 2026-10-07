@@ -8,6 +8,8 @@ test("sincroniza la versión del dashboard y su lockfile", async () => {
   const lock = JSON.parse(await readFile(new URL("../package-lock.json", import.meta.url), "utf8"));
   assert.equal(lock.version, manifest.version);
   assert.equal(lock.packages[""].version, manifest.version);
+  const changelog = await readFile(new URL("../CHANGELOG.md", import.meta.url), "utf8");
+  assert.equal(changelog.match(/^## (\S+) -/m)?.[1], manifest.version);
 });
 
 async function render() {

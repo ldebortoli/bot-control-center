@@ -1,4 +1,4 @@
-﻿# Decisiones tecnicas
+# Decisiones tecnicas
 
 No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entrada que indique cual reemplaza.
 
@@ -293,3 +293,8 @@ No borrar decisiones anteriores. Si una decision cambia, agregar una nueva entra
 ## Release conjunto autorizado - 2026-10-01
 
 Usuario pide inclusion persistente condicional de Mini App/frontend en cada deploy Galerazo, dentro de la tarea mensual existente. Sustituye bloqueo de alcance/reserva frontend. BCC comparte lock, prepara web desde origin/main limpio/detached, fingerprint de rutas de runtime leido en ambos dominios y deploy Wrangler existente solo si difiere; metadata publica no contiene sesiones/datos. Verifica contrato/activos/gateway401/health/imagen exacta antes de exito. Cambios solo web no reinician backend. Fallo parcial no marca exito, consulta estado activo en reintento; no transaccion atomica interproveedor ni rollbackweb automatico. Sin credenciales/permisos/planes/gastos nuevos, calendario/reintentos intactos. Corte actual SOLOweb: bot0.68 ya desplegado y anuncio procesado, no repetir. Organizacion visual flexible para ESTA tarea; asociacionUI no demostrada y bases internas no modificadas. QA navegador usa identidades/grupos ficticios existentes de tests, nunca login simulado productivo.
+
+## Puente frontend fijado al mismo corte - 2026-10-07
+
+- El wrapper PowerShell del frontend se resuelve desde `BotSourceRoot`, igual que su helper Python, para que el release programado ejecute el codigo del snapshot seleccionado incluso cuando el remoto esta adelantado o aparecen ediciones locales despues de fijar el corte. `RuntimeRepositoryPath` conserva unicamente el runtime `.venv` existente.
+- Se conserva una sola tarea y el mismo manager/lock; no reinstalar, iniciar la tarea ni desplegar como parte de esta auditoria. El usuario requiere autorizacion nueva antes de un deploy productivo. Tests del runner usan procesos Git/PowerShell simulados y no publican.

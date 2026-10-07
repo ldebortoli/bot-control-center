@@ -11,6 +11,7 @@
 
 # DONE
 
+- [2026-10-07] BCC 0.1.4: auditoria del recurrente y puente frontend fijado al snapshot del bot, coordinado con Galerazobot `fa7fe8a`. Runner mensual probado con remoto adelantado, orden conjunto y lock; lint/build/65 tests completos/52 tests de cobertura100% pasan, incluido lint con core.autocrlf=true. Secret Scanning/Push Protection enabled y Gitleaks staged sin hallazgos. Tarea mensual/config intactas; ningun despliegue ni CI remota monitoreada. Residuo temporal auxiliar sin enlaces documentado en SESSION_HANDOFF tras rechazo de limpieza automatica.
 - [2026-10-01] [DONE] Frontend 0.1.14 (`375ca92`) desplegado una vez y verificado en ambos dominios. BCC 0.1.3 integra la publicacion condicional en la misma tarea y lock; segundo job sin cambios ni nueva publicacion. Navegacion y limites 403 validados con Edge/API y fixtures. Bot 0.68 (`0fe92884eda7`) healthy, sin redespliegue ni anuncio.
 
 

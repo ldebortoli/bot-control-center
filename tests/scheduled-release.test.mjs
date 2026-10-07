@@ -845,8 +845,41 @@ test("linked frontend is configured explicitly and uses the fixed bridge", () =>
   assert.throws(() => parseRuntimeConfig(raw), /frontendRepositoryPath/);
   const sync = createFrontendReleaseStep(bot, "sync", "result.json");
   assert.ok(sync.args.includes("-BotSourceRoot"));
-  const verify = createFrontendReleaseStep(bot, "verify", "result.json", "C:/snapshot", publishedImage);
+  assert.equal(sync.args[4], path.join(bot.repositoryPath, "scripts", "deploy", "Invoke-FrontendRelease.ps1"));
+  const snapshot = path.resolve("C:/snapshot");
+  const verify = createFrontendReleaseStep(bot, "verify", "result.json", snapshot, publishedImage);
   assert.ok(verify.args.includes("-ExpectedImage"));
+  assert.equal(verify.args[4], path.join(snapshot, "scripts", "deploy", "Invoke-FrontendRelease.ps1"));
+  assert.equal(verify.args[verify.args.indexOf("-RuntimeRepositoryPath") + 1], bot.repositoryPath);
+  assert.equal(verify.args[verify.args.indexOf("-BotSourceRoot") + 1], snapshot);
+});
+
+test("the installed runner includes frontend sync from the selected remote snapshot", async () => {
+  const h = scheduledHarness({
+    frontend: true,
+    local: remoteCommit,
+    remote: localCommit,
+    ancestors: new Set([[remoteCommit, localCommit].join(" ")]),
+    frontendResult: { changed: true, bot_image: "registry.example/bot:old" },
+  });
+  const job = await runScheduledRelease(["--bot", "galerazo"], {
+    loadConfig: async () => ({ config: { bots: { galerazo: h.bot } }, error: null }),
+    createManager: () => h.manager,
+  });
+  assert.equal(job.status, "succeeded");
+  assert.equal(job.action, "scheduled-release");
+  assert.equal(job.targetCommit, localCommit);
+  const snapshot = h.gitCalls.find(args => args[0] === "worktree" && args[1] === "add")[3];
+  assert.deepEqual(h.processCalls.map(call => path.basename(call.args[4])), [
+    "Invoke-FrontendRelease.ps1", "Publish-DockerImage.ps1", "Deploy-Gce.ps1", "Invoke-FrontendRelease.ps1",
+  ]);
+  for (const call of [h.processCalls[0], h.processCalls[3]]) {
+    assert.equal(call.args[4], path.join(snapshot, "scripts", "deploy", "Invoke-FrontendRelease.ps1"));
+    assert.equal(call.args[call.args.indexOf("-RuntimeRepositoryPath") + 1], h.bot.repositoryPath);
+    assert.equal(call.args[call.args.indexOf("-BotSourceRoot") + 1], snapshot);
+  }
+  assert.equal(h.gitCalls.some(args => args[0] === "push"), false);
+  assert.equal(h.wasLockReleased(), true);
 });
 
 test("frontend-only changes succeed without republishing or redeploying the bot", async () => {
