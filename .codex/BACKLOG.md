@@ -14,6 +14,8 @@
 
 # DONE
 
+- [2026-10-16] [DONE] Ejecutar pedido explicito de Python3.14.8 y publicacion web Galerazo por manager frontend-release existente,job99475837-b34d-4ad0-b959-963ec4feac71 succeeded. Web0.1.20/fuente0d1ccfd/Worker60a9166d-1e98-4631-bffa-206ebfb96b28,verify ambos dominios exactos y bot0.68 healthy. Sin publicar imagenGCE/reiniciar bot, anuncios, tarea mensual/config/launcher ni servicios nuevos. Validacion propia web61Node+9Vitest/100% y native650tests/100%; BCC sin cambios de codigo/version, solo memoria. CI remota no monitoreada.
+
 - [2026-10-07] [DONE] Correccion de auditoria de produccion0.1.5: Sharp0.35.5/libvips1.3.4 y source-map-js1.2.2 con overrides/lock compatibles, Next/Vinext conservados y gateCI intacto. npmci/lint/build/67tests,52tests coverage100%lineas/ramas/funciones,checkoutindiceLF/core.autocrlf=true correctos. SmokeLinuxNode22.13.0/2tests y auditproduccion0 tanto Windows comoLinux. Auditfull8avisos de desarrollo derivados de braces sin parche quedan bloqueados inline; no forcefix/deploy ni CIpolling.
 
 - [2026-10-07] BCC 0.1.4: auditoria del recurrente y puente frontend fijado al snapshot del bot, coordinado con Galerazobot `fa7fe8a`. Runner mensual probado con remoto adelantado, orden conjunto y lock; lint/build/65 tests completos/52 tests de cobertura100% pasan, incluido lint con core.autocrlf=true. Secret Scanning/Push Protection enabled y Gitleaks staged sin hallazgos. Tarea mensual/config intactas; ningun despliegue ni CI remota monitoreada. Residuo temporal auxiliar sin enlaces documentado en SESSION_HANDOFF tras rechazo de limpieza automatica.

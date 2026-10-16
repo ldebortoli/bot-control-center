@@ -1,5 +1,10 @@
 # Bot Control Center - Contexto del proyecto
 
+## Publicacion solo frontend - 2026-10-16
+
+- Runtime local del checkout Galerazo actualizado a Python3.14.8 y lock existente, alineado al pin actual. Fuente del bot0.75 permanece preparada; bot productivo0.68/imagen0fe92884eda7 healthy, sin deploy/reinicio. BCC0.1.5/config/launcher/tarea mensual intactos.
+- Job manual frontend-release99475837-b34d-4ad0-b959-963ec4feac71 succeeded: web0.1.20,fuente0d1ccfd,Worker60a9166d-1e98-4631-bffa-206ebfb96b28. Snapshot remoto limpio, gates y verify completados; ambos dominios/version/fingerprint/activos/gateway verificados. Solo Worker existente, sin avisos Telegram o recursos nuevos. Este estado reemplaza referencias historicas al frontend0.1.16 o Python3.14.7, no sus recibos previos.
+
 ## Fuente0.1.5 con parches de auditoria - 2026-10-07
 
 - Sharp0.35.5/libvips1.3.4 y source-map-js1.2.2 fijados en overrides/lock. Next16.3.7/Vinext1.0.0 conservados. Audit de produccion0; fullaudit8altas de desarrollo por braces<=3.0.3 sin parche upstream, bloqueado inline enBACKLOG. Este resultado actual reemplaza afirmaciones historicas de audit completo0.

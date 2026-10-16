@@ -1,5 +1,12 @@
 # Session handoff
 
+## Publicacion web completada - 2026-10-16
+
+- Autorizacion explicita del usuario: actualizar Python3.14.8 y publicar solo Galerazo. Instalador oficial PSF firmado/hash verificado, per-user sin launcher/PATH/reinicio. .venv/requirements existentes alineados;650tests/7032subtests y100% sentencias/ramas nativos pasan; registro privado en memoria del bot.
+- Manager existente frontend-release99475837-b34d-4ad0-b959-963ec4feac71 succeeded; web0.1.20, fuente0d1ccfd,Worker60a9166d-1e98-4631-bffa-206ebfb96b28. Fingerprint a26efe374796a5fdcb9627b3614cdbe50fe13a19a14bc6d155188fde5249a084. Snapshot remoto limpio/gates/dryrun/verify exacto de ambos dominios y backendhealthy correctos; snapshot retirado por finally.
+- Bot sigue0.68/imagen0fe92884eda7, sin deploy/reinicio. Config, launcher, calendario/reintentos de tarea mensual y secretos intactos; sin avisos Telegram ni planes/recursos nuevos. SourceBCC0.1.5 sin cambio funcional; solo memoria, no nuevo incremento. CI no monitoreada.
+- QA ampliada propia de web:61Node+9Vitest/cobertura100%,checkoutLF,E2E42requests,publico21idiomas x3anchos/441nombres/teclado/texto200%,sitemap21/462alternates yassets exactos. QA Telegram real sigue pendiente. Primer intento fue detenido antes del deploy para parchear dependencias de web; no fallo de BCC ni cambio de su codigo.
+
 ## Auditoria de produccion corregida en0.1.5 - 2026-10-07
 
 - Inicio limpio b7f82ff; continuacion en la misma tarea Galerazo del fallo CI37647540746. Cambios scoped: overridesSharp0.35.5/source-map-js1.2.2,lock conSharpnativo/libvips1.3.4,version0.1.5/CHANGELOG/README y testsdependencies. Next16.3.7/Vinext1.0.0 conservados. No modifica gateCI npm audit --omit=dev ni cobertura100%.
