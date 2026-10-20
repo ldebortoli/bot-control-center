@@ -5,6 +5,7 @@
 - El ejemplo del catálogo de Galerazo usa Contabo y SSH, igual que la configuración operativa y la programación mensual; se retira su destino de ejemplo GCP anterior.
 - El estado remoto muestra el proveedor configurado y deja de identificar el VPS como Compute Engine.
 - El inicio admite respuestas lentas del servidor local y mantiene operativos cerrar y Escape durante la espera.
+- La validación local ignora las copias temporales y sus builds generados dentro de work, conservando el análisis del código mantenido.
 
 ## 0.1.6 - 2026-10-20
 

@@ -10,12 +10,14 @@
 
 # IN PROGRESS
 
-- [2026-10-20] Desplegar Galerazo0.80/Mini0.1.27 con manager existente, corregir ejemplos residuales GCP y verificar VPS como único destino Galerazo, sin tocar otras apps. BCC0.1.7/configuración; aprobación del anuncio recibida.
 
 
 
 
 # DONE
+
+- [2026-10-20] [DONE] Deployconjunto0.80/0.1.27 por BCC0.1.7/VPS,jobb9b97ab6 succeeded. Anunciofinalaprobado509/4096/cursor0.80/una confirmación; DBintegrity/FK/restore35tablas20740filas, rollbackanteriorpresente.9otroscontenedores/puertos/límitesidénticos. Herramientareparada(sondeoHTTPcancelable/proveedorcorrecto),VPSúnicoenconfig/ejemplos ymisma tareamensualReady. Gatesnativos/Docker/web/BCC100%medido; fuentespusheadas,detalleenHANDOFF.
+
 
 - [2026-10-20] [DONE] Migración Contabo: bot0.77healthy/DBproductiva/anuncioaprobadoúnico,MiniApp0.1.25/140idiomas por BCC9b211581 succeeded,2GiBagregados/swap0,backupdiario yrestore821(34tablas/20681filas). FlujoSSH/BCC0.1.6 ymisma tareamensualReady1/11/03ART. FuentesGaleramain3174aaa/web2403982/BCCd163bb8;validaciones100% yassets reales verificadas. NoGCP ni nuevos pagos. QA initData real sigue bloqueada explícitamente.
 

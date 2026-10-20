@@ -116,3 +116,7 @@ Produccion: web 0.1.14 (fuente `375ca92`, Worker `527fbb25`) y bot 0.68 (imagen 
 ## Operación vigente20/10 tras pedido explícito
 
 BCC0.1.7, Galerazo únicamenteContabo/VPS en configlocal y ambos ejemplos, no hay destinoGCE activo de Galera. Misma tarea mensual1/03ART/12reintentos/PT1H/3h/IgnoreNew; sin duplicados. Galera1GiB agregado bot768/túnel128/swap0 y backupsagrupadoscodex-backup@daily04ART+jitter20 (cuatroindividualesdisabled), reemplaza referencias históricas2GiB/timersperapp. Puertos asignados8101/8102/8442/8103/8104 deotrasapps preservados. No GCPbilling/serviciospagos. Las guías conjuntas usan rollbackVPS.
+
+## Producción vigente20/10
+
+Bot0.80/ee2aba412e2b healthy yMini0.1.27/Worker a49408e6 desde7c05ef4;139/192idiomas. BCC0.1.7/VPSúnicoGalerazo,mismatareamensualReady1/11/03ART. Cursoranuncio0.80, no reenviar. Galera1GiBagregado/swap0;9otroscontenedores/puertosintactos,backup/restore verificados. Detalle ylimitacionesenSESSION_HANDOFF.

@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated local verification checkouts and their build output.
+    "work/**",
   ]),
 ]);
 

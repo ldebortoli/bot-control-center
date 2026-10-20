@@ -335,3 +335,11 @@ Verificación fuente0.1.7: 53tests coverage100% líneas/ramas/funciones, build/l
 Acceso real falló sin mutar producción. Logs/medición: UIcold3.3s, readinessdescartaba todo a700ms. Regresión nativa compila C# y sirveHTTP1100ms: falló antes, pasa con probeasíncrono acotado10s/bombeo50ms/cancelación propagada/abortfinally. Mantiene límiteglobal60s yX/Escape. Launcher recompilado yshortcutreinstalado con mismoicono/AppID; pruebas70totales y53V8100% por confirmar final. NativecaptureWindowsincompatible no reintentada; CUAinventariobrowser agotó30s20/10 y se descartó; fallbackAPI/CLI/browserheadless.
 
 QA browser real20/10: pantallaDeploy muestra VPS+SSH yContabo, targetantiguo ausente, jobauditado ysin overflow. Detectada etiquetaComputeEngine fija enestadoVM; se usa bot.provider, sin cambio decontrato/transporte. No correr builddelcheckoutconUI/jobactivo para nointerrumpirelproceso; validarbuildfinaltrasdespliegue oenfixtureaislado. Iconosassets/faviconhashidénticoB9B5448B,shortcutreinstalado/exeAppIDexistente; nativecaptureincompatible noreintentada.
+
+## 2026-10-20 · Cierre productivo verificado
+
+Jobb9b97ab6 succeeded por herramienta real; bot0.80/ee2aba4 yMini0.1.27/7c05ef4 publicados,Workera49408e6. Anuncioexactoaprobado509/cursor0.80/una confirmación. Snapshotrestaurado35tablas20740filas/datosidénticos y9contenedoresajenos intactos. VPSúnicodestinoGalerazo; tarea mensualexistenteReady. BCC0.1.7 fuente b2eea6b corrige arranque lento/cancelable yproveedor. Sin CIwatch ni mensajes/backups duplicados; evidencia privada enGalerazobot.codex/deploy-vps-20261020 yBCCwork/deploy-vps-20261020.
+
+## 2026-10-20 · Alcance de lint local
+
+El cierre repitió lint en el checkout principal después de generar work/deploy-vps-20261020/index/dist. ESLint entró en ese build temporal y produjo7errores/3951warnings, todos de salida generada; el mismo código mantenido ya pasaba build/70tests en índice limpio. Se ignora sólo work/** (Git ya lo excluye y no contiene producción) para conservar el gate sobre fuentes mantenidas. No cambia cobertura ni se oculta código alcanzable. Evidencia privada lint-generated-evidence.json; repetir lint principal e índice antes de push.
