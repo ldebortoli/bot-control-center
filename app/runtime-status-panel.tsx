@@ -139,7 +139,7 @@ export function RuntimeStatusPanel({ bot }: { bot: BotDefinition }) {
         <>
           {runtime.alerts.length ? <div className="runtime-alert"><strong>Requiere atención</strong><span>{runtime.alerts.join(" ")}</span></div> : null}
           <div className="runtime-grid">
-            <article><span>VM</span><strong>{runtime.vm.status}</strong><small>Compute Engine</small></article>
+            <article><span>VM</span><strong>{runtime.vm.status}</strong><small>{bot.provider}</small></article>
             <article><span>Contenedor</span><strong>{runtime.container.status}</strong><small>{runtime.container.running ? "running" : "stopped"}</small></article>
             <article><span>Healthcheck</span><strong>{runtime.container.health}</strong><small>{runtime.container.health === "healthy" ? "saludable" : "revisar"}</small></article>
             <article className={runtime.container.restartLoop ? "runtime-card--danger" : ""}><span>Reinicios</span><strong>{runtime.container.restartCount}</strong><small>{runtime.container.recentRestarts} en 15 min</small></article>

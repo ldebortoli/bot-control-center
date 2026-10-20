@@ -333,3 +333,5 @@ Verificación fuente0.1.7: 53tests coverage100% líneas/ramas/funciones, build/l
 ## 2026-10-20 · Arranque local lento reproducido y reparado
 
 Acceso real falló sin mutar producción. Logs/medición: UIcold3.3s, readinessdescartaba todo a700ms. Regresión nativa compila C# y sirveHTTP1100ms: falló antes, pasa con probeasíncrono acotado10s/bombeo50ms/cancelación propagada/abortfinally. Mantiene límiteglobal60s yX/Escape. Launcher recompilado yshortcutreinstalado con mismoicono/AppID; pruebas70totales y53V8100% por confirmar final. NativecaptureWindowsincompatible no reintentada; CUAinventariobrowser agotó30s20/10 y se descartó; fallbackAPI/CLI/browserheadless.
+
+QA browser real20/10: pantallaDeploy muestra VPS+SSH yContabo, targetantiguo ausente, jobauditado ysin overflow. Detectada etiquetaComputeEngine fija enestadoVM; se usa bot.provider, sin cambio decontrato/transporte. No correr builddelcheckoutconUI/jobactivo para nointerrumpirelproceso; validarbuildfinaltrasdespliegue oenfixtureaislado. Iconosassets/faviconhashidénticoB9B5448B,shortcutreinstalado/exeAppIDexistente; nativecaptureincompatible noreintentada.
