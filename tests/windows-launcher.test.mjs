@@ -1,5 +1,11 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, mkdtemp, writeFile, rm } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { createServer } from "node:http";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 import test from "node:test";
 
 const launcherSource = new URL("../launcher/BotControlCenterLauncher.cs", import.meta.url);
@@ -8,6 +14,51 @@ const installerSource = new URL("../scripts/install-codex-app.ps1", import.meta.
 const buildSource = new URL("../scripts/build-windows-launcher.ps1", import.meta.url);
 const scheduleInstallerSource = new URL("../scripts/Install-ReleaseSchedule.ps1", import.meta.url);
 const scheduleRunnerSource = new URL("../scripts/run-scheduled-release.mjs", import.meta.url);
+
+test("el arranque espera una respuesta HTTP lenta sin bloquear la cancelación", { skip: process.platform !== "win32" }, async () => {
+  const run = promisify(execFile);
+  const temporary = await mkdtemp(path.join(tmpdir(), "bcc-startup-probe-"));
+  const server = createServer((_request, response) => {
+    setTimeout(() => { response.writeHead(200); response.end("ready"); }, 1100);
+  });
+  try {
+    await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+    const probe = path.join(temporary, "Probe.cs");
+    const executable = path.join(temporary, "Probe.exe");
+    await writeFile(probe, `
+using System;
+using System.Reflection;
+using BotControlCenter.WindowsLauncher;
+class Probe {
+  [STAThread] static int Main(string[] args) {
+    var method = typeof(Program).GetMethod("IsHttpReady", BindingFlags.NonPublic | BindingFlags.Static);
+    using (var startup = new StartupForm()) {
+      object[] inputs = method.GetParameters().Length == 1 ? new object[] { args[0] } : new object[] { args[0], startup };
+      if (!(bool)method.Invoke(null, inputs)) { Console.Error.WriteLine("Slow healthy server rejected"); return 1; }
+      if (method.GetParameters().Length == 2) {
+        typeof(StartupForm).GetMethod("RequestCancellation", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(startup, null);
+        try { method.Invoke(null, inputs); return 2; }
+        catch (TargetInvocationException error) { if (!(error.InnerException is OperationCanceledException)) throw; }
+      }
+      return 0;
+    }
+  }
+}
+`, "utf8");
+    const options = { windowsHide: true, timeout: 15000, maxBuffer: 65536 };
+    await run(path.join(process.env.WINDIR, "Microsoft.NET/Framework64/v4.0.30319/csc.exe"), [
+      "/nologo", "/target:exe", "/main:Probe", "/reference:System.dll", "/reference:System.Core.dll",
+      "/reference:System.Drawing.dll", "/reference:System.Windows.Forms.dll", `/out:${executable}`,
+      fileURLToPath(launcherSource), probe,
+    ], options);
+    await run(executable, [`http://127.0.0.1:${server.address().port}/`], options);
+  } finally {
+    server.closeAllConnections();
+    await new Promise(resolve => server.close(resolve));
+    assert.equal(path.dirname(temporary), path.resolve(tmpdir()));
+    await rm(temporary, { recursive: true, force: true });
+  }
+});
 
 test("el launcher liga la ventana al ciclo de vida del servidor", async () => {
   const source = await readFile(launcherSource, "utf8");

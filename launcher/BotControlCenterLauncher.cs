@@ -241,7 +241,7 @@ namespace BotControlCenter.WindowsLauncher
                     return false;
                 }
 
-                if (IsHttpReady(url) && IsHttpReady(agentUrl))
+                if (IsHttpReady(url, startup) && IsHttpReady(agentUrl, startup))
                 {
                     return true;
                 }
@@ -252,23 +252,40 @@ namespace BotControlCenter.WindowsLauncher
             return false;
         }
 
-        private static bool IsHttpReady(string url)
+        private static bool IsHttpReady(string url, StartupForm startup)
         {
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             try
             {
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
                 request.Method = "GET";
-                request.Timeout = 700;
-                request.ReadWriteTimeout = 700;
                 request.Proxy = null;
-                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                IAsyncResult pending = request.BeginGetResponse(null, null);
+                DateTime deadline = DateTime.UtcNow.AddSeconds(10);
+                using (WaitHandle completed = pending.AsyncWaitHandle)
                 {
-                    return (int)response.StatusCode < 500;
+                    while (!completed.WaitOne(50))
+                    {
+                        Application.DoEvents();
+                        startup.ThrowIfCancellationRequested();
+                        if (DateTime.UtcNow >= deadline) return false;
+                    }
+                    using (HttpWebResponse response = (HttpWebResponse)request.EndGetResponse(pending))
+                    {
+                        return (int)response.StatusCode < 500;
+                    }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch
             {
                 return false;
+            }
+            finally
+            {
+                request.Abort();
             }
         }
 
