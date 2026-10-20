@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.7 - 2026-10-20
+
+- El ejemplo del catálogo de Galerazo usa Contabo y SSH, igual que la configuración operativa y la programación mensual; se retira su destino de ejemplo GCP anterior.
+
 ## 0.1.6 - 2026-10-20
 
 - Galerazo admite VPS por SSH en el mismo flujo de release, con transferencia directa de imágenes, deploy, rollback, credenciales y verificación del frontend.

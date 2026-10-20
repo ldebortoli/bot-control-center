@@ -323,3 +323,9 @@ Lucas autorizó migrar la producción y actualizar el flujo habitual. BCC0.1.6 i
 ## Cierre de migración verificado (2026-10-20)
 
 Frontend0.1.25/2403982 publicado por BCC9b211581/succeeded,Worker84dc64b7-7d29-42fe-89a3-f8ffb12fc972. Verificación independiente deambosdominios/5assets/140idiomas/401no-store. Galera0.77healthy,0reinicios/errores/conflictos,release_state0.77/anuncio único;backup821restore34tablas/20681filas idénticas. Tarea mensualexistenteReady1/11/03ART aVPS,cuatrodiarios04ARTactivos. AppsNico privadas completadas; no pública/auth/móvil listo. Evidencia enworkspaceVPS, no nuevos pagos/GCP/CIpoll.
+
+## 2026-10-20 · Deploy solicitado y destino único
+
+Lucas pide desplegar Galerazo por BCC y dejar sólo VPS para ese bot. Configlocal ya vps; eliminar referencia GCP residual del ejemplo del catálogo. Conservar adaptador genérico de otros bots, misma tarea/manager/lock y puertos ajenos. Anuncio0.80 reducido a cambios visibles fue aprobado directamente en chat, máximo509/4096. Galera1GiB real, backupdaily agrupado reemplaza cuatro timers; datos previos2GiB/cuatrodiarios en memoria son históricos. BCC0.1.7 por ajuste de configuración.
+
+Verificación fuente0.1.7: 53tests coverage100% líneas/ramas/funciones, build/lint y69unitarios pasan; un assert anterior exigíaTU_PROYECTO_GCP en ejemplo, actualizado para la configuración actualContabo preservando guards de secretos. Auditproducción0; avisosdevbraces preexistentes bloqueados. ProteccionesGitHub enabled/noreply.

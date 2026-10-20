@@ -42,11 +42,11 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 ## Estado estable
 
 - Ruta: `%USERPROFILE%\Documents\Codex\BotControlCenter\dashboard`
-- Stack: Node.js 22+, TypeScript, React 19.2.8, Next 16.3.7, vinext 1.0.0/Vite 8.1.5, peer RSC 0.5.34, Cloudflare Vite Plugin 1.62.2 y Wrangler 4.144.0. La fuente es 0.1.2; los overrides de Nanoid 3.3.18, PostCSS 8.5.23, Sharp 0.35.4 y satori/fflate 0.7.5 mantienen transitivos parcheados. El launcher/acceso local no se recompiló por este cambio de dependencias.
+- Stack: Node.js 22+, TypeScript, React 19.2.8, Next 16.4.2, vinext 1.0.0/Vite 8.1.5, peer RSC 0.5.34, Cloudflare Vite Plugin 1.62.2 y Wrangler 4.144.0. La fuente es 0.1.7; los overrides de Nanoid 3.3.18, PostCSS 8.5.23, Sharp 0.35.4 y satori/fflate 0.7.5 mantienen transitivos parcheados. El launcher/acceso local no se recompiló por este cambio de dependencias.
 - Git: repositorio publico en `https://github.com/ldebortoli/bot-control-center`, con `origin` configurado y rama principal `main`.
 - Idioma de la interfaz y documentación: español.
 - Hosting: no desplegado; `.openai/hosting.json` mantiene D1 y R2 desactivados.
-- Datos de observación: reales para Galerazo mediante un `botctl` efímero por IAP; un error de conexión queda explícito y nunca se reemplaza por fixtures. `config/runtime.local.json` existe localmente, está ignorado y apunta a `bot-fleet-production/us-central1-a/galerazo-prod`; no contiene secretos.
+- Datos de observación: reales para Galerazo mediante un `botctl` efímero por SSH al VPS; un error de conexión queda explícito y nunca se reemplaza por fixtures. `config/runtime.local.json` existe localmente, está ignorado y selecciona provider=vps, Contabo/vmi3680696 y la configprivada `Galerazobot/deploy/out/vps-target.json`; no contiene secretos.
 - Flota inicial: Galerazo Bot y Spider Tracker; Reshare Stories permanece en el catálogo local, inactivo por defecto. Spider, Reshare y registros personalizados no tienen adaptador real configurado y se presentan como `Sin conexión`.
 
 ## Arquitectura
@@ -112,3 +112,7 @@ Computer Use/Windows Graphics Capture no pudo validar visualmente la ventana Edg
 ## Estado estable del frontend y releases conjuntos - 2026-10-01
 
 Produccion: web 0.1.14 (fuente `375ca92`, Worker `527fbb25`) y bot 0.68 (imagen `0fe92884eda7`), healthy. BCC 0.1.3 sincroniza `frontendRepositoryPath` en la tarea mensual y el deploy manual existentes: solo publica si cambia el fingerprint de ejecucion del frontend, exige snapshot remoto limpio y verifica contrato, version, activos y bot healthy antes del exito. Calendario del dia 1 a las 03:00 ART y 12 reintentos horarios intactos. Contrato documentado en `docs/FRONTEND_RELEASE.md` de los tres repos. Sin nuevos secretos, permisos, recursos, planes ni polling. Las referencias historicas a web 0.1.10, reserva y consulta de alcance quedan superadas. QA con sesion real de Telegram pendiente, separado de browser local con fixtures.
+
+## Operación vigente20/10 tras pedido explícito
+
+BCC0.1.7, Galerazo únicamenteContabo/VPS en configlocal y ambos ejemplos, no hay destinoGCE activo de Galera. Misma tarea mensual1/03ART/12reintentos/PT1H/3h/IgnoreNew; sin duplicados. Galera1GiB agregado bot768/túnel128/swap0 y backupsagrupadoscodex-backup@daily04ART+jitter20 (cuatroindividualesdisabled), reemplaza referencias históricas2GiB/timersperapp. Puertos asignados8101/8102/8442/8103/8104 deotrasapps preservados. No GCPbilling/serviciospagos. Las guías conjuntas usan rollbackVPS.

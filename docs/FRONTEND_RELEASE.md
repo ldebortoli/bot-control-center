@@ -50,8 +50,8 @@ QA Telegram con cuenta real debe informarse por separado.
 ## Fallos y recuperacion
 
 Un fallo web bloquea el siguiente deploy del bot y el job queda failed. Un fallo del
-bot mantiene su rollback de GCE; web nueva ya publicada debe ser compatible con
-bot previo. No existe una transaccion atomica entre Cloudflare y GCE: si la sonda
+bot mantiene su rollback del VPS; web nueva ya publicada debe ser compatible con
+bot previo. No existe una transaccion atomica entre Cloudflare y el VPS: si la sonda
 posterior falla no se marca exito, el reintento consulta realidad y no confia en
 una marca local. No se hace rollback automatico de web ni se reenvia anuncio;
 para restaurar un Worker usar el rollback existente de Cloudflare bajo autorizacion.

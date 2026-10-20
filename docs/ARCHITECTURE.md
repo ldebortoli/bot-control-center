@@ -17,10 +17,10 @@ Separar la interfaz de administración de cada bot. El dashboard contiene navega
 
 ```text
 Dashboard local
-  ├─ agente local 127.0.0.1 ── scripts versionados ── Docker / Artifact Registry / GCE
+  ├─ agente local 127.0.0.1 ── scripts versionados ── Docker / SSH / VPS
   └─ registro de bots
-      ├─ adaptador Google Cloud IAP/SSH ── botctl ── Galerazo
-      ├─ adaptador SSH                  ── botctl ── bot en VPS
+      ├─ adaptador SSH                  ── botctl ── Galerazo en Contabo
+      ├─ adaptador Google Cloud IAP/SSH ── botctl ── otros destinos históricos
       └─ adaptador Railway API/CLI      ── botctl ── bot en Railway
 ```
 

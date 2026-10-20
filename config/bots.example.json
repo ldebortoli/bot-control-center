@@ -3,11 +3,11 @@
     {
       "id": "galerazo",
       "name": "Galerazo Bot",
-      "provider": "gcp",
-      "transport": "gcp-iap",
-      "project": "TU_PROYECTO_GCP",
-      "zone": "TU_ZONA",
-      "instance": "TU_INSTANCIA",
+      "provider": "Contabo VPS",
+      "transport": "ssh",
+      "project": "contabo",
+      "zone": "europe",
+      "instance": "vmi3680696",
       "capabilities": ["status", "logs", "triggers", "credentials", "deploy"]
     }
   ]

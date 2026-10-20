@@ -12,6 +12,18 @@ test("sincroniza la versión del dashboard y su lockfile", async () => {
   assert.equal(changelog.match(/^## (\S+) -/m)?.[1], manifest.version);
 });
 
+test("los ejemplos de Galerazo usan el único destino vigente por VPS", async () => {
+  const catalog = JSON.parse(await readFile(new URL("../config/bots.example.json", import.meta.url), "utf8"));
+  const runtime = JSON.parse(await readFile(new URL("../config/runtime.example.json", import.meta.url), "utf8"));
+  const bot = catalog.bots.find(({ id }) => id === "galerazo");
+  assert.equal(bot.transport, "ssh");
+  assert.equal(bot.provider, "Contabo VPS");
+  assert.equal(runtime.bots.galerazo.provider, "vps");
+  assert.equal(runtime.bots.galerazo.instance, bot.instance);
+  assert.ok(runtime.bots.galerazo.vpsConfigFile);
+  assert.doesNotMatch(JSON.stringify({ bot, runtime }), /gcp-iap|galerazo-prod|bot-fleet-production/);
+});
+
 async function render() {
   // vinext 1 uses cloudflare: bindings. Exercise the compiled worker in workerd,
   // not Node with a fake env: preview is loopback-only and never deploys.
@@ -149,7 +161,7 @@ test("conserva los guardrails de SQL y transporte fuera de la UI", async () => {
   assert.match(policy, /insert\|update\|delete/i);
   assert.match(transport, /gcp-iap/);
   assert.match(transport, /BotTransport/);
-  assert.match(exampleConfig, /TU_PROYECTO_GCP/);
+  assert.match(exampleConfig, /Contabo VPS/);
   assert.doesNotMatch(exampleConfig, /private_key|token|password/i);
   assert.match(runtimeExample, /runtime|repositoryPath|projectId/i);
   assert.doesNotMatch(runtimeExample, /private_key|token|password/i);

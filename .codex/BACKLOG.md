@@ -10,6 +10,8 @@
 
 # IN PROGRESS
 
+- [2026-10-20] Desplegar Galerazo0.80/Mini0.1.27 con manager existente, corregir ejemplos residuales GCP y verificar VPS como único destino Galerazo, sin tocar otras apps. BCC0.1.7/configuración; aprobación del anuncio recibida.
+
 
 
 

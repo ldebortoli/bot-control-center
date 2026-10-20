@@ -2,7 +2,7 @@
 
 Dashboard local para observar varios bots remotos desde una sola interfaz. Galerazo integra estado operativo, logs, triggers, multimedia, moderación, deploy y configuración segura de credenciales mediante SSH al VPS Contabo existente. Si falta un adaptador o la conexión falla, la interfaz lo informa explícitamente.
 
-La fuente 0.1.6 incorpora `provider: "vps"` y `vpsConfigFile`: un JSON local ignorado con host, usuario y referencias a la clave privada y known_hosts. El mismo manager y lock ejecutan los scripts versionados de Galerazobot, prueban y construyen localmente, transfieren la imagen por SSH y verifican salud/rollback y frontend. El VPS no usa Artifact Registry ni requiere facturación GCP. La operación requiere una clave existente con ACL privada y comprobación estricta del host. Ver `Galerazobot/docs/DEPLOY_VPS.md`. El adaptador `gce` sigue disponible para otros destinos configurados; no debe seleccionarse para Galerazo migrado.
+La fuente 0.1.7 conserva `provider: "vps"` y `vpsConfigFile`: un JSON local ignorado con host, usuario y referencias a la clave privada y known_hosts. El mismo manager y lock ejecutan los scripts versionados de Galerazobot, prueban y construyen localmente, transfieren la imagen por SSH y verifican salud/rollback y frontend. El VPS no usa Artifact Registry ni requiere facturación GCP. La operación requiere una clave existente con ACL privada y comprobación estricta del host. Ver `Galerazobot/docs/DEPLOY_VPS.md`. El adaptador `gce` sigue disponible para otros destinos configurados; Galerazo sólo tiene configurado Contabo, también en los ejemplos del catálogo y de runtime. El destino GCE anterior no forma parte de su configuración operativa.
 
 ## Qué incluye
 
