@@ -78,7 +78,7 @@ test("incluye visor multimedia y moderación auditada para triggers reales", asy
   assert.match(controlCenter, /withoutInventedData/);
   assert.match(controlCenter, /No se muestran datos de ejemplo/);
   assert.match(remoteTriggers, /Error de conexión\. No pude cargar los triggers/);
-  assert.match(remoteTriggers, /DATOS REALES · GCP IAP/);
+  assert.match(remoteTriggers, /DATOS REALES · SSH/);
   assert.match(remoteTriggers, /moderate-trigger/);
   assert.match(remoteTriggers, /Eliminar trigger/);
   assert.match(remoteTriggers, /Bloquear usuario/);

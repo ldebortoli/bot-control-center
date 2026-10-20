@@ -176,7 +176,7 @@ export function CredentialsPanel({ bot }: { bot: BotDefinition }) {
     <div className="credentials-workspace">
       <section className="panel credentials-hero">
         <div>
-          <span className="eyebrow">CONFIGURACIÓN REMOTA · IAP</span>
+          <span className="eyebrow">CONFIGURACIÓN REMOTA · SSH</span>
           <h2>Credenciales de {bot.name}</h2>
           <p>El panel sólo consulta si cada valor existe. Nunca descarga tokens ni claves desde la VM.</p>
         </div>
@@ -248,7 +248,7 @@ export function CredentialsPanel({ bot }: { bot: BotDefinition }) {
             </div>
             <div className="credentials-submit">
               <p>{pendingCount ? `${pendingCount} cambio${pendingCount === 1 ? "" : "s"} pendiente${pendingCount === 1 ? "" : "s"}` : "Sin cambios pendientes"}</p>
-              <button disabled={busy || pendingCount === 0 || !info.writable} type="submit">{busy ? "Aplicando…" : "Aplicar por IAP"}</button>
+              <button disabled={busy || pendingCount === 0 || !info.writable} type="submit">{busy ? "Aplicando…" : "Aplicar por SSH"}</button>
             </div>
             {error ? <p className="credentials-error" role="alert">{error}</p> : null}
             {message ? <p className="credentials-message" role="status">{message}</p> : null}

@@ -1,6 +1,8 @@
 # Bot Control Center
 
-Dashboard local para observar varios bots remotos desde una sola interfaz. Galerazo integra estado operativo, logs, triggers, multimedia, moderación, deploy y configuración segura de credenciales mediante Google Cloud IAP/SSH. Ningún bot muestra fixtures: si falta un adaptador o la conexión falla, la interfaz lo informa explícitamente.
+Dashboard local para observar varios bots remotos desde una sola interfaz. Galerazo integra estado operativo, logs, triggers, multimedia, moderación, deploy y configuración segura de credenciales mediante SSH al VPS Contabo existente. Si falta un adaptador o la conexión falla, la interfaz lo informa explícitamente.
+
+La fuente 0.1.6 incorpora `provider: "vps"` y `vpsConfigFile`: un JSON local ignorado con host, usuario y referencias a la clave privada y known_hosts. El mismo manager y lock ejecutan los scripts versionados de Galerazobot, prueban y construyen localmente, transfieren la imagen por SSH y verifican salud/rollback y frontend. El VPS no usa Artifact Registry ni requiere facturación GCP. La operación requiere una clave existente con ACL privada y comprobación estricta del host. Ver `Galerazobot/docs/DEPLOY_VPS.md`. El adaptador `gce` sigue disponible para otros destinos configurados; no debe seleccionarse para Galerazo migrado.
 
 ## Qué incluye
 
@@ -9,7 +11,7 @@ Dashboard local para observar varios bots remotos desde una sola interfaz. Galer
 - últimos logs y errores obtenidos desde el adaptador remoto, omitiendo únicamente los polls rutinarios `getUpdates` que terminaron en `HTTP 200 OK`;
 - visualizador genérico de triggers con texto, imágenes, GIF, stickers, audio/video, autor, chat, filtros, paginación de a 10 y auditoría de moderación;
 - estado explícito cuando SQL, triggers u otra capacidad real no están configurados;
-- publicación y deploy controlado de Galerazo en Google Compute Engine, con logs y rollback;
+- publicación y deploy controlado de Galerazo en VPS, con logs y rollback;
 - releases mensuales configurables que fijan un commit, publican sólo cambios confirmados y continúan aunque la UI esté cerrada;
 - registro declarativo y contrato de transporte extensible;
 - diseño responsive, sin guardar credenciales en el navegador ni en Git.
@@ -69,7 +71,7 @@ Spider Tracker, Reshare Stories y cualquier bot agregado localmente se muestran 
 
 ## Configurar el deploy de Galerazo
 
-Primero completá la preparación de Google Compute Engine indicada en `Galerazobot/docs/DEPLOY_GCE.md`, instalá Docker Desktop y Google Cloud CLI, y verificá manualmente el acceso por IAP. Después:
+Primero completá `Galerazobot/docs/DEPLOY_VPS.md`, instalá Docker Desktop y OpenSSH y verificá la clave del host. Configurá `provider: "vps"` y el archivo privado `vpsConfigFile`. Después:
 
 ```powershell
 Copy-Item config\runtime.example.json config\runtime.local.json
@@ -77,7 +79,7 @@ Copy-Item config\runtime.example.json config\runtime.local.json
 
 Editá `config/runtime.local.json` con la ruta local del repositorio Galerazo, proyecto, región, repositorio, zona e instancia. El archivo está ignorado por Git y no debe contener tokens, claves ni el contenido de `.env`.
 
-La vista **Credenciales** usa ese mismo destino para consultar únicamente si cada variable está presente y aplicar parches parciales por IAP. Los campos quedan en blanco y enmascarados: vacío conserva el valor remoto, mientras que **Borrar** elimina sólo campos opcionales. El agente crea un archivo temporal privado, ejecuta scripts fijos del repositorio Galerazo y lo elimina al finalizar; ni la API, los jobs ni los logs conservan los valores enviados. Como Compose carga `/etc/galerazo/bot.env` al crear el contenedor, un `restart` común conserva el entorno anterior: los cambios toman efecto con un deploy o una recreación explícita.
+La vista **Credenciales** usa ese mismo destino para consultar únicamente si cada variable está presente y aplicar parches parciales por SSH. Los campos quedan en blanco y enmascarados: vacío conserva el valor remoto, mientras que **Borrar** elimina sólo campos opcionales. El agente crea un archivo temporal privado, ejecuta scripts fijos del repositorio Galerazo y lo elimina al finalizar; ni la API, los jobs ni los logs conservan los valores enviados. Como Compose carga `/etc/galerazo/bot.env` al crear el contenedor, un `restart` común conserva el entorno anterior: los cambios toman efecto con un deploy o una recreación explícita.
 
 Al abrir la vista **Deploy**, el pre-flight verifica PowerShell, Git, Docker, `gcloud`, el repositorio y los scripts. Los controles son:
 
@@ -101,7 +103,7 @@ Las vistas **Resumen**, **Logs** y **Deploy** incluyen el estado remoto actualiz
 
 Cualquier bot que declare y tenga configurada la capacidad real `triggers` muestra una biblioteca con su contenido, archivo multimedia, usuario creador y chat de origen. La biblioteca muestra 10 elementos por página y permite buscar por ID o nombre de chat, filtrar por tipo y rango de fechas, y ordenar por fecha, nombre o chat. El panel admite texto; imágenes PNG, JPEG, WebP y GIF; stickers estáticos WebP/PNG; stickers animados WebM y TGS; además de audio y video. Todo archivo se puede descargar, y los formatos animados se reproducen dentro de la aplicación. Si el bot no declara esa capacidad, la vista dice **No hay triggers disponibles**; si la declara pero falla la lectura, muestra el error de conexión.
 
-En Galerazo la lista se lee directamente de SQLite por IAP; si la VM o el bot no son accesibles se muestra un error de conexión y nunca se sustituyen los datos por fixtures. Los archivos se obtienen desde Telegram bajo demanda mediante el token que permanece en la VM.
+En Galerazo la lista se lee directamente de SQLite por SSH; si el servidor o el bot no son accesibles se muestra un error de conexión. Los archivos se obtienen desde Telegram bajo demanda mediante el token que permanece en el servidor.
 
 Las acciones **Eliminar trigger**, **Bloquear usuario** y **Eliminar y bloquear** siempre piden confirmación. Galerazo vuelve a resolver autor y chat desde SQLite, aplica la acción y envía una advertencia al mismo chat. El resultado informa por separado eliminación, bloqueo y aviso para que un fallo parcial nunca se presente como éxito total.
 
@@ -124,7 +126,7 @@ La integración real mantendrá estas reglas:
 
 ## Conexión de Galerazo
 
-`config/runtime.local.json` selecciona proyecto, zona, instancia y repositorio local. El agente invoca `scripts/deploy/Invoke-GceBotctl.ps1`, que copia temporalmente el contrato versionado `deploy/gce/botctl.py` por IAP. No instala un daemon ni abre puertos remotos. SQL seguirá fuera del panel hasta agregar una consulta allowlisted y de solo lectura.
+`config/runtime.local.json` selecciona proveedor, instancia, repositorio y referencias operativas locales. Para VPS, `scripts/deploy/Invoke-VpsBot.ps1` transfiere el contrato versionado `deploy/gce/botctl.py` y lo ejecuta por SSH. El nombre histórico de esa ruta no implica acceso a Google: el contrato remoto usa Docker, SQLite y Telegram. No instala un daemon ni abre puertos remotos. SQL seguirá fuera del panel hasta agregar una consulta allowlisted y de solo lectura.
 
 No guardar tokens, claves SSH, rutas sensibles ni copias de la base en el repositorio. La arquitectura completa está en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 

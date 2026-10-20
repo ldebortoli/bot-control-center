@@ -34,6 +34,7 @@ type DeploymentInfo = {
   configured: boolean;
   configError: string | null;
   target: {
+    provider?: "gce" | "vps";
     projectId: string;
     location: string;
     repository: string;
@@ -221,7 +222,7 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
         <div className="deploy-hero-panel__copy">
           <span className="eyebrow">RELEASE CONTROLADA · LOCAL</span>
           <h2>Publicar y desplegar Galerazo</h2>
-          <p>Un solo flujo ejecuta tests, construye la imagen, la publica en Artifact Registry y actualiza la VM por IAP. No acepta comandos libres ni guarda credenciales.</p>
+          <p>El flujo ejecuta pruebas, construye la imagen y la transfiere al servidor configurado con verificación de salud y rollback.</p>
         </div>
         <div className={`agent-state ${agentError ? "agent-state--offline" : "agent-state--online"}`}>
           <span />
@@ -235,7 +236,7 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
         <section className="panel deploy-empty">
           <span aria-hidden="true">!</span>
           <h3>El agente local no está disponible</h3>
-          <p>Abrí Bot Control Center desde su acceso de Windows o ejecutá <code>npm run dev:full</code>. El navegador por sí solo no puede ejecutar Docker ni <code>gcloud</code>.</p>
+          <p>Abrí Bot Control Center desde su acceso de Windows o ejecutá <code>npm run dev:full</code> para habilitar Docker y el acceso remoto.</p>
           <button type="button" onClick={() => void refreshInfo()}>Reintentar conexión</button>
         </section>
       ) : null}
@@ -245,14 +246,14 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
           <section className="panel deploy-actions-panel">
             <div className="panel__header">
               <div><span className="eyebrow">DESTINO</span><h2>{info.target?.instance ?? "Sin configurar"}</h2></div>
-              <span className={info.configured ? "contract-badge" : "pending-badge"}>{info.configured ? "GCE + IAP" : "PENDIENTE"}</span>
+              <span className={info.configured ? "contract-badge" : "pending-badge"}>{info.configured ? (info.target?.provider === "vps" ? "VPS + SSH" : "GCE + IAP") : "PENDIENTE"}</span>
             </div>
 
             {info.target ? (
               <dl className="deploy-target">
                 <div><dt>Proyecto</dt><dd>{info.target.projectId}</dd></div>
                 <div><dt>Zona</dt><dd>{info.target.zone}</dd></div>
-                <div><dt>Registro</dt><dd>{info.target.location}/{info.target.repository}</dd></div>
+                <div><dt>Imágenes</dt><dd>{info.target.provider === "vps" ? "Transferencia directa por SSH" : `${info.target.location}/${info.target.repository}`}</dd></div>
                 <div className="deploy-target__image"><dt>Última imagen</dt><dd title={info.latestImage ?? undefined}>{info.latestImage ?? "Todavía no publicada"}</dd></div>
               </dl>
             ) : <p className="deploy-config-error">{info.configError}</p>}
@@ -260,7 +261,7 @@ export function DeployPanel({ bot }: { bot: BotDefinition }) {
             <div className="deploy-primary-action">
               <button disabled={loading || busy || !info.readiness.release} onClick={() => void runAction("release")} type="button">
                 <span aria-hidden="true">↑</span>
-                <span><strong>{busy ? "Deploy en curso…" : "Publicar y deployar"}</strong><small>tests → imagen → registry → VM</small></span>
+                <span><strong>{busy ? "Deploy en curso…" : "Publicar y deployar"}</strong><small>pruebas → imagen → servidor</small></span>
               </button>
               {!info.readiness.release ? <p>Completá los requisitos marcados antes de habilitar el deploy.</p> : <p>Se pedirá una confirmación explícita antes de tocar producción.</p>}
             </div>

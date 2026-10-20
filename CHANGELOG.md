@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.6 - 2026-10-20
+
+- Galerazo admite VPS por SSH en el mismo flujo de release, con transferencia directa de imágenes, deploy, rollback, credenciales y verificación del frontend.
+- El preflight comprueba OpenSSH y configuración privada para VPS; las pantallas identifican el destino Contabo. Se conserva el adaptador GCE para configuraciones existentes.
+- Next.js y su configuración ESLint se actualizan a 16.4.2 para corregir las alertas de seguridad detectadas durante la validación.
+
 ## 0.1.5 - 2026-10-07
 
 - Actualizados Sharp a 0.35.5 y source-map-js a 1.2.2 para resolver las alertas de seguridad del arbol de dependencias, conservando el control de auditoria de produccion.

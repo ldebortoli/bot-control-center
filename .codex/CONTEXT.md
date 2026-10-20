@@ -1,5 +1,9 @@
 # Bot Control Center - Contexto del proyecto
 
+## Destino Contabo preparado - 2026-10-20
+
+Fuente0.1.6 incorpora provider=vps/VpsConfigFile y UIdeSSH. Configlocalgalerazo apuntaContabo/vmi3680696, referencias privadas aclave/knownhosts bajo deploy/out delbot, sincredenciales embebidas. Runtime/credenciales porSSHrealcomprobados (prod@galerazo_bot,DBrecuperada presente; contenedor aún no creado por aprobación pendiente deanuncio0.77). Windowsrelease yconfigscheduleEnabled=false, noGCP ni nuevascompras. Next/ESLintConfig16.4.2 corrigenadvisoriesactuales; Vinext1.0.0 conservado, build/lint/68tests y53coverage100%lineas/ramas/funciones, auditprod0. Publicación delbot/helperyverificación integrada siguen en tareaVPS; no afirmarbot desplegado.
+
 ## Publicacion solo frontend - 2026-10-16
 
 - Runtime local del checkout Galerazo actualizado a Python3.14.8 y lock existente, alineado al pin actual. Fuente del bot0.75 permanece preparada; bot productivo0.68/imagen0fe92884eda7 healthy, sin deploy/reinicio. BCC0.1.5/config/launcher/tarea mensual intactos.

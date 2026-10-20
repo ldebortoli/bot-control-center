@@ -10,6 +10,8 @@
 
 # IN PROGRESS
 
+- [P0] Migrar adaptador operativo Galerazo a Contabo existente por SSH: release con transferencia de imagen, estado/triggers/credenciales/rollback/frontend, mismo manager y lock. Pedido explícito Lucas20/10 desde tarea VPS. NoGCP ni nuevas compras; tarea mensual permanece deshabilitada hasta validar destino. Versión0.1.6 en preparación, tests/cobertura/commit/push pendientes.
+
 
 
 # DONE

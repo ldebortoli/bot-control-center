@@ -1,5 +1,16 @@
 # Arquitectura de Bot Control Center
 
+## Destino vigente de Galerazo
+
+Desde 0.1.6 Galerazo usa el adaptador `vps`: OpenSSH con identidad explícita,
+host key estricta y configuración local ignorada. El mismo manager/lock invoca
+`Invoke-VpsBot.ps1`; la imagen se construye y prueba en PC, se transfiere con SCP
+y se carga en Docker del VPS contratado. Estado, triggers, multimedia,
+moderación y credenciales conservan sus contratos JSON. El frontend consulta
+salud por el mismo SSH y mantiene sus gates de compatibilidad. Los bloques GCE
+de este documento describen el adaptador histórico para otros destinos; no
+autorizan reactivar Google Cloud ni contratar recursos.
+
 ## Objetivo
 
 Separar la interfaz de administración de cada bot. El dashboard contiene navegación, presentación y políticas comunes; cada bot declara capacidades y cada proveedor implementa un transporte.

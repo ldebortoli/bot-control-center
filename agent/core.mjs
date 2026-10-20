@@ -130,14 +130,19 @@ export function parseRuntimeConfig(raw) {
     }
 
     const repositoryPath = path.resolve(assertString(entry.repositoryPath, `${id}.repositoryPath`));
+    const provider = entry.provider ?? "gce";
+    if (!["gce", "vps"].includes(provider)) throw new Error(`Proveedor desconocido para ${id}.`);
+    const vpsConfigFile = provider === "vps" ? path.resolve(assertString(entry.vpsConfigFile, `${id}.vpsConfigFile`)) : null;
     bots[id] = {
       id,
+      provider,
+      vpsConfigFile,
       repositoryPath,
       frontendRepositoryPath: entry.frontendRepositoryPath === undefined ? null : path.resolve(assertString(entry.frontendRepositoryPath, `${id}.frontendRepositoryPath`)),
-      projectId: assertIdentifier(entry.projectId, `${id}.projectId`),
+      projectId: assertIdentifier(entry.projectId ?? (provider === "vps" ? "contabo" : undefined), `${id}.projectId`),
       location: assertIdentifier(entry.location ?? "us-central1", `${id}.location`),
       repository: assertIdentifier(entry.repository ?? "bots", `${id}.repository`),
-      zone: assertIdentifier(entry.zone, `${id}.zone`),
+      zone: assertIdentifier(entry.zone ?? (provider === "vps" ? "europe" : undefined), `${id}.zone`),
       instance: assertIdentifier(entry.instance, `${id}.instance`),
       imageFile: resolveInside(
         repositoryPath,
@@ -256,6 +261,7 @@ export function powershellStep(label, scriptPath, namedArguments = [], switches 
 }
 
 export function createPublishStep(bot, tag) {
+  if (bot.provider === "vps") return createVpsStep(bot, "publish", tag ? [["Tag", tag]] : []);
   const namedArguments = [
     ["ProjectId", bot.projectId],
     ["Location", bot.location],
@@ -284,6 +290,7 @@ export function createDeployStep(bot, image) {
   if (!isValidImageReference(image)) {
     throw new Error("La referencia de imagen publicada no es válida.");
   }
+  if (bot.provider === "vps") return createVpsStep(bot, "deploy", [["Image", image.trim()]]);
   return powershellStep(
     "Desplegar en Google Compute Engine",
     resolveInside(bot.repositoryPath, path.join("scripts", "deploy", "Deploy-Gce.ps1"), "deployScript"),
@@ -297,6 +304,7 @@ export function createDeployStep(bot, image) {
 }
 
 export function createRollbackStep(bot) {
+  if (bot.provider === "vps") return createVpsStep(bot, "rollback");
   return powershellStep(
     "Restaurar la imagen anterior",
     resolveInside(bot.repositoryPath, path.join("scripts", "deploy", "Rollback-Gce.ps1"), "rollbackScript"),
@@ -309,6 +317,7 @@ export function createRollbackStep(bot) {
 }
 
 export function createCredentialStatusStep(bot) {
+  if (bot.provider === "vps") return createVpsStep(bot, "credential-status");
   return powershellStep(
     "Consultar presencia de credenciales",
     resolveInside(bot.repositoryPath, path.join("scripts", "deploy", "Get-GceBotSecretStatus.ps1"), "credentialStatusScript"),
@@ -322,6 +331,7 @@ export function createCredentialStatusStep(bot) {
 
 export function createCredentialUpdateStep(bot, patchFile) {
   const resolvedPatch = path.resolve(assertString(patchFile, "patchFile"));
+  if (bot.provider === "vps") return createVpsStep(bot, "credentials", [["PatchFile", resolvedPatch]], ["AcknowledgeSecretUpdate"]);
   return powershellStep(
     "Aplicar credenciales remotas por IAP",
     resolveInside(bot.repositoryPath, path.join("scripts", "deploy", "Patch-GceBotSecrets.ps1"), "credentialUpdateScript"),
@@ -336,6 +346,7 @@ export function createCredentialUpdateStep(bot, patchFile) {
 }
 
 function createBotctlStep(bot, action, namedArguments = [], switches = []) {
+  if (bot.provider === "vps") return createVpsStep(bot, action, namedArguments, switches);
   return powershellStep(
     `Galerazo botctl: ${action}`,
     resolveInside(bot.repositoryPath, path.join("scripts", "deploy", "Invoke-GceBotctl.ps1"), "botctlScript"),
@@ -347,6 +358,14 @@ function createBotctlStep(bot, action, namedArguments = [], switches = []) {
       ...namedArguments,
     ],
     switches,
+  );
+}
+
+function createVpsStep(bot, action, namedArguments = [], switches = []) {
+  return powershellStep(
+    `VPS por SSH: ${action}`,
+    resolveInside(bot.repositoryPath, path.join("scripts", "deploy", "Invoke-VpsBot.ps1"), "vpsScript"),
+    [["VpsConfigFile", bot.vpsConfigFile], ["Action", action], ...namedArguments], switches,
   );
 }
 
@@ -409,6 +428,7 @@ export function createFrontendReleaseStep(bot, stage, resultFile, sourceRoot = b
     ["ResultFile", resultFile], ["ProjectId", bot.projectId], ["Zone", bot.zone], ["Instance", bot.instance],
   ];
   if (image) args.push(["ExpectedImage", image]);
+  if (bot.provider === "vps") args.push(["VpsConfigFile", bot.vpsConfigFile]);
   return powershellStep(
     stage === "sync" ? "Validar y sincronizar Mini App si hay cambios" : "Verificar compatibilidad bot y Mini App en produccion",
     resolveInside(sourceRoot, path.join("scripts", "deploy", "Invoke-FrontendRelease.ps1"), "frontendReleaseScript"), args,

@@ -174,7 +174,7 @@ export function RemoteTriggersPanel({ bot }: { bot: BotDefinition }) {
     <section className="trigger-workspace">
       <div className="panel trigger-panel">
         <div className="panel__header">
-          <div><span className="eyebrow">DATOS REALES · GCP IAP</span><h2>Visualizador de triggers</h2></div>
+          <div><span className="eyebrow">DATOS REALES · SSH</span><h2>Visualizador de triggers</h2></div>
           <button className="remote-refresh-button" disabled={loading} onClick={() => void refresh()} type="button">
             {loading ? "Cargando…" : "Actualizar"}
           </button>
@@ -183,7 +183,7 @@ export function RemoteTriggersPanel({ bot }: { bot: BotDefinition }) {
         {message ? <p className="moderation-feedback" role="status">{message}</p> : null}
 
         {loading && triggers.length === 0 ? (
-          <div className="trigger-empty" aria-live="polite"><span aria-hidden="true">↻</span><h3>Consultando la VM</h3><p>Leyendo la base SQLite real por IAP…</p></div>
+          <div className="trigger-empty" aria-live="polite"><span aria-hidden="true">↻</span><h3>Consultando el servidor</h3><p>Leyendo la base SQLite real por SSH…</p></div>
         ) : null}
 
         {error ? (

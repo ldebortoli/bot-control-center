@@ -1,5 +1,9 @@
 # Session handoff
 
+## Corte vigente Contabo - 2026-10-20
+
+Fuente0.1.6listaparaguardar:provider=vps/VpsConfigFile yscriptsfijosSSH,manager/lockexistentes,UI destinoContabo,estado/triggers/credenciales/release/rollback/frontend. ConfiglocalyaVPS/207.180.234.227/vmi3680696, claveestrictaconACL privada, sin valores secretos. PruebaSSHreal:prod@galerazo_bot conectadoySQLiteproductiva presente; contenedor aúnnocreado porqueAGENTSGaleraexigeaprobar/omitiranuncio0.77antesdebump/deploy. ScheduleWindowsDisabled yJSONenabled=false comprobados. NoGCP ni nuevospagos. Next yESLintConfig16.4.2 corrigenaudit;Vinext1.0.0conservado. Lint/build/68tests/53coverage100%líneas/ramas/funciones,auditprod0,checkoutíndicecore.autocrlf=true+lint yescaneocredencialesrealesstaged pasan;8avisosdevbracespreexistentesbloqueadosseparado. SecretScanning yPushProtectionenabled,autornoreply. Commit/pushscopedpendientes; noesperarCI. IntegraciónGalerareal pendienteenworkspaceVPStrasrespuestaanuncio, noclaimproducciónactiva.
+
 ## Publicacion web completada - 2026-10-16
 
 - Autorizacion explicita del usuario: actualizar Python3.14.8 y publicar solo Galerazo. Instalador oficial PSF firmado/hash verificado, per-user sin launcher/PATH/reinicio. .venv/requirements existentes alineados;650tests/7032subtests y100% sentencias/ramas nativos pasan; registro privado en memoria del bot.
@@ -125,3 +129,6 @@ Si el usuario autoriza acciones operativas nuevas, implementar `start` y `restar
 - No interrumpir automáticamente un push/deploy activo al cambiar de vista o cerrar normalmente la ventana; el launcher muestra una espera antes de apagar.
 - Exigir confirmación, auditoría y resultado explícito del aviso al chat para toda moderación remota de triggers.
 - Cerrar cualquier servidor de desarrollo iniciado por Codex antes de terminar la sesión.
+## Contabo en preparación - 2026-10-20
+
+Lucas autoriza cambiar deploy habitual deGalerazo alVPS207.180.234.227, con último código, DBrecuperada, miniapp y backups. Trabajo coordinado desde workspaceVPS, sin otra tarea enviada. Adaptador provider=vps con config privada sóloreferencias aSSHkey/knownhosts; no secretos enrepo. HostyaDocker/systemd/cgroupv2, sliceGalerazo2GiB. TareaWindowsmensual sigueDisabled, noGCP/billingnuevo. VersiónBCC0.1.6 pendiente; cambioscore/server y wrappersGalera en curso, no entrega ni deploytodavía. Preservar flujoGCE deotros destinos peroGalerazoapuntaráVPS. CheckoutwebtieneSEOconcurrente:no tocar cambiosajenos.

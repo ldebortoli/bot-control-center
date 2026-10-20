@@ -6,6 +6,9 @@ import path from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
 import {
+  createPublishStep,
+  createCredentialStatusStep,
+  createFrontendReleaseStep,
   createCredentialUpdateStep,
   createDeployStep,
   createModerationStep,
@@ -41,6 +44,46 @@ import {
 
 const allowedOrigin = "http://localhost:3000";
 const noOperationLock = async () => async () => {};
+
+test("VPS routes every operation through strict SSH and keeps cloud tooling out of preflight", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "bcc-vps-"));
+  try {
+    await mkdir(path.join(root, "scripts/deploy"), { recursive: true });
+    await mkdir(path.join(root, "deploy/gce"), { recursive: true });
+    for (const script of ["Invoke-VpsBot.ps1", "Update-Dependencies.ps1"]) await writeFile(path.join(root, "scripts/deploy", script), "# fixture");
+    await writeFile(path.join(root, "deploy/gce/botctl.py"), "# fixture");
+    const configFile = path.join(root, "target.json");
+    await writeFile(configFile, "{}");
+    const entry = { provider: "vps", vpsConfigFile: configFile, repositoryPath: root, instance: "vmi3680696" };
+    const config = parseRuntimeConfig({ bots: { galerazo: entry } });
+    const bot = config.bots.galerazo;
+    assert.equal(bot.projectId, "contabo");
+    assert.equal(bot.zone, "europe");
+    assert.throws(() => parseRuntimeConfig({ bots: { galerazo: { ...entry, provider: "unknown" } } }));
+    assert.throws(() => parseRuntimeConfig({ bots: { galerazo: { ...entry, vpsConfigFile: "" } } }));
+    const steps = [createPublishStep(bot), createPublishStep(bot, "abc"), createDeployStep(bot, "galerazo-bot:abc"), createRollbackStep(bot),
+      createCredentialStatusStep(bot), createCredentialUpdateStep(bot, "patch.json"), createRuntimeStatusStep(bot), createTriggerListStep(bot),
+      createTriggerMediaStep(bot, "opaque", "output.bin"), createModerationStep(bot, "opaque", "delete-trigger"), createStopStep(bot)];
+    for (const step of steps) {
+      assert.ok(step.args[4].endsWith("Invoke-VpsBot.ps1"));
+      assert.ok(step.args.includes(configFile));
+      assert.ok(!step.args.includes("-ProjectId"));
+    }
+    assert.ok(createFrontendReleaseStep({ ...bot, frontendRepositoryPath: root }, "sync", "result.json").args.includes("-VpsConfigFile"));
+    const commands = [];
+    const state = { config, error: null };
+    const ready = await inspectBot(state, "galerazo", { commandChecker: async (name) => { commands.push(name); return name !== "gcloud"; } });
+    assert.equal(ready.readiness.runtime, true);
+    assert.ok(commands.includes("ssh") && commands.includes("scp"));
+    assert.ok(!commands.includes("gcloud"));
+    const unavailable = await inspectBot(state, "galerazo", { commandChecker: async (name) => name !== "scp" });
+    assert.equal(unavailable.readiness.runtime, false);
+    await rm(configFile);
+    assert.equal((await inspectBot(state, "galerazo", { commandChecker: async () => true })).readiness.runtime, false);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
 
 function deploymentManager(options = {}) {
   return new DeploymentJobManager({ acquireOperationLock: noOperationLock, ...options });
