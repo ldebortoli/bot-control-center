@@ -10,7 +10,7 @@
 
 # IN PROGRESS
 
-- [P0] Migrar adaptador operativo Galerazo a Contabo existente por SSH: release con transferencia de imagen, estado/triggers/credenciales/rollback/frontend, mismo manager y lock. Pedido explícito Lucas20/10 desde tarea VPS. NoGCP ni nuevas compras; tarea mensual permanece deshabilitada hasta validar destino. Versión0.1.6 en preparación, tests/cobertura/commit/push pendientes.
+- [P0] [BLOCKED: activación integral deGalerazoesperaaprobaciónuomisiónexplícitadeanuncio0.77, exigidaporAGENTSdelbot] Terminar migración operativa Contabo. AdaptadorBCC0.1.6yaimplementado/validado/pusheado en codex/contabo-vps/a4e1db6; Galerahelpersad0a9fdmisma rama. SSHreal/DB/tokenverificados,68tests/53coverage100%,build/lint/auditprod0/índiceLF/secretosOK. Falta integrar ramas yverificarreleaseconbotactivo alresolversuaprobación. TareamensualDisabled, noGCP/nuevascompras.
 
 
 
