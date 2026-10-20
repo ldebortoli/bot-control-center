@@ -10,11 +10,12 @@
 
 # IN PROGRESS
 
-- [P0] [BLOCKED: activación integral deGalerazoesperaaprobaciónuomisiónexplícitadeanuncio0.77, exigidaporAGENTSdelbot] Terminar migración operativa Contabo. AdaptadorBCC0.1.6yaimplementado/validado/pusheado en codex/contabo-vps/a4e1db6; Galerahelpersad0a9fdmisma rama. SSHreal/DB/tokenverificados,68tests/53coverage100%,build/lint/auditprod0/índiceLF/secretosOK. Falta integrar ramas yverificarreleaseconbotactivo alresolversuaprobación. TareamensualDisabled, noGCP/nuevascompras.
 
 
 
 # DONE
+
+- [2026-10-20] [DONE] Migración Contabo: bot0.77healthy/DBproductiva/anuncioaprobadoúnico,MiniApp0.1.25/140idiomas por BCC9b211581 succeeded,2GiBagregados/swap0,backupdiario yrestore821(34tablas/20681filas). FlujoSSH/BCC0.1.6 ymisma tareamensualReady1/11/03ART. FuentesGaleramain3174aaa/web2403982/BCCd163bb8;validaciones100% yassets reales verificadas. NoGCP ni nuevos pagos. QA initData real sigue bloqueada explícitamente.
 
 - [2026-10-16] [DONE] Ejecutar pedido explicito de Python3.14.8 y publicacion web Galerazo por manager frontend-release existente,job99475837-b34d-4ad0-b959-963ec4feac71 succeeded. Web0.1.20/fuente0d1ccfd/Worker60a9166d-1e98-4631-bffa-206ebfb96b28,verify ambos dominios exactos y bot0.68 healthy. Sin publicar imagenGCE/reiniciar bot, anuncios, tarea mensual/config/launcher ni servicios nuevos. Validacion propia web61Node+9Vitest/100% y native650tests/100%; BCC sin cambios de codigo/version, solo memoria. CI remota no monitoreada.
 

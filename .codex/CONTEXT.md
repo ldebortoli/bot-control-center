@@ -1,8 +1,14 @@
 # Bot Control Center - Contexto del proyecto
 
-## Destino Contabo preparado - 2026-10-20
+## Contabo operativo · 2026-10-20
 
-Fuente0.1.6 incorpora provider=vps/VpsConfigFile y UIdeSSH. Configlocalgalerazo apuntaContabo/vmi3680696, referencias privadas aclave/knownhosts bajo deploy/out delbot, sincredenciales embebidas. Runtime/credenciales porSSHrealcomprobados (prod@galerazo_bot,DBrecuperada presente; contenedor aún no creado por aprobación pendiente deanuncio0.77). Windowsrelease yconfigscheduleEnabled=false, noGCP ni nuevascompras. Next/ESLintConfig16.4.2 corrigenadvisoriesactuales; Vinext1.0.0 conservado, build/lint/68tests y53coverage100%lineas/ramas/funciones, auditprod0. Publicación delbot/helperyverificación integrada siguen en tareaVPS; no afirmarbot desplegado.
+# Operación Contabo verificada · 2026-10-20
+
+Galerazobot0.77 está activo en207.180.234.227, imagen galerazo-bot:36ef57546e33. main/origin3174aaa añade únicamente UTF8 al wrapper local después del commit de imagen36ef575; no requiere reiniciar el bot. Healthy,cero reinicios,getMe @galerazo_bot,updates reales,sin errores ni conflictos. SQLiteproductiva recuperada20/10 íntegra. Anuncio exacto aprobado,release_state0.77/16:49:27UTC y una confirmación: NO reenviar.
+
+MiniApp0.1.25 publicada por BCC job9b211581-6444-4b8c-9c6b-1aa69010c668/succeeded,webfuente2403982/Worker84dc64b7-7d29-42fe-89a3-f8ffb12fc972. Ambosdominios,5assets byte-exactos,140idiomas,bootstrap401/no-store ySEO conservado. BackendVPS8080loopback,túnel existente;frontendWorker existente. QA Telegram coninitData real permanece bloqueada enBACKLOG; no simular producción.
+
+Galerazo y túnel comparten apps-galerazo.slice2GiB(bot1792MiB+túnel128MiB),swap0 real. AppsNico1GiB cadauna/backups512MiB/apps6GiB. Antes deañadir otraapp revisar presupuesto. APIs/DB privadas. BCC0.1.6/main d163bb8 usa provider=vps y scriptsfijos,mismaexclusión mutua. Configprivada deploy/out/vps-target.json con clave/knownhosts estrictos. Tarea WindowshabitualReady,próxima1/11/2026 03ART,12reintentos/PT1H/3h/IgnoreNew;backupdiario enVPSindependiente delaPC.
 
 ## Publicacion solo frontend - 2026-10-16
 

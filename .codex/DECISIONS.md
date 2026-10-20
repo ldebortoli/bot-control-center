@@ -315,3 +315,11 @@ El usuario autoriza actualizar Python3.14.8 y publicar Galerazo. Usar Deployment
 Lucas autoriza migrar producción y actualizar deployhabitual haciaContabo; noautoriza nuevascompras. Provider=vps conserva manager/lock y contratoBotctl, con scriptfijoInvoke-VpsBot, SSHkey/knownhostsprivadosycomprobaciónestricta; transferenciaDockerlocalsinregistry/GCP. Providergce se conserva paraotrosdestinos, GalerausaVPS. FrontendbridgeeligeSSHsin alterarcontratoprivado/API. ReadinessVPScompruebaSSH/SCP/configlocal, noGoogleCLI. ConfiglocalyaVPS, scheduleWindowsDisabled yJSONenabled=falsehastaactivaciónsegura; release0.77bloqueadoporaprobaciónexactadebroadcastenGalerazoAGENTS. No se envíaanuncio nise arrancaGaleraporaprobarfuenteBCC.
 
 Auditproducción detectóNext16.3.7afectado poravisosnuevos: actualizaciónmínimaNext/eslint-config-next16.4.2, sinforce/downgradeVinext ni debilitargates. Gateslocalesbuild/lint/68tests/53coverage100% ya pasados, auditprod0; 8avisosdevbracespreexistentesconbloqueoseparado. Fuenteadvisory https://github.com/vercel/next.js/security/advisories/GHSA-3w37-wq28-93x7 . ProteccionesrepositorioSecretScanning/PushProtectionenabled; autornoreplypreservado. SinmonitoreoCIremota.
+
+## Contabo activado y tarea habitual restaurada (2026-10-20)
+
+Lucas autorizó migrar la producción y actualizar el flujo habitual. BCC0.1.6 integrado enmain d163bb8; bot0.77healthy conSSH real y límites. Configprovider=vps sin credenciales; tarea mensual existente Ready, próxima1/11/2026 03ART, mismo launcher/runner/calendario/reintentos, sin ejecución manual nueva. Frontend0.1.24 intermedio por manager verificado;0.1.25 final en curso para distinguir el artefacto privado delSEOaislado. NoGCPni servicios pagos nuevos.
+
+## Cierre de migración verificado (2026-10-20)
+
+Frontend0.1.25/2403982 publicado por BCC9b211581/succeeded,Worker84dc64b7-7d29-42fe-89a3-f8ffb12fc972. Verificación independiente deambosdominios/5assets/140idiomas/401no-store. Galera0.77healthy,0reinicios/errores/conflictos,release_state0.77/anuncio único;backup821restore34tablas/20681filas idénticas. Tarea mensualexistenteReady1/11/03ART aVPS,cuatrodiarios04ARTactivos. AppsNico privadas completadas; no pública/auth/móvil listo. Evidencia enworkspaceVPS, no nuevos pagos/GCP/CIpoll.
