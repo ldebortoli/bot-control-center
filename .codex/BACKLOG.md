@@ -16,6 +16,8 @@
 
 # DONE
 
+- [2026-10-22] [DONE] R11 - Vite 8.1.6 en package.json/lock, sin otros cambios de paquetes. Candidato local aislado: instalacion limpia, build/70 tests/lint, 53 tests agente con 100% lineas/ramas/funciones y regresion HTML antes/despues. Audit prod0; full8 de braces ya bloqueadas arriba. Solo fuente/candidato: runtime, binarios/perfil y config/calendario/jobs previos conservados; aplicacion reservada a coordinacion. Sin deploy/anuncios/push. Evidencia y rollback en work/r11-vite-20261022. Cola procesada previa auditada: sus tres pedidos siguen DONE; no se activan pendientes fuera de R11.
+
 - [2026-10-20] [DONE] Deployconjunto0.80/0.1.27 por BCC0.1.7/VPS,jobb9b97ab6 succeeded. Anunciofinalaprobado509/4096/cursor0.80/una confirmación; DBintegrity/FK/restore35tablas20740filas, rollbackanteriorpresente.9otroscontenedores/puertos/límitesidénticos. Herramientareparada(sondeoHTTPcancelable/proveedorcorrecto),VPSúnicoenconfig/ejemplos ymisma tareamensualReady. Gatesnativos/Docker/web/BCC100%medido; fuentespusheadas,detalleenHANDOFF.
 
 

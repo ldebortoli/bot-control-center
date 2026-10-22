@@ -343,3 +343,7 @@ Jobb9b97ab6 succeeded por herramienta real; bot0.80/ee2aba4 yMini0.1.27/7c05ef4 
 ## 2026-10-20 · Alcance de lint local
 
 El cierre repitió lint en el checkout principal después de generar work/deploy-vps-20261020/index/dist. ESLint entró en ese build temporal y produjo7errores/3951warnings, todos de salida generada; el mismo código mantenido ya pasaba build/70tests en índice limpio. Se ignora sólo work/** (Git ya lo excluye y no contiene producción) para conservar el gate sobre fuentes mantenidas. No cambia cobertura ni se oculta código alcanzable. Evidencia privada lint-generated-evidence.json; repetir lint principal e índice antes de push.
+
+## R11 - Vite 8.1.6 - 2026-10-22
+
+Autorizacion posterior acotada al lote R11: actualizar solo Vite 8.1.5 a 8.1.6 mediante npm, sin otros padres/overrides, Next16.4.2/Sharp0.35.5/braces3.0.3 conservados. Cinco GHSA oficiales incluyen 8.1.5 y corrigen esta rama en 8.1.6; launch-editor2.14.2 esta incorporado en Vite. El tooling dev participa de la UI local, sin demostrar exposicion de los servicios productivos. Validar en copia sin runtime.local con SSH/Docker/Telegram y jobs falsos; no release real. Conservar runtime/binarios/perfil anteriores y preparar candidato local; coordinar cualquier aplicacion si BCC esta activo. No iniciar colas, modificar gates/permisos/secretos, desplegar ni reenviar anuncios. Commit local acotado para trazabilidad; sin push o merge innecesarios. Fuentes y resultados en work/r11-vite-20261022/REPORT.md.

@@ -1,3 +1,13 @@
+# R11 - Vite 8.1.6 - 2026-10-22
+
+Parche solo Vite en package.json y lock; base ec05cc1. Version BCC0.1.7, Next/eslint-config-next16.4.2, Sharp0.35.5 y otros pins conservados. npm ci limpio antes/despues, build+70/70 tests (sin skips), lint y cobertura agente53tests/100% lineas/ramas/funciones. Regresion HTML inocua falla en8.1.5 y pasa en8.1.6; la primera expectativa extra sobre eliminar queries se corrigio a verificar origen, sin cambiar aplicacion. Los cinco GHSA ya no figuran en audit candidato. Audit prod0; full8 altas por braces upstream, bloqueo previo conservado.
+
+Candidato/evidencia/artefacto y rollback: work/r11-vite-20261022; ver REPORT.md. Ejecutables previos copiados en rollback; perfil/config y runtime principal preservados. node_modules habitual conserva Vite8.1.5 y dist previo; NO se activo el candidato. Siguiente paso, solo si se coordina la aplicacion: comprobar BCC/jobs/escritores, esperar cierre seguro de instancia activa y aplicar el commit exacto con npm ci/build locales; nunca iniciar release/scheduled-release ni repetir anuncios, ni limpiar jobs inciertos. Ningun bot/Worker/VPS/APK, anuncio, calendario o credencial fue cambiado. No hubo denegacion de accion R11 ni operacion productiva incierta; sin push/merge.
+
+La cola anterior tiene sus tres pedidos DONE y no hay nuevos pendientes. Este turno queda limitado expresamente a R11. Estado productivo historico siguiente no fue revalidado ni modificado en este lote.
+
+---
+
 # Cierre: despliegue al VPS · 2026-10-20
 
 ## Producción y fuentes

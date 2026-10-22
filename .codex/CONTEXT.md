@@ -42,7 +42,7 @@ Dashboard local y extensible para observar una flota de bots remotos desde una i
 ## Estado estable
 
 - Ruta: `%USERPROFILE%\Documents\Codex\BotControlCenter\dashboard`
-- Stack: Node.js 22+, TypeScript, React 19.2.8, Next 16.4.2, vinext 1.0.0/Vite 8.1.5, peer RSC 0.5.34, Cloudflare Vite Plugin 1.62.2 y Wrangler 4.144.0. La fuente es 0.1.7; los overrides de Nanoid 3.3.18, PostCSS 8.5.23, Sharp 0.35.4 y satori/fflate 0.7.5 mantienen transitivos parcheados. El launcher/acceso local no se recompiló por este cambio de dependencias.
+- Stack: Node.js 22+, TypeScript, React 19.2.8, Next 16.4.2, vinext 1.0.0/Vite 8.1.6, peer RSC 0.5.34, Cloudflare Vite Plugin 1.62.2 y Wrangler 4.144.0. La fuente es 0.1.7; los overrides de Nanoid 3.3.18, PostCSS 8.5.23, Sharp 0.35.5 y satori/fflate 0.7.5 mantienen transitivos parcheados. El launcher/acceso local no se recompiló por este cambio de dependencias.
 - Git: repositorio publico en `https://github.com/ldebortoli/bot-control-center`, con `origin` configurado y rama principal `main`.
 - Idioma de la interfaz y documentación: español.
 - Hosting: no desplegado; `.openai/hosting.json` mantiene D1 y R2 desactivados.
@@ -120,3 +120,7 @@ BCC0.1.7, Galerazo únicamenteContabo/VPS en configlocal y ambos ejemplos, no ha
 ## Producción vigente20/10
 
 Bot0.80/ee2aba412e2b healthy yMini0.1.27/Worker a49408e6 desde7c05ef4;139/192idiomas. BCC0.1.7/VPSúnicoGalerazo,mismatareamensualReady1/11/03ART. Cursoranuncio0.80, no reenviar. Galera1GiBagregado/swap0;9otroscontenedores/puertosintactos,backup/restore verificados. Detalle ylimitacionesenSESSION_HANDOFF.
+
+## R11 - Vite 8.1.6 - 2026-10-22
+
+Fuente 0.1.7 con Vite 8.1.6; Next/eslint-config-next 16.4.2, Sharp 0.35.5 y resto del grafo conservados. Candidato aislado validado en work/r11-vite-20261022: npm ci antes/despues, build+70 tests, lint, 53 tests de cobertura agente 100% y regresion HTML roja con 8.1.5/verde con 8.1.6. Audit produccion 0; completo conserva ocho altas de braces preexistentes. El runtime principal sigue con Vite 8.1.5: no se reemplazaron node_modules/dist, ejecutables, perfil, config o tarea. Aplicacion local reservada para coordinacion; no jobs, releases, VPS/Worker/APK, anuncios ni push.
