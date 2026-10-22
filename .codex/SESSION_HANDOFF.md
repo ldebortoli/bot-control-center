@@ -1,3 +1,15 @@
+# R11 APLICADO al BCC habitual - 2026-10-22
+
+Vite efectivo8.1.6 y build probado adoptados a23:24:37UTC, aplicacionBCC0.1.7. No queda solo candidato. Fuente funcional549f7e8; este cierre agrega memoria de la adopcion. Preflight renovado sin BCC/puertos/mutex/jobs/locks, tarea mensualReady/resultado0/missed0/proxima1-11 03ART. Falla de transporte anterior ocurrio antes de ejecutar; executor recuperado sin cambiar entorno ni eludir permisos.
+
+Validacion en runtime habitual: 70/70 tests sin skips, 53 tests cobertura100% lineas/ramas/funciones, regresion de origen HTML y CLI8.1.6, peer tree deduped. Build95archivos y Vite63archivos coinciden byte a byte con candidato probado. Otros paquetes, Next16.4.2 y Sharp0.35.5 intactos; full audit8 entradas braces preexistentes no ocultadas, prod0 del mismo grafo verificado.
+
+Perfiles/logs/estado completos3863archivos identicos porSHA256; incluye cursor/jobpersistido anterior. Config, ambos EXE, acceso, shims y XMLtarea identicos. Ningun proceso/listener residual. Vite anterior63archivos y build106archivos preservados con lock oculto completo en work/r11-vite-20261022/adoption/rollback-runtime y tar bcc-before-adoption-vite-8.1.5.tgz/SHA256SUMS. CLI previo imprime8.1.5 sin afectar el habitual. Rollback requiere preflight quieto, preservar version nueva antes de restaurar carpetas/lock/manifiestos previos y comprobar hashes; no ejecutar ni repetir releases/anuncios, no limpiar jobs.
+
+No se abrio BCC operativo; tests usan dobles, previewloopback y Probe temporal. Cero jobs operativos, SSH/Docker real, bot/Worker/VPS/APK, anuncios/publicaciones o cambios sensibles. No push/merge. Evidencia actual: work/r11-vite-20261022/adoption/ADOPTION_REPORT.md, final-verification.json y journal.json(applied-and-verified). Cola previa3pedidos DONE; no otros lotes activados. Sin bloqueos pendientes de R11. Las secciones siguientes describen estados historicos anteriores a la adopcion.
+
+---
+
 # R11 - Vite 8.1.6 - 2026-10-22
 
 Parche solo Vite en package.json y lock; base ec05cc1. Version BCC0.1.7, Next/eslint-config-next16.4.2, Sharp0.35.5 y otros pins conservados. npm ci limpio antes/despues, build+70/70 tests (sin skips), lint y cobertura agente53tests/100% lineas/ramas/funciones. Regresion HTML inocua falla en8.1.5 y pasa en8.1.6; la primera expectativa extra sobre eliminar queries se corrigio a verificar origen, sin cambiar aplicacion. Los cinco GHSA ya no figuran en audit candidato. Audit prod0; full8 altas por braces upstream, bloqueo previo conservado.
