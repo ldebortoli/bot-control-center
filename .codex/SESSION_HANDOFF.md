@@ -1,3 +1,9 @@
+# R11 - Publicacion y seguimiento CI autorizados - 2026-10-23
+
+El usuario solicita el push normal del R11 ya aplicado y seguimiento CI hasta resultado. Destino verificado: https://github.com/ldebortoli/bot-control-center.git, rama main; base remotaec05cc1 y cambios fuente/adopcion549f7e8+944f378, autoria noreply. Unico efecto del workflow revisado: Quality de validacion, sin deploy; no habia runs activos enmain al revisar. Este cierre agrega solo registro de la autorizacion actual y referencia a la evidencia, sin volver a aplicar el runtime ni iniciar jobs. SHA local/remoto, privacidad, enlace y resultado CI se registran en work/r11-vite-20261023-publication/publication-report.md. El seguimiento CI esta pedido explicitamente en esta ejecucion; mantener la politica habitual sin polling para otras solicitudes. Braces conserva ocho entradas dev altas conocidas y no se oculta el audit. Las secciones siguientes son historicas de la adopcion local previa.
+
+---
+
 # R11 APLICADO al BCC habitual - 2026-10-22
 
 Vite efectivo8.1.6 y build probado adoptados a23:24:37UTC, aplicacionBCC0.1.7. No queda solo candidato. Fuente funcional549f7e8; este cierre agrega memoria de la adopcion. Preflight renovado sin BCC/puertos/mutex/jobs/locks, tarea mensualReady/resultado0/missed0/proxima1-11 03ART. Falla de transporte anterior ocurrio antes de ejecutar; executor recuperado sin cambiar entorno ni eludir permisos.
